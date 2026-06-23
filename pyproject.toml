@@ -1,0 +1,38 @@
+[project]
+name = "data-platform"
+version = "0.1.0"
+description = "Governed multi-source MGNREGA data layer served over MCP for AI agents."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pre-commit>=3.7",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pytest>=8.2",
+]
+
+# No source package to build yet; treat the repo as an application, not a library,
+# so `uv sync` doesn't try to build/install it.
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

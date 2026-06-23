@@ -1,0 +1,47 @@
+# Pre-commit hooks for Data Platform.
+# Every hook runs through `uv run`, so it uses the exact tool versions pinned in
+# pyproject.toml / uv.lock — one source of truth, no duplicated version pins here.
+# Requires `uv` on PATH and the dev dependency group installed (`uv sync`).
+minimum_pre_commit_version: "3.7.0"
+
+repos:
+  - repo: local
+    hooks:
+      # Lint with ruff. Strict gate: reports violations and BLOCKS the commit.
+      # No auto-fix here, so a commit only proceeds on genuinely clean code.
+      - id: ruff-check
+        name: ruff check (lint)
+        entry: uv run ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # Format with ruff. Auto-formats staged files in place; if anything was
+      # reformatted the hook fails, so you re-stage and commit the formatted code.
+      # (For CI / check-only mode, swap the entry to `uv run ruff format --check`.)
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # Type-check with mypy (strict, per CLAUDE.md). Targets src/ and tests/
+      # only, and no-ops cleanly until at least one of those dirs exists.
+      - id: mypy
+        name: mypy (strict)
+        entry: "bash -c 'p=\"\"; for d in src tests; do [ -d \"$d\" ] && p=\"$p $d\"; done; if [ -n \"$p\" ]; then uv run mypy $p; else exit 0; fi'"
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+
+      # Run the test suite. Skips when there is no tests/ dir yet, and treats
+      # "no tests collected" (pytest exit code 5) as success; real failures BLOCK.
+      - id: pytest
+        name: pytest
+        entry: "bash -c 'test -d tests || exit 0; uv run pytest -v; rc=$?; [ \"$rc\" = 5 ] && exit 0; exit \"$rc\"'"
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
