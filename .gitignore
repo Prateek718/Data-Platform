@@ -16,3 +16,9 @@ __pycache__/
 # os / editor
 .DS_Store
 .vscode/
+
+# working files (process, not deliverable)
+# tasks/   — plan/todo files
+# scripts/ — Stage 0 exploration/probe scripts; findings captured in docs/notes/divergence-findings.md
+tasks/
+scripts/
