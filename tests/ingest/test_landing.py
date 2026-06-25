@@ -144,6 +144,38 @@ def test_quarantine_predicate_flags_synthetic_total_row() -> None:
     assert batch.parse_failures[0].row_index == 1
 
 
+def test_nonstring_scalar_cell_preserved_not_quarantined() -> None:
+    # The flagship API's type metadata is unreliable: a cell that is "really" a
+    # string can arrive as a bare number. That is NOT a malformed row — keep the
+    # whole row, preserve the value verbatim-typed. Discarding ~34 good columns
+    # over one typed cell would be the silent data loss the pipeline exists to stop.
+    rows = [
+        {
+            "state_name": "GOA",
+            "Persondays_so_far": 2523,  # int, not "2523"
+            "Total_Exp": 3884.10,  # float, not "3884.10"
+            "is_finalized": True,  # JSON bool, not 1
+        }
+    ]
+    cols = ["state_name", "Persondays_so_far", "Total_Exp", "is_finalized"]
+
+    batch = _batch(rows, cols)
+
+    assert batch.parse_failures == []  # not quarantined
+    assert len(batch.records) == 1
+
+    rec = batch.records[0]
+    assert rec.raw["state_name"] == "GOA"
+    # values kept verbatim AND verbatim-typed (no coercion, no stringification)
+    assert rec.raw["Persondays_so_far"] == 2523
+    assert isinstance(rec.raw["Persondays_so_far"], int)
+    assert rec.raw["Total_Exp"] == 3884.10
+    assert isinstance(rec.raw["Total_Exp"], float)
+    # bool stays a genuine bool, never collapsed to its int subclass (True != 1)
+    assert rec.raw["is_finalized"] is True
+    assert type(rec.raw["is_finalized"]) is bool
+
+
 def test_records_are_immutable() -> None:
     rec = _batch([{"a": "1"}], ["a"]).records[0]
     with pytest.raises(ValidationError):
