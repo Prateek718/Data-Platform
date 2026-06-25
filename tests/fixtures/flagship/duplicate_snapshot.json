@@ -1,0 +1,320 @@
+{
+  "index_name": "ee03643a-ee4c-48c2-ac30-9f2ff26ab722",
+  "title": "District-wise MGNREGA Data at a Glance",
+  "desc": "District-wise MGNREGA Data at a Glance",
+  "org_type": "Central",
+  "org": [
+    "Ministry of Rural Development",
+    "Department of Land Resources (DLR)"
+  ],
+  "sector": [
+    "Rural",
+    "Land Resources"
+  ],
+  "source": "data.gov.in",
+  "catalog_uuid": "854e5a1f-a4e3-4177-8586-2bcc27b74552",
+  "visualizable": "1",
+  "active": "1",
+  "created": 1695098583,
+  "updated": 1782320459,
+  "created_date": "2023-09-19T06:43:03Z",
+  "updated_date": "2026-06-24T17:00:59Z",
+  "external_ws": 0,
+  "external_ws_url": "",
+  "target_bucket": {
+    "index": "mgnrega",
+    "type": "854e5a1f-a4e3-4177-8586-2bcc27b74552"
+  },
+  "field": [
+    {
+      "name": "fin year",
+      "id": "fin_year",
+      "type": "text"
+    },
+    {
+      "name": "Month",
+      "id": "month",
+      "type": "text"
+    },
+    {
+      "name": "State Code",
+      "id": "state_code",
+      "type": "keyword"
+    },
+    {
+      "name": "State Name",
+      "id": "state_name",
+      "type": "text"
+    },
+    {
+      "name": "District Code",
+      "id": "district_code",
+      "type": "keyword"
+    },
+    {
+      "name": "District Name",
+      "id": "district_name",
+      "type": "text"
+    },
+    {
+      "name": "Approved Labour Budget",
+      "id": "Approved_Labour_Budget",
+      "type": "long"
+    },
+    {
+      "name": "Average Wage rate per day per person",
+      "id": "Average_Wage_rate_per_day_per_person",
+      "type": "long"
+    },
+    {
+      "name": "Average days of employment provided per Household",
+      "id": "Average_days_of_employment_provided_per_Household",
+      "type": "long"
+    },
+    {
+      "name": "Differently abled persons worked",
+      "id": "Differently_abled_persons_worked",
+      "type": "long"
+    },
+    {
+      "name": "Material and skilled Wages",
+      "id": "Material_and_skilled_Wages",
+      "type": "long"
+    },
+    {
+      "name": "Number of Completed Works",
+      "id": "Number_of_Completed_Works",
+      "type": "long"
+    },
+    {
+      "name": "Number of GPs with NIL exp",
+      "id": "Number_of_GPs_with_NIL_exp",
+      "type": "long"
+    },
+    {
+      "name": "Number of Ongoing Works",
+      "id": "Number_of_Ongoing_Works",
+      "type": "long"
+    },
+    {
+      "name": "Persondays of Central Liability so far",
+      "id": "Persondays_of_Central_Liability_so_far",
+      "type": "long"
+    },
+    {
+      "name": "SC persondays",
+      "id": "SC_persondays",
+      "type": "long"
+    },
+    {
+      "name": "SC workers against active workers",
+      "id": "SC_workers_against_active_workers",
+      "type": "long"
+    },
+    {
+      "name": "ST persondays",
+      "id": "ST_persondays",
+      "type": "long"
+    },
+    {
+      "name": "ST workers against active workers",
+      "id": "ST_workers_against_active_workers",
+      "type": "long"
+    },
+    {
+      "name": "Total Adm Expenditure",
+      "id": "Total_Adm_Expenditure",
+      "type": "long"
+    },
+    {
+      "name": "Total Exp",
+      "id": "Total_Exp",
+      "type": "long"
+    },
+    {
+      "name": "Total Households Worked",
+      "id": "Total_Households_Worked",
+      "type": "long"
+    },
+    {
+      "name": "Total Individuals Worked",
+      "id": "Total_Individuals_Worked",
+      "type": "long"
+    },
+    {
+      "name": "Total No of Active Job Cards",
+      "id": "Total_No_of_Active_Job_Cards",
+      "type": "long"
+    },
+    {
+      "name": "Total No of Active Workers",
+      "id": "Total_No_of_Active_Workers",
+      "type": "long"
+    },
+    {
+      "name": "Total No of HHs completed 100 Days of Wage Employment",
+      "id": "Total_No_of_HHs_completed_100_Days_of_Wage_Employment",
+      "type": "long"
+    },
+    {
+      "name": "Total No of JobCards issued",
+      "id": "Total_No_of_JobCards_issued",
+      "type": "long"
+    },
+    {
+      "name": "Total No of Workers",
+      "id": "Total_No_of_Workers",
+      "type": "long"
+    },
+    {
+      "name": "Total No of Works Takenup",
+      "id": "Total_No_of_Works_Takenup",
+      "type": "long"
+    },
+    {
+      "name": "Wages",
+      "id": "Wages",
+      "type": "long"
+    },
+    {
+      "name": "Women Persondays",
+      "id": "Women_Persondays",
+      "type": "long"
+    },
+    {
+      "name": "percent of Category B Works",
+      "id": "percent_of_Category_B_Works",
+      "type": "long"
+    },
+    {
+      "name": "percent of Expenditure on Agriculture Allied Works",
+      "id": "percent_of_Expenditure_on_Agriculture_Allied_Works",
+      "type": "long"
+    },
+    {
+      "name": "percent of NRM Expenditure",
+      "id": "percent_of_NRM_Expenditure",
+      "type": "long"
+    },
+    {
+      "name": "percentage payments gererated within 15 days",
+      "id": "percentage_payments_gererated_within_15_days",
+      "type": "long"
+    },
+    {
+      "name": "Remarks",
+      "id": "Remarks",
+      "type": "text"
+    }
+  ],
+  "field_dependent": [],
+  "order": [
+    {
+      "name": "State Name",
+      "id": "state_name"
+    },
+    {
+      "name": "Fin Year",
+      "id": "fin_year"
+    }
+  ],
+  "aggregation": [],
+  "field_exposed": [
+    {
+      "name": "State Name",
+      "id": "state_name",
+      "type": "keyword"
+    },
+    {
+      "name": "Financial Year",
+      "id": "fin_year",
+      "type": "keyword"
+    }
+  ],
+  "message": "Resource lists",
+  "version": "2.2.0",
+  "status": "ok",
+  "total": 24,
+  "count": 2,
+  "limit": "50",
+  "offset": "0",
+  "records": [
+    {
+      "fin_year": "2022-2023",
+      "month": "Jan",
+      "state_code": "10",
+      "state_name": "GOA",
+      "district_code": "1001",
+      "district_name": "NORTH GOA",
+      "Approved_Labour_Budget": "141371",
+      "Average_Wage_rate_per_day_per_person": "397.314743793074",
+      "Average_days_of_employment_provided_per_Household": "22",
+      "Differently_abled_persons_worked": "0",
+      "Material_and_skilled_Wages": "27.54266",
+      "Number_of_Completed_Works": "30",
+      "Number_of_GPs_with_NIL_exp": "45",
+      "Number_of_Ongoing_Works": "278",
+      "Persondays_of_Central_Liability_so_far": "34679",
+      "SC_persondays": "732",
+      "SC_workers_against_active_workers": "234",
+      "ST_persondays": "5057",
+      "ST_workers_against_active_workers": "328",
+      "Total_Adm_Expenditure": "0.21169",
+      "Total_Exp": "165.53913",
+      "Total_Households_Worked": "1547",
+      "Total_Individuals_Worked": "1625",
+      "Total_No_of_Active_Job_Cards": "3725",
+      "Total_No_of_Active_Workers": "4691",
+      "Total_No_of_HHs_completed_100_Days_of_Wage_Employment": "13",
+      "Total_No_of_JobCards_issued": "20250",
+      "Total_No_of_Workers": "24030",
+      "Total_No_of_Works_Takenup": "308",
+      "Wages": "137.78478",
+      "Women_Persondays": "27724",
+      "percent_of_Category_B_Works": "0",
+      "percent_of_Expenditure_on_Agriculture_Allied_Works": "58.55",
+      "percent_of_NRM_Expenditure": "69.77",
+      "percentage_payments_gererated_within_15_days": "140.49",
+      "Remarks": "NA"
+    },
+    {
+      "fin_year": "2022-2023",
+      "month": "Jan",
+      "state_code": "10",
+      "state_name": "GOA",
+      "district_code": "1001",
+      "district_name": "NORTH GOA",
+      "Approved_Labour_Budget": "141371",
+      "Average_Wage_rate_per_day_per_person": "397.314743793074",
+      "Average_days_of_employment_provided_per_Household": "22",
+      "Differently_abled_persons_worked": "0",
+      "Material_and_skilled_Wages": "27.54266",
+      "Number_of_Completed_Works": "30",
+      "Number_of_GPs_with_NIL_exp": "45",
+      "Number_of_Ongoing_Works": "278",
+      "Persondays_of_Central_Liability_so_far": "34102",
+      "SC_persondays": "732",
+      "SC_workers_against_active_workers": "234",
+      "ST_persondays": "5057",
+      "ST_workers_against_active_workers": "328",
+      "Total_Adm_Expenditure": "0.21169",
+      "Total_Exp": "165.53913",
+      "Total_Households_Worked": "1547",
+      "Total_Individuals_Worked": "1625",
+      "Total_No_of_Active_Job_Cards": "3725",
+      "Total_No_of_Active_Workers": "4691",
+      "Total_No_of_HHs_completed_100_Days_of_Wage_Employment": "13",
+      "Total_No_of_JobCards_issued": "20250",
+      "Total_No_of_Workers": "24030",
+      "Total_No_of_Works_Takenup": "308",
+      "Wages": "137.78478",
+      "Women_Persondays": "27724",
+      "percent_of_Category_B_Works": "0",
+      "percent_of_Expenditure_on_Agriculture_Allied_Works": "58.55",
+      "percent_of_NRM_Expenditure": "69.77",
+      "percentage_payments_gererated_within_15_days": "140.49",
+      "Remarks": "NA"
+    }
+  ],
+  "_fixture_note": "CONSTRUCTED, not a raw pull: two rows with identical (district_name, month)=(NORTH GOA, Jan) and differing Persondays, modelling the documented snapshot-revision duplicates (sources.md S4, PUNE Jan 558170 vs 552427). Stage 1 must preserve both verbatim; dedupe is Stage 2."
+}
