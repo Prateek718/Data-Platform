@@ -11,8 +11,9 @@ import it. Decoupling parse from fetch is what makes ingestion unit-testable and
 
 from __future__ import annotations
 
+import hashlib
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar
@@ -48,3 +49,29 @@ class SourceAdapter(ABC):
     def parse(self, payload: SourcePayload) -> RawLandingBatch:
         """Pure transform: ``SourcePayload`` -> ``RawLandingBatch``. No I/O."""
         ...
+
+
+def observed_columns(rows: Sequence[Any]) -> list[str]:
+    """The observed schema: union of keys across mapping rows, in first-seen (source)
+    order — verbatim, never sorted, never invented. Non-mapping rows are skipped here
+    (``build_batch`` quarantines them as malformed); a column present in only some rows
+    still appears, since landing fills its absence with null on the rows that lack it.
+    """
+    columns: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        if isinstance(row, Mapping):
+            for key in row:
+                if key not in seen:
+                    seen.add(key)
+                    columns.append(key)
+    return columns
+
+
+def schema_fingerprint(column_names: Sequence[str]) -> str:
+    """Deterministic, order-insensitive fingerprint of an observed column set, stamped on
+    each batch as ``schema_version``. Order-insensitive so a reordered-but-identical schema
+    hashes the same. Interim primitive: T1.3 builds schema-drift DETECTION on top of it.
+    """
+    digest = hashlib.sha256("\n".join(sorted(set(column_names))).encode()).hexdigest()
+    return f"sha256:{digest}"

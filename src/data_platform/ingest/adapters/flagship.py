@@ -1,9 +1,9 @@
 """SRC_FLAGSHIP adapter — ``District-wise MGNREGA Data at a Glance`` (district + monthly).
 
-STUB (T1.2): the seam is wired so tests import cleanly; ``parse`` is intentionally
-unimplemented (behaviorally red) until the failing tests are reviewed. When built it
-must keep all source columns verbatim (Stage 0 observed 36) and preserve duplicate
-snapshot rows un-deduped (dedupe is Stage 2).
+Pure parse: the data.gov.in response envelope in, a :class:`RawLandingBatch` out. Every
+source column is kept verbatim (Stage 0 observed 36), cells are stored exactly as emitted
+(flagship publishes everything as strings — ``"NA"`` and numerics alike — so nothing is
+coerced here), and duplicate snapshot rows are preserved un-deduped (dedupe is Stage 2).
 """
 
 from __future__ import annotations
@@ -11,8 +11,13 @@ from __future__ import annotations
 from typing import ClassVar
 
 from data_platform.ingest import registry
-from data_platform.ingest.adapters.base import SourceAdapter, SourcePayload
-from data_platform.ingest.landing import RawLandingBatch
+from data_platform.ingest.adapters.base import (
+    SourceAdapter,
+    SourcePayload,
+    observed_columns,
+    schema_fingerprint,
+)
+from data_platform.ingest.landing import RawLandingBatch, build_batch
 
 
 class FlagshipAdapter(SourceAdapter):
@@ -21,4 +26,15 @@ class FlagshipAdapter(SourceAdapter):
     source_grain: ClassVar[str] = registry.FLAGSHIP_GRAIN
 
     def parse(self, payload: SourcePayload) -> RawLandingBatch:
-        raise NotImplementedError("T1.2: FlagshipAdapter.parse not yet implemented")
+        rows = payload.raw[registry.DATAGOVIN_RECORDS_FIELD]
+        column_names = observed_columns(rows)
+        return build_batch(
+            source_id=self.source_id,
+            resource_id=payload.resource_id,
+            ingested_at=payload.fetched_at,
+            source_as_of=payload.source_as_of,
+            schema_version=schema_fingerprint(column_names),
+            source_grain=self.source_grain,
+            column_names=column_names,
+            rows=rows,
+        )

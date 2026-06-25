@@ -1,20 +1,26 @@
 """SRC_RS adapter — Rajya Sabha person-days tables (state + annual), two resources.
 
-STUB (T1.2): the seam is wired so tests import cleanly; ``parse`` is intentionally
-unimplemented (behaviorally red) until the failing tests are reviewed. One instance is
-bound to ONE resource_id: the two RS resources have different schemas and different
-as-of dates, so each yields its OWN batch — they are never merged. When built, ``parse``
-must quarantine the synthetic ``Total`` row via the ``build_batch`` quarantine predicate
-as ``ParseFailureReason.SYNTHETIC_TOTAL_ROW`` (kept, not dropped, not passed through).
+Pure parse, one instance bound to ONE resource_id: the two RS resources have different
+schemas and different as-of dates, so each yields its OWN batch — they are never merged.
+The synthetic ``Total`` roll-up row is quarantined (kept, not dropped, not passed through)
+via the ``build_batch`` quarantine predicate as ``SYNTHETIC_TOTAL_ROW``; the label column it
+lives under differs per resource, so it is read from ``registry.RS_LABEL_COLUMN`` — never
+hardcoded. Metric cells (JSON floats, declared "in lakh") are kept verbatim-typed; unit
+normalization is Stage 4.
 """
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from data_platform.ingest import registry
-from data_platform.ingest.adapters.base import SourceAdapter, SourcePayload
-from data_platform.ingest.landing import RawLandingBatch
+from data_platform.ingest.adapters.base import (
+    SourceAdapter,
+    SourcePayload,
+    observed_columns,
+    schema_fingerprint,
+)
+from data_platform.ingest.landing import ParseFailureReason, RawLandingBatch, build_batch
 
 
 class RajyaSabhaAdapter(SourceAdapter):
@@ -28,4 +34,23 @@ class RajyaSabhaAdapter(SourceAdapter):
         self.resource_id = resource_id
 
     def parse(self, payload: SourcePayload) -> RawLandingBatch:
-        raise NotImplementedError("T1.2: RajyaSabhaAdapter.parse not yet implemented")
+        rows = payload.raw[registry.DATAGOVIN_RECORDS_FIELD]
+        column_names = observed_columns(rows)
+        label_column = registry.RS_LABEL_COLUMN[self.resource_id]
+
+        def quarantine_total(row: dict[str, Any]) -> ParseFailureReason | None:
+            if row.get(label_column) == registry.RS_TOTAL_LABEL:
+                return ParseFailureReason.SYNTHETIC_TOTAL_ROW
+            return None
+
+        return build_batch(
+            source_id=self.source_id,
+            resource_id=payload.resource_id,
+            ingested_at=payload.fetched_at,
+            source_as_of=payload.source_as_of,
+            schema_version=schema_fingerprint(column_names),
+            source_grain=self.source_grain,
+            column_names=column_names,
+            rows=rows,
+            quarantine=quarantine_total,
+        )
