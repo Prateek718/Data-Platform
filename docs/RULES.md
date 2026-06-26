@@ -43,10 +43,16 @@ logic happens in Stage 2.
 ### Snapshot dedupe (deferred from Stage 1)
 - **R2-DEDUP-01**: a single source can ship duplicate rows for the same source-level key
   (its own state/district + FY + month) — duplicate district-month snapshots. Pick ONE
-  canonical row deterministically and drop the rest; record `duplicates_collapsed` (count) in
-  lineage. Single-source dedupe only — cross-source agreement remains Stage 4 (R4-REC-*).
-  [DECISION NEEDED — tie-break key when snapshots differ: latest `source_as_of`, else last
-  occurrence in file? Must be deterministic and config-carried.]
+  canonical row deterministically and drop the rest; record `duplicates_collapsed` (count)
+  and the active `tie_break_rule_id` in lineage. Single-source dedupe only — cross-source
+  agreement remains Stage 4 (R4-REC-*).
+  - **[LOCKED] tie-break `R2-DEDUP-TB-01` (`latest_source_as_of`)**: keep the row with the
+    latest `source_as_of`; if `source_as_of` ties, keep the last occurrence in file order.
+    Config-carried (a named setting, not a hardcoded magic value) so the strategy can be
+    flipped without rewriting dedupe logic; the active strategy's id is what lands in
+    lineage `dedupe.tie_break_rule_id`. Rationale: person-days is cumulative year-to-date, so
+    a later snapshot is a more-complete version of the SAME fact, not a contradiction —
+    "latest wins" matches what the data means.
 
 ---
 

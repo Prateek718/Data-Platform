@@ -148,9 +148,11 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
    reconciled across conflicting units/grains/year-slices. Third-party republishers (SYNC:
    DeshSeva/dataful) and the operational NREGA MIS are evaluated and excluded from v1.
 5. District grain floor: **district** (no block/village in v1).
-
-**STILL OPEN (Stage 2 — single-source cleanup):**
-- R2-DEDUP-01: snapshot dedupe tie-break — latest `source_as_of`, else last-in-file? Config-carried.
+6. Stage 2 snapshot dedupe tie-break: **`R2-DEDUP-TB-01` (`latest_source_as_of`)** — keep
+   latest `source_as_of`, ties → last occurrence in file. Config-carried (flippable without
+   rewriting dedupe logic); active id recorded in lineage `dedupe.tie_break_rule_id`.
+   Rationale: person-days is cumulative YTD, so a later snapshot is a more-complete version
+   of the same fact, not a contradiction.
 
 **STILL OPEN (Stage 3/4 — needed when those stages are built, ~30–40%):**
 - R3-SET-02: district split/merge handling — keep-both-with-validity (rec) vs successor-mapping.
