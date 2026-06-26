@@ -45,9 +45,17 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
+
+# A batch's observed COVERAGE: did the pull see every resource row (``full``) or only a
+# filtered/truncated slice (``partial``)? This is a DIFFERENT axis from a "bounded" pull
+# (= one that passes an explicit ``limit``, never ``limit=all``) — a ``full`` pull is still
+# bounded. Drift detection (T1.3) compares ONLY ``full`` vs ``full``: a ``partial`` pull
+# under-observes sparse columns and would false-flag added/removed. The value is set by
+# ``transport`` from the response envelope, or declared explicitly on an offline read.
+PullCompleteness = Literal["full", "partial"]
 
 
 class ParseFailureReason(StrEnum):
@@ -80,13 +88,22 @@ class ParseFailure(_Frozen):
 
 
 class DriftFlag(_Frozen):
-    """Schema-drift marker for a batch (populated in T1.3; detect-and-tag only)."""
+    """Schema-drift marker for a batch (populated in T1.3; detect-and-tag only).
+
+    ``comparable`` records whether the two pulls were even *comparable* for drift: it is
+    ``True`` only when both the baseline and the current pull are ``full``. When the scopes
+    are incomparable (either side ``partial``) ``comparable`` is ``False``, ``added``/
+    ``removed`` are left empty, and ``detected`` is ``False`` — drift was NOT assessed.
+    "couldn't compare" (``comparable=False``) is deliberately distinct from "no drift"
+    (``comparable=True, detected=False``) so a scope mismatch is never misread as a clean diff.
+    """
 
     detected: bool
     previous_version: str | None
     new_version: str
     added: list[str]
     removed: list[str]
+    comparable: bool = True
 
 
 class RawLandingBatch(_Frozen):
@@ -98,6 +115,7 @@ class RawLandingBatch(_Frozen):
     source_as_of: datetime | None
     schema_version: str
     source_grain: str
+    pull_completeness: PullCompleteness = "partial"
     column_names: list[str]
     records: list[RawLandingRecord]
     parse_failures: list[ParseFailure]
@@ -114,6 +132,7 @@ def build_batch(
     source_grain: str,
     column_names: list[str],
     rows: list[Any],
+    pull_completeness: PullCompleteness = "partial",
     quarantine: Callable[[dict[str, Any]], ParseFailureReason | None] | None = None,
 ) -> RawLandingBatch:
     """Build a :class:`RawLandingBatch` from raw source rows.
@@ -183,6 +202,7 @@ def build_batch(
         source_as_of=source_as_of,
         schema_version=schema_version,
         source_grain=source_grain,
+        pull_completeness=pull_completeness,
         column_names=column_names,
         records=records,
         parse_failures=parse_failures,

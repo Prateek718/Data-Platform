@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, ClassVar
 
-from data_platform.ingest.landing import RawLandingBatch
+from data_platform.ingest.landing import PullCompleteness, RawLandingBatch
 
 
 @dataclass(frozen=True)
@@ -30,12 +30,18 @@ class SourcePayload:
     response metadata by ``transport`` — for data.gov.in that is the envelope-level
     ``updated_date`` (a single value for the whole batch; Stage 0 confirmed it never
     appears per-record) — so ``parse`` receives provenance rather than discovering it.
+
+    ``pull_completeness`` carries the batch's observed coverage (``full``/``partial``) set
+    by ``transport`` (or declared on an offline read); ``parse`` copies it onto the batch.
+    Defaults to the fail-safe ``partial`` so an un-tagged payload can never be mistaken for
+    a comparable ``full`` pull in drift detection.
     """
 
     resource_id: str
     fetched_at: datetime
     source_as_of: datetime | None
     raw: Any
+    pull_completeness: PullCompleteness = "partial"
 
 
 class SourceAdapter(ABC):
