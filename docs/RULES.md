@@ -1,13 +1,66 @@
-# Data Platform — RULES.md — Stage 3 (Entity Resolution) & Stage 4 (Metric Harmonization)
+# Data Platform — RULES.md — Stage 2 (Normalization), Stage 3 (Entity Resolution) & Stage 4 (Metric Harmonization)
 
 > **Data Platform** — A governed data layer that fuses multiple public sources into one
 > contracted, lineage-tracked dataset, served over MCP for AI agents to query.
 >
-> The two hard stages. These rules are the project's credibility. Written as explicit,
+> Stage 2 is mechanical single-source cleanup; Stages 3 and 4 are the two hard stages.
+> These rules are the project's credibility. Written as explicit,
 > named, deterministic rules so Claude Code IMPLEMENTS them rather than inventing logic.
 > Each rule has an id (used in lineage), a trigger, an action, and a quarantine fallback.
 >
 > Status: DRAFT. [ASSUMED] = defensible default I chose; [DECISION NEEDED] = your call.
+
+---
+
+## STAGE 2 — NORMALIZATION (single-source cleanup)
+
+> **Boundary** — Stage 2 = single-source cleanup; Stage 4 = cross-source reconciliation.
+> Placement test: *can this be done on one row from one source, or does it need to compare
+> sources?* One row / one source → here. Needs comparison across sources or scheme semantics
+> → Stage 4.
+
+Goal: make each source's rows individually clean and correctly typed, BEFORE any
+cross-source comparison. Everything here operates on a single row from a single source:
+strip formatting, normalize single-row dates, coerce declared-vs-delivered type mismatches,
+and collapse a source's own duplicate snapshots to one canonical row. NO source-vs-source
+logic happens in Stage 2.
+
+### Numeric & format cleaning
+- **R2-FMT-01**: numeric cleaning — strip commas, handle blanks/`NA`/`-` as null (not zero).
+  [IMPORTANT: null ≠ 0. A missing person-days value is NOT zero employment.]
+
+### Date normalization
+- **R2-DATE-01**: normalize all dates to ISO; map FY strings ("2023-24") to canonical FY.
+  Single-row formatting only — no cross-source period reconciliation. Un-parseable FY/month
+  cell → set that cell to null and record `R2-DATE-01:parse_failed` on that column in
+  `normalization_rules` (keep the row) — same cell-null-and-flag principle as the R2-TYPE-01
+  amendment (row-quarantine is reserved for whole-row failures).
+
+### Type coercion (deferred from Stage 1)
+- **R2-TYPE-01**: when a source's declared schema type does not match what it delivers
+  (OBSERVED in Stage 1: source declares `long`, delivers decimal-strings), coerce to the real
+  type after R2-FMT-01 cleaning. Record the coercion as **delivered-type → target** (e.g.
+  `R2-TYPE-01:str→decimal`) in `normalization_rules`, so the mismatch is auditable, not silent
+  — NOT source-declared-type → target: Stage 1 deliberately discarded the source's unreliable
+  declared types (it declares `long` for decimal-strings), so the honest audit record is the
+  type the value actually arrived as. Un-coercible cell → set that cell to null and
+  record `R2-TYPE-01:coercion_failed` on that column in `normalization_rules` (keep the row).
+  Row-quarantine is reserved for whole-row failures — consistent with the landing layer's
+  refusal to drop a row over one bad cell.
+
+### Snapshot dedupe (deferred from Stage 1)
+- **R2-DEDUP-01**: a single source can ship duplicate rows for the same source-level key
+  (its own state/district + FY + month) — duplicate district-month snapshots. Pick ONE
+  canonical row deterministically and drop the rest; record `duplicates_collapsed` (count)
+  and the active `tie_break_rule_id` in lineage. Single-source dedupe only — cross-source
+  agreement remains Stage 4 (R4-REC-*).
+  - **[LOCKED] tie-break `R2-DEDUP-TB-01` (`latest_source_as_of`)**: keep the row with the
+    latest `source_as_of`; if `source_as_of` ties, keep the last occurrence in file order.
+    Config-carried (a named setting, not a hardcoded magic value) so the strategy can be
+    flipped without rewriting dedupe logic; the active strategy's id is what lands in
+    lineage `dedupe.tie_break_rule_id`. Rationale: person-days is cumulative year-to-date, so
+    a later snapshot is a more-complete version of the SAME fact, not a contradiction —
+    "latest wins" matches what the data means.
 
 ---
 
@@ -49,14 +102,17 @@ Sources disagree on WHICH districts exist (755 vs 740+ vs other).
 
 ## STAGE 4 — METRIC HARMONIZATION
 
+> **Boundary** — Stage 4 = cross-source reconciliation; Stage 2 = single-source cleanup.
+> Placement test: *can this be done on one row from one source, or does it need to compare
+> sources?* Needs comparison across sources or scheme semantics → here. One row / one source
+> → Stage 2 (formatting, dates, typing, snapshot dedupe).
+
 Goal: produce ONE trustworthy canonical value per metric per row, with the rule recorded.
 
-### Unit & format normalization
+### Unit normalization (cross-source)
 - **R4-UNIT-01**: expenditure fields → normalize all to INR lakhs (sources vary: rupees,
-  lakhs, crores). Record original unit in lineage.
-- **R4-FMT-01**: numeric cleaning — strip commas, handle blanks/`NA`/`-` as null (not zero).
-  [IMPORTANT: null ≠ 0. A missing person-days value is NOT zero employment.]
-- **R4-DATE-01**: normalize all dates to ISO; map FY strings ("2023-24") to canonical FY.
+  lakhs, crores). Record original unit in lineage. Stays in Stage 4: choosing one canonical
+  unit so values from different sources are comparable is cross-source by nature.
 
 ### Definition harmonization (the subtle part)
 - **R4-DEF-01 (total_expenditure)**: [DECISION NEEDED] — is canonical total_expenditure
@@ -85,16 +141,19 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
   `sources_seen = 1` so the trust report can flag "unverified by a second source."
 
 ### Quarantine (the validation-gate handoff)
-- **R4-Q-01**: any row failing unit/format normalization, or with an impossible value
+- **R4-Q-01**: any row failing unit normalization (R4-UNIT-01) — or already quarantined
+  upstream by Stage 2 cleanup (R2-FMT-01 / R2-TYPE-01) — or carrying an impossible value
   (negative expenditure, persondays > active_workers × days_in_period), is quarantined with
   a typed reason and excluded from the golden store — but remains queryable as quarantined.
 
 ---
 
-## OPEN QUESTIONS for Prateek (Stage 3/4 — batched)
+## OPEN QUESTIONS for Prateek (Stage 2/3/4 — batched)
 
 1. **R3-SET-02 district split/merge**: keep-both-with-validity (my rec) or successor-mapping?
 2. **R3-GEO-04 / code authority**: LGD codes as the match key?
 3. **R4-DEF-01 total_expenditure**: derive-and-compare (my rec) or take source field directly?
 4. **R4-REC-01 tolerance**: 0.5% expenditure / exact counts (my rec), config-carried?
 5. **R4-REC-03 staleness threshold**: how many days' lag flags a value stale?
+6. **R2-DEDUP-01 snapshot dedupe (Stage 2)**: tie-break when duplicate snapshots differ —
+   latest `source_as_of`, else last-in-file? (config-carried)
