@@ -119,6 +119,8 @@ Every canonical fact row MUST carry:
 | source_as_of | each source's own sync/update date |
 | ingested_at | when our pipeline pulled it |
 | schema_version | which source schema version this came through |
+| normalization_rules | Stage 2 single-source cleanup applied to this value (R2-FMT-01 / R2-DATE-01 / R2-TYPE-01, incl. declared→coerced type) |
+| dedupe | null, or {duplicates_collapsed, tie_break_rule_id} when R2-DEDUP-01 collapsed snapshot rows |
 
 This is the structure `get_lineage` returns. It is the definition-of-done made concrete.
 
@@ -146,6 +148,9 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
    reconciled across conflicting units/grains/year-slices. Third-party republishers (SYNC:
    DeshSeva/dataful) and the operational NREGA MIS are evaluated and excluded from v1.
 5. District grain floor: **district** (no block/village in v1).
+
+**STILL OPEN (Stage 2 — single-source cleanup):**
+- R2-DEDUP-01: snapshot dedupe tie-break — latest `source_as_of`, else last-in-file? Config-carried.
 
 **STILL OPEN (Stage 3/4 — needed when those stages are built, ~30–40%):**
 - R3-SET-02: district split/merge handling — keep-both-with-validity (rec) vs successor-mapping.
