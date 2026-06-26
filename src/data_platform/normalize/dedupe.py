@@ -18,7 +18,6 @@ from datetime import UTC, datetime
 from typing import NamedTuple
 
 from data_platform.normalize.models import (
-    CleanCell,
     DedupeLineage,
     NormalizationFailure,
     NormalizationQuarantineReason,
@@ -35,7 +34,7 @@ class DedupeCandidate(NamedTuple):
 
     row_index: int
     raw: dict[str, RawCell]
-    key: tuple[CleanCell, ...]
+    key: tuple[RawCell, ...]
     source_as_of: datetime | None
 
 
@@ -55,7 +54,7 @@ def _rank(candidate: DedupeCandidate) -> tuple[datetime, int]:
 def dedupe(candidates: Sequence[DedupeCandidate], *, tie_break_rule_id: str) -> DedupeResult:
     """Collapse duplicate-grain-key rows to one winner each; quarantine identity-less rows."""
     quarantined: list[NormalizationFailure] = []
-    groups: dict[tuple[CleanCell, ...], list[DedupeCandidate]] = {}
+    groups: dict[tuple[RawCell, ...], list[DedupeCandidate]] = {}
 
     for candidate in candidates:
         if all(value is None for value in candidate.key):
