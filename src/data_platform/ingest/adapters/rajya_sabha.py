@@ -50,6 +50,7 @@ class RajyaSabhaAdapter(SourceAdapter):
             source_as_of=payload.source_as_of,
             schema_version=schema_fingerprint(column_names),
             source_grain=self.source_grain,
+            pull_completeness=payload.pull_completeness,
             column_names=column_names,
             rows=rows,
             quarantine=quarantine_total,

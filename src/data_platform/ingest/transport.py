@@ -47,14 +47,19 @@ def read_offline(
     *,
     pull_completeness: PullCompleteness = "partial",
 ) -> SourcePayload:
-    """Read a previously-saved raw payload from disk -> :class:`SourcePayload`."""
-    # STUB (T1.4 red): pull_completeness is accepted but not yet threaded onto the payload.
+    """Read a previously-saved raw payload from disk -> :class:`SourcePayload`.
+
+    ``pull_completeness`` is DECLARED by the caller (default the fail-safe ``partial``):
+    offline fixtures are trimmed slices, and the envelope's ``count`` is hand-edited and
+    unfaithful, so completeness is never derived from it here — it is stated explicitly.
+    """
     envelope = json.loads(path.read_text())
     return SourcePayload(
         resource_id=_resource_id_of(envelope, fallback=path.stem),
         fetched_at=datetime.now(UTC),
         source_as_of=_source_as_of(envelope),
         raw=envelope,
+        pull_completeness=pull_completeness,
     )
 
 
