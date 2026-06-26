@@ -1,0 +1,98 @@
+{
+  "index_name": "e289a8fe-3fd4-4964-9579-5bddb88e36b8",
+  "title": "State/UT-wise Details of Employment provided (in person-days generated) under Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA) from 2021-22 to 2023-24.",
+  "desc": "State/UT-wise Details of Employment provided (in person-days generated) under Mahatma Gandhi National Rural Employment Guarantee Act (MGNREGA) from 2021-22 to 2023-24.",
+  "org_type": "Central",
+  "org": [
+    "Rajya Sabha"
+  ],
+  "sector": [
+    "All"
+  ],
+  "source": "data.gov.in",
+  "catalog_uuid": "b63773fc-083b-40a0-8203-3de548241fc6",
+  "visualizable": "1",
+  "active": "1",
+  "created": 1730566585,
+  "updated": 1730566585,
+  "created_date": "2024-11-02T17:56:25Z",
+  "updated_date": "2024-11-02T17:56:25Z",
+  "external_ws": 0,
+  "external_ws_url": "",
+  "target_bucket": {
+    "index": "api",
+    "type": "b63773fc-083b-40a0-8203-3de548241fc6",
+    "field": "e289a8fe-3fd4-4964-9579-5bddb88e36b8"
+  },
+  "field": [
+    {
+      "id": "sl__no_",
+      "name": "Sl. No.",
+      "type": "keyword"
+    },
+    {
+      "id": "state_uts",
+      "name": "State/UTs",
+      "type": "keyword"
+    },
+    {
+      "id": "person_days_generated__in_lakh____2021_22",
+      "name": "Person-days generated (in Lakh) - 2021-22",
+      "type": "double"
+    },
+    {
+      "id": "person_days_generated__in_lakh____2022_23",
+      "name": "Person-days generated (in Lakh) - 2022-23",
+      "type": "double"
+    },
+    {
+      "id": "person_days_generated__in_lakh____2023_24",
+      "name": "Person-days generated (in Lakh) - 2023-24",
+      "type": "double"
+    }
+  ],
+  "message": "Resource lists",
+  "version": "2.2.0",
+  "status": "ok",
+  "total": 35,
+  "count": 5,
+  "limit": "40",
+  "offset": "0",
+  "records": [
+    {
+      "sl__no_": "1",
+      "state_uts": "Andhra Pradesh",
+      "person_days_generated__in_lakh____2021_22": 2414.87,
+      "person_days_generated__in_lakh____2022_23": 2395.43,
+      "person_days_generated__in_lakh____2023_24": 2554.97
+    },
+    {
+      "sl__no_": "2",
+      "state_uts": "Arunachal Pradesh",
+      "person_days_generated__in_lakh____2021_22": 158.71,
+      "person_days_generated__in_lakh____2022_23": 151.29,
+      "person_days_generated__in_lakh____2023_24": 161.29
+    },
+    {
+      "sl__no_": "3",
+      "state_uts": "Assam",
+      "person_days_generated__in_lakh____2021_22": 915.85,
+      "person_days_generated__in_lakh____2022_23": 788.01,
+      "person_days_generated__in_lakh____2023_24": 876.35
+    },
+    {
+      "sl__no_": "6",
+      "state_uts": "Goa",
+      "person_days_generated__in_lakh____2021_22": 0.95,
+      "person_days_generated__in_lakh____2022_23": 0.94,
+      "person_days_generated__in_lakh____2023_24": 0.43
+    },
+    {
+      "sl__no_": "Total",
+      "state_uts": "Total",
+      "person_days_generated__in_lakh____2021_22": 36310.35,
+      "person_days_generated__in_lakh____2022_23": 29561.88,
+      "person_days_generated__in_lakh____2023_24": 31237.31
+    }
+  ]
+}

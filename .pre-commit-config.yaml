@@ -36,12 +36,17 @@ repos:
         always_run: true
         require_serial: true
 
-      # Run the test suite. Skips when there is no tests/ dir yet, and treats
+      # Run the test suite — at PRE-PUSH only, not pre-commit. Rationale: lint/types
+      # must pass on every commit (including intentional red-test TDD checkpoints), but
+      # green-suite is a branch-state guarantee enforced before code reaches the remote.
+      # This keeps the local red->green TDD rhythm working while still blocking failing
+      # tests from being pushed. Skips when there is no tests/ dir yet, and treats
       # "no tests collected" (pytest exit code 5) as success; real failures BLOCK.
       - id: pytest
         name: pytest
         entry: "bash -c 'test -d tests || exit 0; uv run pytest -v; rc=$?; [ \"$rc\" = 5 ] && exit 0; exit \"$rc\"'"
         language: system
+        stages: [pre-push]
         pass_filenames: false
         always_run: true
         require_serial: true
