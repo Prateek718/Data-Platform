@@ -21,6 +21,7 @@ import httpx
 
 from data_platform.ingest import registry
 from data_platform.ingest.adapters.base import SourceAdapter, SourcePayload
+from data_platform.ingest.landing import PullCompleteness
 
 _BASE_URL = "https://api.data.gov.in/resource"
 _RAW_ROOT = Path("data/raw")
@@ -40,8 +41,14 @@ def _resource_id_of(envelope: dict[str, Any], fallback: str) -> str:
     return index_name if isinstance(index_name, str) and index_name else fallback
 
 
-def read_offline(adapter: SourceAdapter, path: Path) -> SourcePayload:
+def read_offline(
+    adapter: SourceAdapter,
+    path: Path,
+    *,
+    pull_completeness: PullCompleteness = "partial",
+) -> SourcePayload:
     """Read a previously-saved raw payload from disk -> :class:`SourcePayload`."""
+    # STUB (T1.4 red): pull_completeness is accepted but not yet threaded onto the payload.
     envelope = json.loads(path.read_text())
     return SourcePayload(
         resource_id=_resource_id_of(envelope, fallback=path.stem),
