@@ -31,13 +31,19 @@ logic happens in Stage 2.
 
 ### Date normalization
 - **R2-DATE-01**: normalize all dates to ISO; map FY strings ("2023-24") to canonical FY.
-  Single-row formatting only — no cross-source period reconciliation.
+  Single-row formatting only — no cross-source period reconciliation. Un-parseable FY/month
+  cell → set that cell to null and record `R2-DATE-01:parse_failed` on that column in
+  `normalization_rules` (keep the row) — same cell-null-and-flag principle as the R2-TYPE-01
+  amendment (row-quarantine is reserved for whole-row failures).
 
 ### Type coercion (deferred from Stage 1)
 - **R2-TYPE-01**: when a source's declared schema type does not match what it delivers
   (OBSERVED in Stage 1: source declares `long`, delivers decimal-strings), coerce to the real
-  type after R2-FMT-01 cleaning. Record the coercion (declared type → coerced type) in lineage
-  so the mismatch is auditable, not silent. Un-coercible cell → set that cell to null and
+  type after R2-FMT-01 cleaning. Record the coercion as **delivered-type → target** (e.g.
+  `R2-TYPE-01:str→decimal`) in `normalization_rules`, so the mismatch is auditable, not silent
+  — NOT source-declared-type → target: Stage 1 deliberately discarded the source's unreliable
+  declared types (it declares `long` for decimal-strings), so the honest audit record is the
+  type the value actually arrived as. Un-coercible cell → set that cell to null and
   record `R2-TYPE-01:coercion_failed` on that column in `normalization_rules` (keep the row).
   Row-quarantine is reserved for whole-row failures — consistent with the landing layer's
   refusal to drop a row over one bad cell.

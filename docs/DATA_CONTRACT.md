@@ -119,7 +119,7 @@ Every canonical fact row MUST carry:
 | source_as_of | each source's own sync/update date |
 | ingested_at | when our pipeline pulled it |
 | schema_version | which source schema version this came through |
-| normalization_rules | Stage 2 single-source cleanup applied to this value (R2-FMT-01 / R2-DATE-01 / R2-TYPE-01, incl. declared→coerced type) |
+| normalization_rules | Stage 2 single-source cleanup applied to this value (R2-FMT-01 / R2-DATE-01 / R2-TYPE-01, incl. delivered→coerced type — the type the value arrived as, NOT the source's discarded declared type) |
 | dedupe | always present: {duplicates_collapsed, collapsed_row_indexes, tie_break_rule_id} — zeros/empty when nothing collapsed (absence of dedupe is itself signal for the trust report) |
 
 This is the structure `get_lineage` returns. It is the definition-of-done made concrete.
