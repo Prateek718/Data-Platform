@@ -27,6 +27,7 @@ from data_platform.normalize.models import (
     NormalizationQuarantineReason,
     NormalizedBatch,
     NormalizedRecord,
+    RawCell,
 )
 
 INGESTED = datetime(2026, 6, 23, 12, 0, tzinfo=UTC)
@@ -138,24 +139,31 @@ def test_dedupe_lineage_is_frozen() -> None:
 
 
 def test_normalization_quarantine_reason_is_str_enum() -> None:
-    assert isinstance(NormalizationQuarantineReason.MISSING_DEDUP_KEY, str)
-    assert NormalizationQuarantineReason.MISSING_DEDUP_KEY.value == "missing_dedup_key"
+    assert isinstance(NormalizationQuarantineReason.MISSING_GRAIN_KEY, str)
+    assert NormalizationQuarantineReason.MISSING_GRAIN_KEY.value == "missing_grain_key"
 
 
 def test_normalization_failure_preserves_row_and_typed_reason() -> None:
+    # MISSING_GRAIN_KEY fires only when ALL grain-key columns are null (no identity).
+    raw: dict[str, RawCell] = {
+        "state_name": None,
+        "district_name": None,
+        "fin_year": None,
+        "month": None,
+    }
     fail = NormalizationFailure(
         row_index=7,
-        raw={"state_code": "10", "month": None},
-        reason=NormalizationQuarantineReason.MISSING_DEDUP_KEY,
+        raw=raw,
+        reason=NormalizationQuarantineReason.MISSING_GRAIN_KEY,
     )
     assert fail.row_index == 7
-    assert fail.raw == {"state_code": "10", "month": None}
-    assert fail.reason is NormalizationQuarantineReason.MISSING_DEDUP_KEY
+    assert fail.raw == raw
+    assert fail.reason is NormalizationQuarantineReason.MISSING_GRAIN_KEY
 
 
 def test_normalization_failure_is_frozen() -> None:
     fail = NormalizationFailure(
-        row_index=7, raw={"a": "1"}, reason=NormalizationQuarantineReason.MISSING_DEDUP_KEY
+        row_index=7, raw={"a": "1"}, reason=NormalizationQuarantineReason.MISSING_GRAIN_KEY
     )
     with pytest.raises(ValidationError):
         fail.row_index = 0
