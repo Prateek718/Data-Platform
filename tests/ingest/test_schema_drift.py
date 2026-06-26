@@ -202,3 +202,57 @@ def test_partial_pull_never_overwrites_the_full_baseline(tmp_path: Path) -> None
     assert flag.detected is True
     assert flag.removed == ["c"]
     assert flag.added == ["d"]
+
+
+def test_partial_first_baseline_is_upgraded_by_a_later_full_pull(tmp_path: Path) -> None:
+    # Invariant: a partial FIRST pull must not lock the source out forever. It records a
+    # baseline (so there is something on record), but the first full pull upgrades it.
+    ledger = SchemaLedger(root=tmp_path)
+
+    # 1) First-ever pull is PARTIAL -> baseline recorded, nothing to compare, no drift.
+    first = ledger.assess(
+        source_id="SRC_Y",
+        columns=["a", "b"],
+        pull_completeness="partial",
+        source_as_of=AS_OF,
+        ingested_at=INGESTED,
+    )
+    assert first.detected is False
+    assert first.comparable is True
+    assert first.previous_version is None
+    base1 = ledger.baseline("SRC_Y")
+    assert base1 is not None
+    assert base1.pull_completeness == "partial"
+    assert set(base1.columns) == {"a", "b"}
+
+    # 2) First FULL pull. (a) Diffing against a PARTIAL baseline can't be trusted ->
+    # comparable=False, no diff emitted. (b) But the full pull UPGRADES the baseline.
+    second = ledger.assess(
+        source_id="SRC_Y",
+        columns=["a", "b", "c"],
+        pull_completeness="full",
+        source_as_of=AS_OF,
+        ingested_at=INGESTED,
+    )
+    assert second.comparable is False
+    assert second.added == []
+    assert second.removed == []
+    base2 = ledger.baseline("SRC_Y")
+    assert base2 is not None
+    assert base2.pull_completeness == "full"  # upgraded from partial to full
+    assert set(base2.columns) == {"a", "b", "c"}
+
+    # 3) Next FULL pull now diffs CLEANLY against the upgraded full baseline {a,b,c}.
+    # added == ["d"] proves it compared against {a,b,c}; it would be ["c","d"] if it had
+    # wrongly compared against the original partial baseline {a,b}.
+    third = ledger.assess(
+        source_id="SRC_Y",
+        columns=["a", "b", "c", "d"],
+        pull_completeness="full",
+        source_as_of=AS_OF,
+        ingested_at=INGESTED,
+    )
+    assert third.comparable is True
+    assert third.detected is True
+    assert third.added == ["d"]
+    assert third.removed == []
