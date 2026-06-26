@@ -29,3 +29,24 @@ class ColumnType(StrEnum):
     DECIMAL = "decimal"
     FY = "fy"
     MONTH = "month"
+
+
+# R2-DATE-01 — month name/abbreviation (lowercased) -> canonical zero-padded "01".."12" (Q2).
+_MONTH_NAMES: Final = (
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+)
+MONTH_TO_CANONICAL: Final[dict[str, str]] = {
+    **{name: f"{i:02d}" for i, name in enumerate(_MONTH_NAMES, start=1)},
+    **{name[:3]: f"{i:02d}" for i, name in enumerate(_MONTH_NAMES, start=1)},
+}
