@@ -25,7 +25,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from data_platform.ingest.landing import DriftFlag, PullCompleteness
+from data_platform.ingest.landing import PullCompleteness
 
 # A cleaned + typed cell value. No ``float`` (money/rate become ``Decimal``, counts ``int``;
 # Q6), no ``bool`` (no boolean columns in the flagship schema), and no ``date`` (FY and month
@@ -112,4 +112,3 @@ class NormalizedBatch(_NormalizedModel):
     records: list[NormalizedRecord]
     quarantined: list[NormalizationFailure]
     dedupe: DedupeLineage
-    drift: DriftFlag | None = None
