@@ -42,14 +42,29 @@ data.gov.in into ONE governed "golden" dataset. The canonical grain is:
 ### 2.2 Geography entity (the hard one)
 | field | type | notes |
 |---|---|---|
-| state_canonical_id | str | canonical state code |
-| state_canonical_name | str | canonical display name |
-| district_canonical_id | str | canonical district code |
-| district_canonical_name | str | canonical display name |
+| state_canonical_id | str | LGD state code — canonical identity |
+| state_canonical_name | str | current LGD name — canonical display |
+| district_canonical_id | str | LGD district code — canonical identity |
+| district_canonical_name | str | current LGD name — canonical display |
 | valid_from / valid_to | date | districts split/merge over time — see Stage 3 |
 
-**[LOCKED]** Canonical geography is anchored to the **LGD (Local Government Directory)**
-codes, the GoI standard for state/district codes — the official reconciliation key.
+**[LOCKED — GEOGRAPHY ANCHOR (Option A: source-local → LGD translation)]** Canonical
+geographic *identity* is the **LGD (Local Government Directory)** code; the canonical *display*
+name is the **current LGD name**. A source's own state/district codes are NOT LGD codes and are
+never used as canonical identity — verification confirmed the flagship publishes
+source-internal (MIS) codes, not LGD (e.g. flagship Goa `state_code=10` vs LGD Goa `30`;
+flagship districts `1001`/`1002` are sequential internal codes, not LGD district codes). Each
+source therefore carries a **maintained per-source translation table** mapping its local
+state/district codes → the LGD code; the applied mapping is recorded in the `geo_resolution`
+lineage field (§4). Source NAMES are **input aliases only** — used (alongside the codes) to
+resolve to the LGD code, then dropped from the golden record but preserved in lineage; a source
+name is never canonical. (The translation-table *contents* are populated from live data in
+Stage 3 — this contract specifies only that the mechanism exists and where it is recorded.)
+
+**[v1 BOUNDARY — CURRENT-LGD NAMES]** Canonical names are the *current* LGD names. Resolving a
+historical name as-of the record's period (a district renamed or split since) is OUT OF SCOPE
+for v1; it depends on the still-open **R3-SET-02** (district split/merge with temporal
+validity), which remains a [DECISION NEEDED].
 
 ### 2.3 Metric set (the canonical facts)
 Drawn from fields OBSERVED in real sources (GitHub analysis + data.gov.in dataset titles).
@@ -140,7 +155,12 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
 
 **LOCKED:**
 1. Temporal grain: **monthly**.
-2. Geography anchor: **LGD codes**.
+2. Geography anchor: **LGD code = canonical identity; current LGD name = canonical display.**
+   Source-local codes are source-internal (MIS) codes, NOT LGD — they are mapped to LGD via a
+   maintained per-source translation table, recorded in the `geo_resolution` lineage field;
+   source names are input aliases only (preserved in lineage, never canonical). Canonical names
+   are current-LGD; historical-name-as-of-period is out of scope for v1 (see the §2.2 boundary
+   and the still-open R3-SET-02). Full locked detail in §2.2.
 3. Metrics: **all 9 in schema & final deliverable; build 3 first** (persondays_generated,
    avg_wage_rate_per_day, total_expenditure), then the other 6.
 4. Sources: **data.gov.in only.** Divergence is internal cross-department (flagship
