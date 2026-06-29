@@ -70,9 +70,11 @@ Goal: decide when records from different sources refer to the SAME real thing
 (same scheme, same state, same district), despite different spellings, codes, and district sets.
 
 ### Scheme identity
-- **R3-SCHEME-01**: normalize scheme name (uppercase, strip spaces/punctuation) →
+- **R3-SCHEME-01 [LOCKED]**: normalize scheme name (uppercase, strip spaces/punctuation) →
   if in {NREGA, MGNREGA, MNREGA, MGNREGS, MAHATMAGANDHI...} → canonical `MGNREGA`.
-  No-match → quarantine with reason `unknown_scheme`.
+  No-match → quarantine with reason `unknown_scheme`. Lockable now with no live data: the
+  variant set is a known, closed list of MGNREGA aliases and the match is on the normalized
+  (uppercased, space/punctuation-stripped) form. Confirmed as written.
 
 ### State / district name normalization
 - **R3-GEO-01 (normalize)**: lowercase, trim, collapse whitespace, strip punctuation,
@@ -82,8 +84,14 @@ Goal: decide when records from different sources refer to the SAME real thing
   canonical geography → resolve. Record `geo_resolution = exact`.
 - **R3-GEO-03 (alias table)**: maintained lookup of known variant→canonical mappings for
   cases R3-GEO-02 misses. Record `geo_resolution = alias:<id>`.
-- **R3-GEO-04 (code match)**: if source carries a state/district CODE, match on code
-  (preferred over name when both present). [DECISION NEEDED: code authority = LGD?]
+- **R3-GEO-04 (code authority = LGD; translate, don't match) [LOCKED]**: LGD is the canonical
+  code authority. A source's own state/district code is a source-internal (MIS) code, NOT an LGD
+  code (DATA_CONTRACT §2.2) — so it is **translated to the LGD code via the maintained per-source
+  translation table**, never matched directly against canonical codes. When a source carries a
+  code, code-translation is the preferred identity path over name resolution (R3-GEO-02/03); the
+  applied mapping is recorded in `geo_resolution`. A source code with no entry in its translation
+  table → quarantine via R3-GEO-05 (`unresolved_geography`). (Translation-table contents are
+  populated from live data in Stage 3; this rule fixes only the authority and the mechanism.)
 - **R3-GEO-05 (no-match → quarantine)**: if a district can't be confidently resolved,
   DO NOT guess. Quarantine row, reason `unresolved_geography`, surface in trust report.
 
@@ -151,7 +159,9 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
 ## OPEN QUESTIONS for Prateek (Stage 2/3/4 — batched)
 
 1. **R3-SET-02 district split/merge**: keep-both-with-validity (my rec) or successor-mapping?
-2. **R3-GEO-04 / code authority**: LGD codes as the match key?
+2. ~~**R3-GEO-04 / code authority**: LGD codes as the match key?~~ — **RESOLVED & LOCKED**:
+   LGD is the code authority; source-local (MIS) codes are *translated* to LGD via a per-source
+   table, not matched directly (see R3-GEO-04 and DATA_CONTRACT §2.2).
 3. **R4-DEF-01 total_expenditure**: derive-and-compare (my rec) or take source field directly?
 4. **R4-REC-01 tolerance**: 0.5% expenditure / exact counts (my rec), config-carried?
 5. **R4-REC-03 staleness threshold**: how many days' lag flags a value stale?

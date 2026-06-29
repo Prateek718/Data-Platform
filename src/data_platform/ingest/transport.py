@@ -26,7 +26,6 @@ from data_platform.ingest.landing import PullCompleteness
 _BASE_URL = "https://api.data.gov.in/resource"
 _RAW_ROOT = Path("data/raw")
 _API_KEY_ENV = "DATA_GOV_API_KEY"
-_TIMEOUT_SECONDS = 60.0
 
 
 def _source_as_of(envelope: dict[str, Any]) -> datetime | None:
@@ -74,7 +73,9 @@ def fetch_live(adapter: SourceAdapter, *, limit: int) -> list[SourcePayload]:
 
     key = _require_api_key()
     payloads: list[SourcePayload] = []
-    with httpx.Client(timeout=_TIMEOUT_SECONDS, follow_redirects=True) as client:
+    with httpx.Client(
+        timeout=registry.DATAGOVIN_REQUEST_TIMEOUT_SECONDS, follow_redirects=True
+    ) as client:
         for resource_id in adapter.resource_ids:
             params = {"api-key": key, "format": "json", "limit": str(limit)}
             response = client.get(f"{_BASE_URL}/{resource_id}", params=params)
