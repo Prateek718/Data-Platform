@@ -80,7 +80,6 @@ def normalize_batch(batch: RawLandingBatch) -> NormalizedBatch:
         records=records,
         quarantined=deduped.quarantined,
         dedupe=deduped.lineage,
-        drift=batch.drift,
     )
 
 

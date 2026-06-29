@@ -18,12 +18,42 @@
 4. **null ≠ 0.** Missing metric values are null, never coerced to zero.
 5. **Consumers are read-only.** The MCP surface exposes no mutation verb to consumers.
 
-## TIER 2 — WORKFLOW
-- Non-trivial task (3+ steps or any design decision) → enter plan mode, write plan to
+## TIER 2 — WORKFLOW & EXECUTION
+
+### Think before coding (don't assume, don't hide confusion, surface tradeoffs)
+- State assumptions explicitly. If uncertain, ask — don't run with a silent guess.
+- If multiple interpretations exist, present them; don't pick one quietly.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop, name what's confusing, and ask. (This is the behavioural
+  side of TIER 1 rule 1: an unspecified rule is an Open Question, never an invention.)
+
+### Plan, then build
+- Non-trivial task (3+ steps or any design decision) → enter plan mode, write the plan to
   `tasks/<stage>-todo.md`, check in before implementing.
-- TDD: write tests first, confirm they fail, commit failing tests, implement until green,
-  do not modify tests to make them pass.
-- One pipeline stage at a time, in the order in BUILD_SEQUENCE (below). Review gate between.
+- One pipeline stage at a time, in BUILD_SEQUENCE order. Review gate between stages.
+
+### TDD rhythm (goal-driven — define success, loop until verified)
+- Turn instructions into verifiable goals before coding: "fix the bug" → "write a test that
+  reproduces it, then make it pass"; "add validation" → "write tests for invalid inputs,
+  then make them pass."
+- Write tests first, confirm they fail, commit the failing tests, implement until green.
+  Do NOT modify tests to make them pass.
+- Every invariant gets a guarding test, not a comment.
+
+### Simplicity first (minimum code that solves the problem; nothing speculative)
+- No features, abstractions, "flexibility", or error handling beyond what the task needs.
+- No abstractions for single-use code.
+- If you wrote 200 lines and it could be 50, rewrite it. The test: "would a senior engineer
+  call this overcomplicated?" If yes, simplify.
+- Note: config-carried thresholds (tolerances, staleness, tie-breaks) are a deliberate
+  requirement, NOT speculative configurability — they are mandated below and override the
+  "nothing configurable unless asked" default.
+
+### Surgical changes (touch only what you must; clean up only your own mess)
+- Every changed line should trace directly to the task. Don't "improve" adjacent code,
+  comments, or formatting; don't refactor what isn't broken; match existing style.
+- Remove imports/variables/functions YOUR change orphaned. Don't delete pre-existing dead
+  code — mention it instead.
 
 ## ARCHITECTURE (one line)
 messy multi-source MGNREGA data → ingest → normalize → Stage3 entity-resolution →
@@ -48,3 +78,9 @@ Postgres (governed store) · MCP server SDK · LangGraph (analyst) · Docker Com
 ## SPECS
 Per-stage specs live in `docs/specs/`. Build order in `docs/BUILD_SEQUENCE.md`.
 Foundational decisions in `docs/DATA_CONTRACT.md` and `docs/RULES.md` — authoritative.
+
+---
+> Workflow guidelines in TIER 2 (think-before-coding, simplicity, surgical changes,
+> goal-driven TDD) adapt Andrej Karpathy's observations on LLM coding pitfalls to this
+> project. They bias toward caution over speed; for trivial changes, use judgment. On any
+> conflict, TIER 1 hard rules and DATA_CONTRACT.md / RULES.md win.

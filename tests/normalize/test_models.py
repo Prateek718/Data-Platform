@@ -19,7 +19,6 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from data_platform.ingest.landing import DriftFlag
 from data_platform.normalize.models import (
     DedupeLineage,
     NormalizationFailure,
@@ -190,32 +189,10 @@ def test_normalized_batch_carries_provenance_and_stage2_outputs() -> None:
     assert batch.source_id == "SRC_FLAGSHIP"
     assert batch.source_as_of == AS_OF
     assert batch.pull_completeness == "full"
-    assert batch.drift is None
     # Stage 2 outputs
     assert batch.records[0].cells["Total_Exp"] == Decimal("165.53913")
     assert batch.quarantined == []
     assert batch.dedupe.tie_break_rule_id == "R2-DEDUP-TB-01"
-
-
-def test_normalized_batch_accepts_drift_flag_from_landing() -> None:
-    drift = DriftFlag(
-        detected=False, previous_version=None, new_version="sha256:x", added=[], removed=[]
-    )
-    batch = NormalizedBatch(
-        source_id="SRC_FLAGSHIP",
-        resource_id="r",
-        ingested_at=INGESTED,
-        source_as_of=None,
-        schema_version="sv",
-        source_grain="district+monthly",
-        pull_completeness="full",
-        column_names=[],
-        records=[],
-        quarantined=[],
-        dedupe=_dedupe(),
-        drift=drift,
-    )
-    assert batch.drift == drift
 
 
 def test_normalized_batch_is_frozen() -> None:

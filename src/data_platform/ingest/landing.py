@@ -119,7 +119,6 @@ class RawLandingBatch(_Frozen):
     column_names: list[str]
     records: list[RawLandingRecord]
     parse_failures: list[ParseFailure]
-    drift: DriftFlag | None = None
 
 
 def build_batch(
