@@ -1,0 +1,27 @@
+{
+  "index_name": "ee03643a-ee4c-48c2-ac30-9f2ff26ab722",
+  "title": "District-wise MGNREGA Data at a Glance",
+  "updated_date": "2026-06-24T17:00:59Z",
+  "message": "Resource lists",
+  "version": "2.2.0",
+  "status": "ok",
+  "total": 1,
+  "count": 1,
+  "limit": "50",
+  "offset": "0",
+  "records": [
+    {
+      "fin_year": "2022-2023",
+      "month": "Smarch",
+      "state_code": "10",
+      "state_name": "GOA",
+      "district_code": "1001",
+      "district_name": "NORTH GOA",
+      "Persondays_of_Central_Liability_so_far": "1,234",
+      "Average_Wage_rate_per_day_per_person": " 1,234.5 ",
+      "Total_Exp": "1.2.3",
+      "Remarks": "NA"
+    }
+  ],
+  "_fixture_note": "CONSTRUCTED, not a raw pull: ONE deliberately messy row that drives the Stage-2 orchestrator's composed FMT->TYPE->DATE paths end-to-end — the gaps the clean golden fixtures (goa_2022_2023, duplicate_snapshot) never exercise (audit finding F5). Persondays '1,234' = comma-bearing INT (FMT strip_commas + TYPE str->int: BOTH notes, in order). Average_Wage ' 1,234.5 ' = trim+de-comma overlap on a DECIMAL (documents F4 at integration: the trim is folded under the strip_commas note). Total_Exp '1.2.3' = un-coercible DECIMAL (R2-TYPE-01:coercion_failed -> cell null, row KEPT, Q1). month 'Smarch' = unparseable month (R2-DATE-01:parse_failed -> cell null, row KEPT). fin_year '2022-2023' is valid and canonicalizes, to show the DATE success note coexisting with the failures in the same row."
+}

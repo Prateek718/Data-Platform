@@ -143,3 +143,45 @@ def test_all_null_grain_key_row_quarantined_others_survive() -> None:
     assert len(out.quarantined) == 1
     assert out.quarantined[0].row_index == 0
     assert out.quarantined[0].reason is NormalizationQuarantineReason.MISSING_GRAIN_KEY
+
+
+def test_messy_row_composes_fmt_type_date_through_orchestrator() -> None:
+    """F5 — drive the composed FMT->TYPE->DATE paths through normalize_batch end-to-end.
+
+    coerce/date failures and multi-rule lineage are unit-tested in isolation, but the clean
+    golden fixtures (no commas, no un-coercible cells) never exercise the composition inside
+    ``_build_record`` at the orchestrator level. This constructed messy row does, asserting both
+    the per-column lineage and the Q1 keep-the-row contract through the full pipeline.
+    """
+    out = normalize_batch(_flagship_batch("flagship/messy_row.json"))
+
+    # Q1 / keep-the-row: every cell-level failure below nulls the CELL, never the row.
+    assert len(out.records) == 1
+    assert out.quarantined == []
+    rec = out.records[0]
+    pc = rec.normalization.per_column
+
+    # (a) comma-bearing INT: BOTH an FMT note and a TYPE note, in order, through the orchestrator
+    assert rec.cells[PERSONDAYS] == 1234
+    assert isinstance(rec.cells[PERSONDAYS], int)
+    assert pc[PERSONDAYS] == ["R2-FMT-01:strip_commas", "R2-TYPE-01:str→int"]
+
+    # (b) un-coercible DECIMAL ("1.2.3"): cell nulled + coercion_failed; row still survives (Q1)
+    assert rec.cells["Total_Exp"] is None
+    assert pc["Total_Exp"] == ["R2-TYPE-01:coercion_failed"]
+
+    # (c) unparseable month ("Smarch"): cell nulled + parse_failed through the orchestrator...
+    assert rec.cells["month"] is None
+    assert pc["month"] == ["R2-DATE-01:parse_failed"]
+    # ...while a VALID fin_year in the SAME row still canonicalizes (DATE success path coexists)
+    assert rec.cells["fin_year"] == "2022-23"
+    assert pc["fin_year"] == ["R2-DATE-01:2022-2023→2022-23"]
+
+    # (d) F4 trim+de-comma overlap on a DECIMAL (" 1,234.5 "): value is trimmed AND de-comma'd,
+    # but the CURRENT lineage records only strip_commas (the trim is folded in). This pins the
+    # existing integration behaviour — it DOCUMENTS F4, it does not fix it.
+    assert rec.cells["Average_Wage_rate_per_day_per_person"] == Decimal("1234.5")
+    assert pc["Average_Wage_rate_per_day_per_person"] == [
+        "R2-FMT-01:strip_commas",
+        "R2-TYPE-01:str→decimal",
+    ]
