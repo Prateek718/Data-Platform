@@ -61,10 +61,13 @@ resolve to the LGD code, then dropped from the golden record but preserved in li
 name is never canonical. (The translation-table *contents* are populated from live data in
 Stage 3 — this contract specifies only that the mechanism exists and where it is recorded.)
 
-**[v1 BOUNDARY — CURRENT-LGD NAMES]** Canonical names are the *current* LGD names. Resolving a
-historical name as-of the record's period (a district renamed or split since) is OUT OF SCOPE
-for v1; it depends on the still-open **R3-SET-02** (district split/merge with temporal
-validity), which remains a [DECISION NEEDED].
+**[v1 BOUNDARY — CURRENT-LGD NAMES]** Canonical names are the *current* LGD names: the golden
+record shows the present-day LGD name even for a record from a period when the geography was
+named differently. Resolving a historical *display name* as-of the record's period stays OUT OF
+SCOPE for v1. Period-correct *geography* itself is handled by **R3-SET-02 [LOCKED — option (a):
+keep-both-with-validity]** (file each record under the LGD geography that existed at its period,
+with `valid_from`/`valid_to`, never merged or forward-mapped across a split); only historical
+name *display* remains deferred.
 
 ### 2.3 Metric set (the canonical facts)
 Drawn from fields OBSERVED in real sources (GitHub analysis + data.gov.in dataset titles).
@@ -159,8 +162,9 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
    Source-local codes are source-internal (MIS) codes, NOT LGD — they are mapped to LGD via a
    maintained per-source translation table, recorded in the `geo_resolution` lineage field;
    source names are input aliases only (preserved in lineage, never canonical). Canonical names
-   are current-LGD; historical-name-as-of-period is out of scope for v1 (see the §2.2 boundary
-   and the still-open R3-SET-02). Full locked detail in §2.2.
+   are current-LGD; historical-name-*display*-as-of-period is out of scope for v1 (see the §2.2
+   boundary); geography temporal validity itself is now **R3-SET-02 LOCKED-(a)** (see item 7).
+   Full locked detail in §2.2.
 3. Metrics: **all 9 in schema & final deliverable; build 3 first** (persondays_generated,
    avg_wage_rate_per_day, total_expenditure), then the other 6.
 4. Sources: **data.gov.in only.** Divergence is internal cross-department (flagship
@@ -173,9 +177,14 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
    rewriting dedupe logic); active id recorded in lineage `dedupe.tie_break_rule_id`.
    Rationale: person-days is cumulative YTD, so a later snapshot is a more-complete version
    of the same fact, not a contradiction.
+7. District split/merge temporal validity (**R3-SET-02**): **LOCKED — option (a),
+   keep-both-with-validity.** File each record under the LGD geography that existed at its
+   period, with `valid_from`/`valid_to`; never merge or forward-map values across a split
+   (forward-mapping would fabricate an allocation the source never provided — same principle as
+   row-atomic dedupe). Split recorded as a lineage note. Future-only (not v1): a successor
+   pointer for navigability, never value redistribution.
 
 **STILL OPEN (Stage 3/4 — needed when those stages are built, ~30–40%):**
-- R3-SET-02: district split/merge handling — keep-both-with-validity (rec) vs successor-mapping.
 - R4-DEF-01: total_expenditure — derive-and-compare (rec) vs take source field directly.
 - R4-REC-01: disagreement tolerance — 0.5% expenditure / exact counts (rec), config-carried.
 - R4-REC-03: staleness threshold (days of lag that flags a value stale).

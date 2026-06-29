@@ -100,11 +100,17 @@ Sources disagree on WHICH districts exist (755 vs 740+ vs other).
 - **R3-SET-01**: a district present in one source but absent in another is NOT an error by
   itself — record it as `present_in: [sources]`. Only quarantine a *fact* if it can't be
   geo-resolved at all (R3-GEO-05).
-- **R3-SET-02 (temporal validity)**: districts split/merge over time. [DECISION NEEDED —
-  HARD ONE]: how to handle a district that existed in FY2021 but was split by FY2024?
-  Options: (a) keep both, mark valid_from/valid_to, don't merge across the split;
-  (b) maintain a successor-mapping table. I recommend (a) for v1 — simpler, honest, and
-  the split itself becomes a lineage note. This is a genuine architect call.
+- **R3-SET-02 (temporal validity) [LOCKED — option (a): keep-both-with-validity]**: districts
+  split/merge over time. Each record is filed under the LGD geography that existed **at the
+  record's period**, carrying `valid_from`/`valid_to` validity dates; records are **never merged
+  or forward-mapped across a split**, and the split is recorded as a lineage note.
+  Rationale: forward-mapping (the rejected option (b)) would require splitting an old aggregate
+  value across the new boundaries using an allocation ratio the source does not provide — that is
+  fabrication, the same principle as row-atomic snapshot dedupe (R2-DEDUP-01): never invent
+  values, preserve citation integrity. Option (a) preserves each fact exactly as the source
+  published it, with the split traceable via the validity dates plus the lineage note.
+  Future enhancement (NOT v1): a successor POINTER in lineage ("old-X became new-Y, new-Z") for
+  navigability — a pointer ONLY, never redistributing values across successors.
 
 ---
 
@@ -158,7 +164,12 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
 
 ## OPEN QUESTIONS for Prateek (Stage 2/3/4 — batched)
 
-1. **R3-SET-02 district split/merge**: keep-both-with-validity (my rec) or successor-mapping?
+1. ~~**R3-SET-02 district split/merge**: keep-both-with-validity (my rec) or successor-mapping?~~
+   — **RESOLVED & LOCKED (a)**: keep-both-with-validity — file each record under the
+   period-correct LGD geography with `valid_from`/`valid_to`, never merge or forward-map across a
+   split (forward-mapping would fabricate an allocation the source never provided); the split is
+   a lineage note. Future-only: a successor pointer for navigability (pointer, never value
+   redistribution). See R3-SET-02.
 2. ~~**R3-GEO-04 / code authority**: LGD codes as the match key?~~ — **RESOLVED & LOCKED**:
    LGD is the code authority; source-local (MIS) codes are *translated* to LGD via a per-source
    table, not matched directly (see R3-GEO-04 and DATA_CONTRACT §2.2).
