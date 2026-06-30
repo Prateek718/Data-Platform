@@ -19,6 +19,7 @@ Resolved records carry canonical LGD identity only; source names/codes survive s
 from __future__ import annotations
 
 from data_platform.normalize.models import CleanCell, NormalizedBatch, NormalizedRecord
+from data_platform.resolve.aliases import GEO_QUARANTINE_NOTES
 from data_platform.resolve.config import SOURCE_GEO_COLUMNS, SOURCE_SCHEME, GeoColumns
 from data_platform.resolve.geo import GeoResolver
 from data_platform.resolve.models import (
@@ -29,6 +30,7 @@ from data_platform.resolve.models import (
     ResolvedBatch,
     ResolvedRecord,
 )
+from data_platform.resolve.normalize_name import normalize_geo_name
 from data_platform.resolve.scheme import resolve_scheme
 
 
@@ -86,11 +88,11 @@ def _resolve_record(
     district_name = _as_name(record.cells.get(geo_columns.district_name))
     district = resolver.resolve_district(state.code, district_name)
     if district is None:
-        return None, _quarantine(
-            record,
-            ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY,
-            f"district:{district_name!r} in state {state.name}({state.code})",
-        )
+        detail = f"district:{district_name!r} in state {state.name}({state.code})"
+        note = _quarantine_note(state.code, district_name)
+        if note is not None:
+            detail = f"{detail} — {note}"
+        return None, _quarantine(record, ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY, detail)
 
     geo_resolution = GeoResolution(
         state=GeoFieldResolution(
@@ -122,6 +124,14 @@ def _resolve_record(
 def _as_name(cell: CleanCell) -> str | None:
     """A geography cell is a string identifier or null; any other type is not a usable name."""
     return cell if isinstance(cell, str) else None
+
+
+def _quarantine_note(lgd_state_code: str, district_name: str | None) -> str | None:
+    """Rich, honest description for a known non-resolvable geography (R3-GEO-05), if curated."""
+    normalized = normalize_geo_name(district_name)
+    if normalized is None:
+        return None
+    return GEO_QUARANTINE_NOTES.get((lgd_state_code, normalized))
 
 
 def _quarantine(

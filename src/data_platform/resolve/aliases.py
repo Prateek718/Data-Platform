@@ -137,3 +137,48 @@ DISTRICT_ALIASES: Final[dict[tuple[str, str], str]] = {
     ("36", "rajanna sirsilla"): "Rajanna Sircilla",  # Rajanna Sirsilla
     ("36", "rangareddy"): "Ranga Reddy",  # Rangareddy
 }
+
+# Curated quarantine notes (R3-GEO-05): for flagship labels that deliberately do NOT resolve and
+# must NOT be aliased, a rich, honest description of what the entity is and which LGD geography it
+# relates to. Keyed by (LGD state code, normalized flagship name). Used as the quarantine
+# `detail` so the row stays presented and queryable — no unique data is lost, it is just filed
+# under an honest "unresolved" identity instead of a fabricated one. (The row's metric values are
+# always preserved on the quarantine regardless; this only enriches the human-readable reason.)
+#
+# West Bengal Darjeeling region (investigated): Darjeeling district is published ONLY as two
+# SUB-DISTRICT fragments — DGHC/GTA (flagship unit 3219, the hill subdivisions) and Siliguri
+# Mahakuma Parisad (unit 3204, the plains subdivision); Kalimpong (unit 3221) is a separate LGD
+# district and resolves cleanly. There is no clean district-grain Darjeeling row. Resolving a
+# single fragment as "Darjeeling" would under-count; summing fragments would fabricate a district
+# total the source never published (R3-SET-02 principle). Below the v1 district floor (§5).
+_DARJEELING_SPLIT = (
+    "sub-district fragment of LGD Darjeeling district (West Bengal), below the v1 district floor; "
+    "its sibling fragment is published separately, so it is neither aliased to Darjeeling "
+    "(would under-count) nor summed with siblings (would fabricate an unpublished district total)"
+)
+GEO_QUARANTINE_NOTES: Final[dict[tuple[str, str], str]] = {
+    ("19", "darjeeling gorkha hill council dghc"): (
+        "Darjeeling Gorkha Hill Council (DGHC) — autonomous hill-council unit (flagship unit "
+        "3219) covering the hill subdivisions (Darjeeling Sadar, Kurseong, Mirik); a "
+        f"{_DARJEELING_SPLIT}. Sibling fragment: Siliguri Mahakuma Parisad (plains subdivision)."
+    ),
+    ("19", "gorkhaland territorial administration gta"): (
+        "Gorkhaland Territorial Administration (GTA) — successor body to DGHC (same flagship unit "
+        f"3219, the Darjeeling hill subdivisions); a {_DARJEELING_SPLIT}. Sibling fragment: "
+        "Siliguri Mahakuma Parisad (the plains subdivision)."
+    ),
+    ("19", "siliguri mahakuma parisad"): (
+        "Siliguri Mahakuma Parisad — the Siliguri (plains) subdivision (flagship unit 3204); a "
+        f"{_DARJEELING_SPLIT}. Sibling fragment: the hill subdivisions, published as DGHC/GTA."
+    ),
+    # New districts genuinely absent from the archived LGD snapshot (current as of 2026-06): real
+    # places with no LGD identity to assign yet, kept queryable as quarantined rather than guessed.
+    ("28", "markapuram"): "Markapuram (Andhra Pradesh) — not a district in the LGD snapshot.",
+    ("28", "polavaram"): "Polavaram (Andhra Pradesh) — not a district in the LGD snapshot.",
+    ("12", "keyi panyor"): (
+        "Keyi Panyor (Arunachal Pradesh) — district created 2024, absent from the LGD snapshot."
+    ),
+    ("29", "bengaluru south"): (
+        "Bengaluru South (Karnataka) — newly notified district, absent from the LGD snapshot."
+    ),
+}
