@@ -26,6 +26,7 @@ class GeoResolver:
     """Resolves flagship state/district names to canonical LGD identity."""
 
     _state_by_norm: dict[str, LGDState]
+    _district_by_norm: dict[tuple[str, str], LGDDistrict]
 
     @classmethod
     def from_reference(
@@ -35,7 +36,16 @@ class GeoResolver:
         state_by_norm = {normalize_geo_name(s.name): s for s in states}
         if None in state_by_norm:  # defensive: an LGD row with a null name is a corrupt reference
             raise ValueError("LGD state with null name in reference")
-        return cls(_state_by_norm={k: v for k, v in state_by_norm.items() if k is not None})
+        district_by_norm: dict[tuple[str, str], LGDDistrict] = {}
+        for d in districts:
+            key = normalize_geo_name(d.name)
+            if key is None:
+                raise ValueError("LGD district with null name in reference")
+            district_by_norm[(d.state_code, key)] = d
+        return cls(
+            _state_by_norm={k: v for k, v in state_by_norm.items() if k is not None},
+            _district_by_norm=district_by_norm,
+        )
 
     def resolve_state(self, name: str | None) -> GeoMatch | None:
         """Resolve a flagship state name to its LGD state, or ``None`` if unresolved."""
@@ -52,4 +62,8 @@ class GeoResolver:
                 return GeoMatch(
                     code=target.code, name=target.name, rule_id=f"R3-GEO-03:{normalized}"
                 )
+        return None
+
+    def resolve_district(self, lgd_state_code: str, name: str | None) -> GeoMatch | None:
+        """Resolve a flagship district name within an LGD state (stub; implemented next)."""
         return None
