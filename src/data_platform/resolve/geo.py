@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from data_platform.resolve.aliases import STATE_ALIASES
+from data_platform.resolve.aliases import DISTRICT_ALIASES, STATE_ALIASES
 from data_platform.resolve.lgd import LGDDistrict, LGDState
 from data_platform.resolve.models import GeoMatch
 from data_platform.resolve.normalize_name import normalize_geo_name
@@ -65,5 +65,30 @@ class GeoResolver:
         return None
 
     def resolve_district(self, lgd_state_code: str, name: str | None) -> GeoMatch | None:
-        """Resolve a flagship district name within an LGD state (stub; implemented next)."""
+        """Resolve a flagship district name within an LGD state, or ``None`` if unresolved.
+
+        Scoped to ``lgd_state_code`` (the caller resolves the state first): exact normalized
+        match (R3-GEO-02), then the state-scoped alias table (R3-GEO-03). The alias value is a
+        target LGD English name, looked back up in the same state's index so a mistyped target
+        cannot resolve to nothing silently — it simply fails to a quarantine, surfaced by the
+        alias-integrity test.
+        """
+        normalized = normalize_geo_name(name)
+        if not normalized:
+            return None
+        exact = self._district_by_norm.get((lgd_state_code, normalized))
+        if exact is not None:
+            return GeoMatch(code=exact.code, name=exact.name, rule_id="R3-GEO-02")
+        aliased = DISTRICT_ALIASES.get((lgd_state_code, normalized))
+        if aliased is not None:
+            target_norm = normalize_geo_name(aliased)
+            target = (
+                self._district_by_norm.get((lgd_state_code, target_norm))
+                if target_norm is not None
+                else None
+            )
+            if target is not None:
+                return GeoMatch(
+                    code=target.code, name=target.name, rule_id=f"R3-GEO-03:{normalized}"
+                )
         return None
