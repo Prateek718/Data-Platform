@@ -1,6 +1,16 @@
 # Stage 0 · T0.1 — Source Reconnaissance (registry)
 
-> Status: **DRAFT for review.** This pass covers **SRC_OGD (data.gov.in) only** — the API
+> **STATUS: SUPERSEDED (scope expanded).** This is the original Stage-0 reconnaissance and is
+> retained as a historical record of the discovery method. The shortlist recommendation below
+> (flagship-only + "candidate" sources) was **NOT** the final scope. Current scope: the **full
+> MGNREGA archive on data.gov.in** — 88 API/JSON datasets + 42 file-only CSVs + the LGD
+> reference — is captured **offline under `data/archive/` (gitignored)** and processed toward one
+> canonical series spanning **FY 2006–07 → FY 2026–27** (2026-27 is the current, partial FY).
+> **Pre-2018 history comes from the non-flagship sources this doc labels "candidates."** Ongoing
+> builds run against the local archive, not the live portal. The "~130 datasets / 88 API /
+> 42 file-only" facts below are accurate and now describe the *in-scope* archive.
+>
+> Status (original): **DRAFT for review.** This pass covers **SRC_OGD (data.gov.in) only** — the API
 > key-verification check plus a proposed shortlist of datasets. SRC_SYNC (DeshSeva/dataful)
 > and SRC_MIS (nrega.nic.in) reconnaissance are **pending** (sections stubbed at the bottom).
 > No data was fetched to disk yet (that is T0.2). The proposed shortlist is **not settled** —

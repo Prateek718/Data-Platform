@@ -1,5 +1,13 @@
 # SPEC — Stage 0 (Data Fetch + Divergence Check) & Stage 1 (Ingestion)
 
+> **STATUS: HISTORICAL (Stages 0–1 complete).** The source taxonomy in this spec
+> (`SRC_OGD / SRC_SYNC / SRC_MIS`) predates the current `SRC_FLAGSHIP / SRC_RS / SRC_MOSPI`
+> model; SYNC/MIS were evaluated and **excluded** (DATA_CONTRACT §5). Actual scope is the **full
+> MGNREGA archive on data.gov.in**, captured **offline under `data/archive/`** (FY 2006–07 →
+> 2026–27), processed toward one canonical series. T1.4's "run fully offline against fixtures, no
+> network" requirement is what the project actually does; live fetch is a separate explicit mode.
+> Retained as the historical Stage 0–1 plan.
+>
 > Project: Data Platform. Authoritative refs: `docs/DATA_CONTRACT.md`, `docs/RULES.md`.
 > Read both before starting. Do NOT invent schema, rules, or canonical fields — they live there.
 > Workflow: for each stage, enter plan mode, write the task plan to `tasks/stageN-todo.md`,
