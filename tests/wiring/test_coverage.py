@@ -46,7 +46,7 @@ def resolver() -> GeoResolver:
 
 @pytest.fixture(scope="module")
 def outcomes(resolver: GeoResolver) -> dict[str, WiringOutcome]:
-    return {rid: wire_resource(res, resolver) for rid, res in WIRED.items()}
+    return {rid: wire_resource(res, resolver, archive_root=ARCHIVE) for rid, res in WIRED.items()}
 
 
 def _manifest_resource_ids() -> set[str]:
