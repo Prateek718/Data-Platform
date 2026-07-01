@@ -18,12 +18,13 @@
 ## 1. Scope of the canonical model
 
 The platform fuses MGNREGA data published across multiple datasets and departments within
-data.gov.in into ONE governed "golden" dataset spanning **FY 2006–07 → FY 2026–27** (2026-27
-is the current, partial FY; the earliest years come from file-only historical datasets, not the
-flagship). The **full MGNREGA archive on data.gov.in** — 88 API/JSON datasets + 42 file-only
-CSVs + the LGD reference — is captured **offline under `data/archive/` (gitignored)**; all
-processing builds against that local archive, and the portal is **not a live runtime
-dependency**. The canonical grain is:
+data.gov.in into ONE governed "golden" dataset spanning **FY 2006–07 → FY 2026–27** (FY 2026-27
+is in-progress/partial — the flagship carries April 2026 only, so the last *complete* FY is
+2025-26; the earliest years come from file-only historical datasets, not the flagship). The
+**full MGNREGA archive on data.gov.in** — 88 API/JSON datasets + **41 file-only CSVs** (of 42 the
+portal's discovery listed; one was not retrievable) + the LGD reference — is captured **offline
+under `data/archive/` (gitignored)**; all processing builds against that local archive, and the
+portal is **not a live runtime dependency**. The canonical grain is:
 
 **One row = one (scheme, state, district, financial-year, month, metric-set).**
 
@@ -103,7 +104,7 @@ of proven patterns, not new architecture):
 ## 3. Sources (the contract with reality)
 
 The platform processes the **full MGNREGA archive on data.gov.in**, captured **offline** under
-`data/archive/` (88 API/JSON datasets + 42 file-only CSVs + LGD); the portal is **not a live
+`data/archive/` (88 API/JSON datasets + 41 file-only CSVs + LGD); the portal is **not a live
 runtime dependency**. The divergence the platform reconciles is **internal to data.gov.in**: the
 same MGNREGA facts are published across multiple datasets and multiple departments, with
 conflicting units (lakh vs crore), grains (district vs state), and year-slices. Reconciling that
@@ -114,10 +115,10 @@ cross-department conflict into one canonical series is the core job — not fusi
 | SRC_FLAGSHIP | "District-wise MGNREGA Data at a Glance" — DRD (resource id `ee03643a-ee4c-48c2-ac30-9f2ff26ab722`) | district + monthly | **primary anchor for FY 2018–19 →** |
 | SRC_RS | Rajya Sabha parliamentary-answer tables | state, year-slice (typ.) | in-scope: overlap cross-check + pre-2018 history |
 | SRC_MOSPI | MoSPI-published MGNREGA tables | state/district, varies | in-scope: overlap cross-check + pre-2018 history |
-| (archive) | remaining ~85 API/JSON + 42 file-only CSV MGNREGA datasets | varies (state/annual, national/annual) | in-scope: primary carriers of pre-2018 history (back to FY 2006–07) |
+| (archive) | remaining ~85 API/JSON + 41 file-only CSV MGNREGA datasets | varies (state/annual, national/annual) | in-scope: primary carriers of pre-2018 history (back to FY 2006–07) |
 
 **[LOCKED — SOURCE SCOPE]** Scope is the **full MGNREGA archive on data.gov.in** — 88 API/JSON
-datasets + 42 file-only CSVs + the LGD reference — captured **offline** under `data/archive/`;
+datasets + 41 file-only CSVs + the LGD reference — captured **offline** under `data/archive/`;
 processing builds against that local archive, never a live portal. The flagship
 **"District-wise MGNREGA Data at a Glance"** (resource id `ee03643a-ee4c-48c2-ac30-9f2ff26ab722`,
 district + monthly) is the anchor for the modern series (FY 2018–19 →). The other archived
@@ -180,9 +181,10 @@ This is the structure `get_lineage` returns. It is the definition-of-done made c
    Full locked detail in §2.2.
 3. Metrics: **all 9 in schema & final deliverable; build 3 first** (persondays_generated,
    avg_wage_rate_per_day, total_expenditure), then the other 6.
-4. Sources: **the full MGNREGA archive on data.gov.in** (88 API/JSON + 42 file-only CSVs + LGD),
+4. Sources: **the full MGNREGA archive on data.gov.in** (88 API/JSON + 41 file-only CSVs + LGD),
    captured **offline** under `data/archive/` — the portal is not a live runtime dependency. All
-   in-scope datasets are processed toward **one canonical series (FY 2006–07 → 2026–27)**: the
+   in-scope datasets are processed toward **one canonical series (FY 2006–07 → 2026–27; 2026-27
+   partial — flagship has April 2026 only, last complete FY 2025-26)**: the
    flagship "District-wise MGNREGA Data at a Glance" anchors FY 2018–19 →; the other datasets
    (Rajya Sabha, MoSPI, older CSVs) cross-check on overlap and carry **pre-2018 history the
    flagship lacks**. Divergence is internal cross-department, reconciled across conflicting
