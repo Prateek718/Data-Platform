@@ -139,18 +139,24 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
 
 ### Cross-source value reconciliation (when sources disagree on the same number)
 - **R4-REC-01 (agreement check)**: for a given canonical (geo, period, metric), compare
-  values across sources. If within tolerance → agree, take primary (SRC_OGD).
+  values across sources. If within tolerance → agree, take the period-authoritative source
+  (SRC_FLAGSHIP where it covers the period, FY 2018–19 →; the best-available archived source
+  otherwise — see DATA_CONTRACT §3 priority).
   [DECISION NEEDED — TOLERANCE]: what % counts as "agreement"? I recommend 0.5% for
   expenditure, exact for counts — but this is a real call and should be config-carried,
   not hardcoded (mirrors your Project 2 "threshold not statistical test" decision).
-- **R4-REC-02 (disagreement → resolve + record)**: beyond tolerance → take source-priority
-  winner (SRC_OGD > SRC_SYNC > SRC_MIS for published statistical facts), record
+- **R4-REC-02 (disagreement → resolve + record)**: beyond tolerance → take the source-priority
+  winner per DATA_CONTRACT §3 (SRC_FLAGSHIP authoritative for the periods it covers; the
+  best-available archived source for pre-2018 periods it does not), record
   {winning_value, rejected_value(s), pct_diff, rule_id} in lineage. This populates the trust
-  report's "sources disagreed" line. NOTE: when MIS (operational) disagrees with OGD
-  (published), flag it rather than silently discarding — MIS may be more current/granular.
+  report's "sources disagreed" line. NOTE: flag the disagreement rather than silently discarding
+  the rejected value — a coarser or older archived source may still be the only carrier for a
+  period or geography the flagship omits.
 - **R4-REC-03 (staleness)**: if a source's `source_as_of` lags the primary by more than
   [DECISION NEEDED: N days?], flag the value as stale in lineage even if it agrees.
-  (DeshSeva explicitly warns its syncs lag — this rule operationalizes that.)
+  (Archived parliamentary-answer tables are frozen at their tabling date — e.g. the two RS
+  person-days tables tabled months apart — so a corroborating value may be materially older than
+  the flagship's; this rule operationalizes that.)
 - **R4-REC-04 (single-source value)**: if only one source has the fact, take it but mark
   `sources_seen = 1` so the trust report can flag "unverified by a second source."
 

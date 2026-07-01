@@ -1,5 +1,13 @@
 # Stage 0 · T0.3 — Divergence Findings (cross-department, within data.gov.in)
 
+> **NOTE — this is a bounded, point-in-time divergence *check*, not a scope statement.** It
+> compares one (state, year, metric) head-to-head, pulled **live** on 2026-06-23. Project scope
+> has since expanded: the **full MGNREGA archive** (88 API/JSON + 41 file-only CSVs + LGD) is now
+> captured **offline under `data/archive/`**, and ongoing builds do **not** hit the live API. The
+> "two RS resources" here are the two person-days tables used for this head-to-head — **not** the
+> extent of RS coverage or of project scope. The live-pull numbers below are retained as the
+> evidentiary record of the check.
+>
 > Status: **COMPLETE.** This is the last premise check before ingestion. It proves the same
 > MGNREGA fact, published by different departments inside data.gov.in, genuinely conflicts.
 > Authoritative refs: `docs/DATA_CONTRACT.md` (esp. revised §3), `docs/notes/sources.md`.
