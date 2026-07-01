@@ -3,7 +3,7 @@
 > **STATUS: SUPERSEDED (scope expanded).** This is the original Stage-0 reconnaissance and is
 > retained as a historical record of the discovery method. The shortlist recommendation below
 > (flagship-only + "candidate" sources) was **NOT** the final scope. Current scope: the **full
-> MGNREGA archive on data.gov.in** — 88 API/JSON datasets + 42 file-only CSVs + the LGD
+> MGNREGA archive on data.gov.in** — 88 API/JSON datasets + 41 file-only CSVs + the LGD
 > reference — is captured **offline under `data/archive/` (gitignored)** and processed toward one
 > canonical series spanning **FY 2006–07 → FY 2026–27** (2026-27 is the current, partial FY).
 > **Pre-2018 history comes from the non-flagship sources this doc labels "candidates."** Ongoing

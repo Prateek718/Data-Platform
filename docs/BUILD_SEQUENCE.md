@@ -3,7 +3,7 @@
 > **Data Platform** — A governed data layer that reconciles MGNREGA facts published across
 > multiple datasets and departments within data.gov.in into one contracted, lineage-tracked
 > dataset (one canonical series, **FY 2006–07 → FY 2026–27**), served over MCP for AI agents to
-> query. The **full MGNREGA archive** (88 API/JSON + 42 file-only CSVs + LGD) is captured
+> query. The **full MGNREGA archive** (88 API/JSON + 41 file-only CSVs + LGD) is captured
 > **offline under `data/archive/`**; everything builds against that local archive, not the live
 > portal.
 >

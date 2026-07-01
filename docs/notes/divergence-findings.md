@@ -2,7 +2,7 @@
 
 > **NOTE — this is a bounded, point-in-time divergence *check*, not a scope statement.** It
 > compares one (state, year, metric) head-to-head, pulled **live** on 2026-06-23. Project scope
-> has since expanded: the **full MGNREGA archive** (88 API/JSON + 42 file-only CSVs + LGD) is now
+> has since expanded: the **full MGNREGA archive** (88 API/JSON + 41 file-only CSVs + LGD) is now
 > captured **offline under `data/archive/`**, and ongoing builds do **not** hit the live API. The
 > "two RS resources" here are the two person-days tables used for this head-to-head — **not** the
 > extent of RS coverage or of project scope. The live-pull numbers below are retained as the
