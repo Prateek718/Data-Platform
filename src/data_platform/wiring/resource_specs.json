@@ -1,0 +1,2550 @@
+{
+ "04476f1d-c61c-4584-9e0a-b1cb62410f5f": {
+  "column_types": {
+   "_year": "fy"
+  },
+  "file": "04476f1d-c61c-4584-9e0a-b1cb62410f5f.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "0a4e6ea7-e4cc-45a6-8d8f-5d0edf285f6f": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "0a4e6ea7-e4cc-45a6-8d8f-5d0edf285f6f.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "0b3149e7-2845-49dd-b0c3-92f133a05744": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "0b3149e7-2845-49dd-b0c3-92f133a05744.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sr__no_",
+    "states",
+    "_age_of_delayed_payment___27_07_2016"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "0fecf99b-2c7c-46db-9f7d-c4bdacf040fc": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "0fecf99b-2c7c-46db-9f7d-c4bdacf040fc.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sl__no_",
+    "state_ut",
+    "total_number_of_active_st_worker__in_lakh_"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "102ee4c0-4f39-413a-a645-5141e8494af5": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/102ee4c0-4f39-413a-a645-5141e8494af5.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sl.No",
+    "State/UT"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "2011-12",
+    "2012-13",
+    "2013-14",
+    "2014-15",
+    "2015-16",
+    "2016-17",
+    "2017-18",
+    "2018-19",
+    "2019-20"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "1207abc1-893c-475b-a4a8-d5fe6300be6f": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "1207abc1-893c-475b-a4a8-d5fe6300be6f.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sr_no",
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "12f5a356-63d5-481b-9d55-0fe25aa483bf": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/12f5a356-63d5-481b-9d55-0fe25aa483bf.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "15d85eb1-ca4f-4704-831b-2556345ee7c3": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "15d85eb1-ca4f-4704-831b-2556345ee7c3.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "1608c4a1-b419-4c7a-9328-faec1b1dd70e": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/1608c4a1-b419-4c7a-9328-faec1b1dd70e.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "18527128-545c-4cb2-bd43-47217c71024f": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/18527128-545c-4cb2-bd43-47217c71024f.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Category",
+    "State/UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "1878204d-9048-4016-8e56-a2fe2cf4fe97": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/1878204d-9048-4016-8e56-a2fe2cf4fe97.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "22ca0b64-15d9-4eca-ad37-a8928eafdcb2": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "22ca0b64-15d9-4eca-ad37-a8928eafdcb2.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s_no_",
+    "states__uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "22f8cdb0-380d-4975-97ec-f7dd95f1c681": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "22f8cdb0-380d-4975-97ec-f7dd95f1c681.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sr_no_",
+    "state",
+    "no__of_hh_issued_job_cards__in_lakh_"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "2485c8e1-4381-4e47-9fff-03e7ae21f2e4": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/2485c8e1-4381-4e47-9fff-03e7ae21f2e4.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "24a028ac-af8e-48c6-a663-6f2625655d10": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "24a028ac-af8e-48c6-a663-6f2625655d10.json",
+  "geo_columns": {
+   "district_name": "districts___total",
+   "state_name": "states"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "states",
+   "districts___total",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "si_no_",
+    "states",
+    "districts___total",
+    "districts___drought_effected",
+    "blocks___total",
+    "blocks___drought_effected",
+    "panchayats___total",
+    "panchayats___drought_effected"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_RS"
+ },
+ "2611cc74-3b21-4522-907a-f4186ec2bbdf": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "2611cc74-3b21-4522-907a-f4186ec2bbdf.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "states__uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "26837e5a-3f9d-42f2-a85a-0e511a17a888": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "26837e5a-3f9d-42f2-a85a-0e511a17a888.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2015-16",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "27d1d629-7cf0-419c-a342-d83f700d24d1": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "27d1d629-7cf0-419c-a342-d83f700d24d1.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "s__no_",
+    "states__uts",
+    "remarks"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "285d7783-793c-4347-974c-ecadbbce8b55": {
+  "deferred": "single state only in title (Karnataka); geography-from-title deferred"
+ },
+ "2aeef02e-5978-40f7-a4a5-d473e3a84257": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "2aeef02e-5978-40f7-a4a5-d473e3a84257.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "2b43e757-7e2c-44bd-80e5-668d30e463ff": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/2b43e757-7e2c-44bd-80e5-668d30e463ff.csv",
+  "geo_columns": {
+   "state_name": "State"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sr.No.",
+    "State"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "2d0a4136-27b9-4c25-8389-474ae1f8342b": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/2d0a4136-27b9-4c25-8389-474ae1f8342b.csv",
+  "geo_columns": {
+   "state_name": "State/ UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/ UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "State/ UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "341c9375-46de-4ec8-b284-9f5df998b521": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "341c9375-46de-4ec8-b284-9f5df998b521.json",
+  "geo_columns": {
+   "state_name": "state__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state__uts",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s_no_",
+    "state__uts"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "__2012_13",
+    "__2013_14",
+    "__2014_15"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "34a83496-2050-4f4d-9bff-926d8e830a57": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "34a83496-2050-4f4d-9bff-926d8e830a57.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_no_",
+    "states"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "3e87dec0-749b-4b3e-87e6-38e24eb440ae": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "3e87dec0-749b-4b3e-87e6-38e24eb440ae.json",
+  "geo_columns": {
+   "state_name": "states_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_uts",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2019-20",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "3ebbea46-f28d-4bbc-bc73-0c50bc2403cf": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/3ebbea46-f28d-4bbc-bc73-0c50bc2403cf.csv",
+  "geo_columns": {
+   "state_name": "State/UTs"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UTs",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "State/UTs"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "3ffbac94-3121-46ff-a300-143478791d1b": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "3ffbac94-3121-46ff-a300-143478791d1b.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2018-19",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "41256e58-4deb-4d89-83b6-3466a25c5955": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "418b414a-0963-4b0c-bbe2-ad0d535a59e2": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "418b414a-0963-4b0c-bbe2-ad0d535a59e2.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2015-16",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "41c20814-5552-4712-9dbd-a5e1809ca531": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "428fa054-45d1-4225-99a0-46c90a626716": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/428fa054-45d1-4225-99a0-46c90a626716.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "42fb2e9f-a498-4a88-8d00-855473c21fca": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/42fb2e9f-a498-4a88-8d00-855473c21fca.csv",
+  "geo_columns": {
+   "state_name": "State/ UT Name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/ UT Name",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "SI. No.",
+    "State/ UT Name"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "4632d771-5a5f-4536-a478-9de4e10d9ce9": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "4632d771-5a5f-4536-a478-9de4e10d9ce9.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "no",
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "484bf9c5-9f60-4e6c-b306-ddc1a23a399d": {
+  "column_types": {
+   "_year": "fy"
+  },
+  "file": "484bf9c5-9f60-4e6c-b306-ddc1a23a399d.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "49214697-d57d-453b-9740-31825d294f58": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/49214697-d57d-453b-9740-31825d294f58.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "4c262a70-085a-4eec-869c-212da411cb2a": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "4c262a70-085a-4eec-869c-212da411cb2a.json",
+  "geo_columns": {
+   "state_name": "state_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_uts",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2019-20",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "4cc2e26d-844b-414d-ab34-799c0beb52b3": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "4cc2e26d-844b-414d-ab34-799c0beb52b3.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "5183200b-84ff-44ed-9c92-fa1c2e07f32f": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "5183200b-84ff-44ed-9c92-fa1c2e07f32f.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2015-16",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "51a18f1b-c3a8-45fb-82fb-cd884d1c2650": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "51a18f1b-c3a8-45fb-82fb-cd884d1c2650.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "si_no_",
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "530fa100-f189-4b5c-8f63-0a1f2d16b54b": {
+  "column_types": {
+   "fin_year": "fy"
+  },
+  "file": "530fa100-f189-4b5c-8f63-0a1f2d16b54b.json",
+  "geo_columns": {
+   "district_name": "district_name",
+   "state_name": "state_name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "state_name",
+   "district_name",
+   "fin_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "54d1a5fa-7663-4c10-84ce-c184c7761fcc": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/54d1a5fa-7663-4c10-84ce-c184c7761fcc.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "57bff16a-6423-45b2-9700-ebcde6709937": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "57bff16a-6423-45b2-9700-ebcde6709937.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s_no_",
+    "state_ut"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "__2014_15",
+    "__2015_16",
+    "__2016_17",
+    "_2017_18",
+    "_2018_19"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "5dcb2b3e-0ef7-4be3-9f85-0feca5821c3d": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "5dcb2b3e-0ef7-4be3-9f85-0feca5821c3d.json",
+  "geo_columns": {
+   "state_name": "states_union_territorys"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_union_territorys",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2018-19",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "630072f2-9e62-4f4a-be74-e406617dc921": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "630072f2-9e62-4f4a-be74-e406617dc921.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "states__uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "64e915f4-d814-45f6-b1b4-9aadad9189b6": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/64e915f4-d814-45f6-b1b4-9aadad9189b6.csv",
+  "geo_columns": {
+   "state_name": "States"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "States",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2015-16",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "657ac6a3-3139-48e0-988d-198977aac77b": {
+  "deferred": "single state only in title (Uttar Pradesh); geography-from-title deferred"
+ },
+ "66f18c1a-c53b-4f4b-a344-36279e8bdaa0": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/66f18c1a-c53b-4f4b-a344-36279e8bdaa0.csv",
+  "geo_columns": {
+   "state_name": "States"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "States",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "6827bdf1-51c2-4846-96c9-e30e373166a3": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "6827bdf1-51c2-4846-96c9-e30e373166a3.json",
+  "geo_columns": {
+   "state_name": "states_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sl_no",
+    "states_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "68840a65-1e82-44de-9902-31c43fd7cd21": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/68840a65-1e82-44de-9902-31c43fd7cd21.csv",
+  "geo_columns": {
+   "state_name": "State"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sr.No.",
+    "State"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "6ae541ca-903e-4a6a-be62-48dedea02223": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "6ae541ca-903e-4a6a-be62-48dedea02223.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "6c12385f-c2cb-4a10-8df9-c69b1c251efc": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "6c12385f-c2cb-4a10-8df9-c69b1c251efc.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sr_no_",
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "6e2315ad-c261-4207-86b1-5ebc2b8c7303": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "720e21aa-32c2-45d8-878d-7484b9fc487e": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "720e21aa-32c2-45d8-878d-7484b9fc487e.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "states__uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "7371da1e-4c5e-4c52-9223-f85e1756d24d": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "7388bc76-4871-4f0b-8dc4-93f6f8716098": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "7388bc76-4871-4f0b-8dc4-93f6f8716098.json",
+  "geo_columns": {
+   "state_name": "states__uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states__uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "states__uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "73d68992-8549-47b2-9e32-1a6c0936e010": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "73d68992-8549-47b2-9e32-1a6c0936e010.json",
+  "geo_columns": {
+   "state_name": "state__ut_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state__ut_name",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sr__no_",
+    "state__ut_name"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "7496d75d-9158-4f7e-a3b7-b952f9682fa1": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/7496d75d-9158-4f7e-a3b7-b952f9682fa1.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "79d89e44-566f-47f9-a92a-3e7e53b5d6de": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "7b502fe1-6684-4c4c-9347-57d20af7d4dc": {
+  "column_types": {
+   "_year": "fy"
+  },
+  "file": "7b502fe1-6684-4c4c-9347-57d20af7d4dc.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "7cc62579-f30e-4e0d-8842-337e3e1c5836": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/7cc62579-f30e-4e0d-8842-337e3e1c5836.csv",
+  "geo_columns": {
+   "state_name": "States"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "States",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "SI. No.",
+    "States"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "7efb084d-b562-4b9f-8a3a-d0808a54d609": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "7efb084d-b562-4b9f-8a3a-d0808a54d609.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sl_no",
+    "state_ut"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "_2017_18",
+    "_2018_19",
+    "_2019_20"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "81043a7e-e9f4-4b00-ad6e-845c03ceca94": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "81043a7e-e9f4-4b00-ad6e-845c03ceca94.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "total_no__of_rejected_transactions"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "8325c8a6-1bcb-49d9-b127-9e92cc2d4898": {
+  "deferred": "no bytes on disk (not retrieved)"
+ },
+ "886d58ec-dce8-4737-b69d-31921f3a7d07": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "8d734637-0e87-46a1-8ea2-e9b113b5fc9e": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/8d734637-0e87-46a1-8ea2-e9b113b5fc9e.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "8e7b41be-c790-4495-8339-c8da0a7f287e": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "8e7b41be-c790-4495-8339-c8da0a7f287e.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state_ut"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "_2019_20",
+    "_2018_19",
+    "_2017_18",
+    "__2016_17"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "8e9fe253-4fab-4952-aa37-023ca64311dc": {
+  "column_types": {
+   "_year": "fy"
+  },
+  "file": "8e9fe253-4fab-4952-aa37-023ca64311dc.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "8efa9ec1-a27c-4253-8b9b-151ed51c5e00": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/8efa9ec1-a27c-4253-8b9b-151ed51c5e00.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "92331756-5f20-43cb-9f80-462f2f639e3e": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "92331756-5f20-43cb-9f80-462f2f639e3e.json",
+  "geo_columns": {
+   "state_name": "states_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s_no",
+    "states_uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "923b4373-b4a9-42fa-adf0-51efe0917abd": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "923b4373-b4a9-42fa-adf0-51efe0917abd.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sr__no_",
+    "state",
+    "persondays_generated_upto_june_in_fy__2016__17__in_lakh_",
+    "_age_change"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "97f6ba47-44b5-433b-9bc4-1d2fb0d0f32d": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "99a91845-6d1a-4851-b428-4e424860289e": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/99a91845-6d1a-4851-b428-4e424860289e.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "9aa66b7a-bb1d-4e20-bd4b-e5e68539cdfc": {
+  "deferred": "single state only in title (Jammu And Kashmir); geography-from-title deferred"
+ },
+ "9aefcd0f-1a41-4b88-bb2c-40263a707fbd": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/9aefcd0f-1a41-4b88-bb2c-40263a707fbd.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Category",
+    "State/UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "9bec525d-aa17-421b-b6f5-f6c3f24d6868": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/9bec525d-aa17-421b-b6f5-f6c3f24d6868.csv",
+  "geo_columns": {
+   "state_name": "States"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "States",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "9ea040fa-8ce8-4c8e-be76-11452afd3e7d": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "a000738b-e946-40fb-b6b0-825f3ff66928": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/a000738b-e946-40fb-b6b0-825f3ff66928.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "a0d62cd1-d239-4b89-a538-6f8730975767": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "a0d62cd1-d239-4b89-a538-6f8730975767.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s__no_",
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "a1c9803c-d405-4edf-a298-ee42e7e65d0b": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "a1c9803c-d405-4edf-a298-ee42e7e65d0b.json",
+  "geo_columns": {
+   "state_name": "states_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_uts",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "states_uts"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "__2016_17",
+    "_2017_18",
+    "_2018_19"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "a47b1763-5caf-4051-ba20-f621b4f8f20c": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/a47b1763-5caf-4051-ba20-f621b4f8f20c.csv",
+  "geo_columns": {
+   "state_name": "State"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sr. No.",
+    "State"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "a611f7b8-6b4a-4fc4-9826-a7b8b3938f3b": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/a611f7b8-6b4a-4fc4-9826-a7b8b3938f3b.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "aeca8112-5fd4-4c91-92dc-d72b2c7b969e": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "aeca8112-5fd4-4c91-92dc-d72b2c7b969e.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s__no_",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "af6f81cd-7564-4cf5-9540-679364d0a9c2": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/af6f81cd-7564-4cf5-9540-679364d0a9c2.csv",
+  "geo_columns": {
+   "state_name": "State/ UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/ UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "State/ UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "b0830b4b-e071-4ed7-8754-c49052b0d0d1": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/b0830b4b-e071-4ed7-8754-c49052b0d0d1.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "b0c7c7a4-a0e8-433f-958b-39f55021652c": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "b0c7c7a4-a0e8-433f-958b-39f55021652c.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state",
+    "central_share_admissible__rs__in_lakh____rs_2_00_lakh_",
+    "fund_released__rs__in_lakh__as_central_share"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "b0f2d01a-dd15-4bf2-81ff-e1c5c8d658e8": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "b0f2d01a-dd15-4bf2-81ff-e1c5c8d658e8.json",
+  "geo_columns": {
+   "state_name": "state__ut_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state__ut_name",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state__ut_name"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "b30c524a-0792-4dcd-9af4-374fd1d3fea2": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "bd9922fb-858d-43a2-8ad4-37e7cdd5f596": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "bd9922fb-858d-43a2-8ad4-37e7cdd5f596.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "si_no_",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "bf1da9fc-5650-45c3-be3b-0ba006377869": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "bf1da9fc-5650-45c3-be3b-0ba006377869.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "bfea3018-cf46-4000-be72-9abf67e56802": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "c0350589-65a7-4166-996a-ba5845c398fe": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c0350589-65a7-4166-996a-ba5845c398fe.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c11b65d4-b15d-45b2-ba52-44704234c05b": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/c11b65d4-b15d-45b2-ba52-44704234c05b.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Category",
+    "State/UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "c28ea0d0-c938-4167-900d-6958f57b7a52": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "c3316007-b128-4bcb-a929-39ffe7a29a95": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c3316007-b128-4bcb-a929-39ffe7a29a95.json",
+  "geo_columns": {
+   "state_name": "state__ut_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state__ut_name",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c3b1dffb-b6ba-4a28-a005-85e17483ad20": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c3b1dffb-b6ba-4a28-a005-85e17483ad20.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_s_no_",
+    "states"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c47dcff6-c201-4112-98cc-1e43d70e3e25": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c47dcff6-c201-4112-98cc-1e43d70e3e25.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sl_no",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c5c8858c-8451-4c83-9071-0d81e9ef1e94": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c5c8858c-8451-4c83-9071-0d81e9ef1e94.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "si_no_",
+    "states"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c5de960a-1ca4-410a-81fd-6e0edd92fab5": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c5de960a-1ca4-410a-81fd-6e0edd92fab5.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "s_no_",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c6575501-11f3-4805-815c-773f40e9f7b1": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/c6575501-11f3-4805-815c-773f40e9f7b1.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "c8687507-4e15-4225-842a-b95f86e15992": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "c8687507-4e15-4225-842a-b95f86e15992.json",
+  "geo_columns": {
+   "state_name": "state_ut_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut_name",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "c8f211d0-23e5-4ec8-b268-d04c6decbc2b": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "c8f211d0-23e5-4ec8-b268-d04c6decbc2b.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "cadde395-1843-464f-94c8-83c11dcecc08": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "cb137c04-41da-489d-94c1-62a2dceb6127": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/cb137c04-41da-489d-94c1-62a2dceb6127.csv",
+  "geo_columns": {
+   "state_name": "State"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sl.No.",
+    "State"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "cc1533a1-cb38-4363-ba47-df907f4f2db2": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "cc1533a1-cb38-4363-ba47-df907f4f2db2.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "cea6ee41-2b18-4266-b42b-0af54c13b18c": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "cea6ee41-2b18-4266-b42b-0af54c13b18c.json",
+  "geo_columns": {
+   "state_name": "state_ut_wise"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut_wise",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "si___no_",
+    "state_ut_wise"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "_2019_20",
+    "_2020_21",
+    "_2021_22",
+    "_2022_23",
+    "_2023_24"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "d1d29e37-1d60-46da-9902-52340abbfb13": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "d1d29e37-1d60-46da-9902-52340abbfb13.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state_ut"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "d64434e9-fc81-4834-954b-5e494e0ee2c7": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/d64434e9-fc81-4834-954b-5e494e0ee2c7.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Category",
+    "State/UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "d88e2cb6-842b-48ed-884c-a561c8f113ff": {
+  "column_types": {
+   "Year": "fy"
+  },
+  "file": "csv/d88e2cb6-842b-48ed-884c-a561c8f113ff.csv",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_MOSPI"
+ },
+ "ddd13bbe-9d3d-463d-bef7-8497f39d6927": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "e0b14917-d9ae-4ac4-9c65-359fe7dc2e68": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "e289a8fe-3fd4-4964-9579-5bddb88e36b8": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "e289a8fe-3fd4-4964-9579-5bddb88e36b8.json",
+  "geo_columns": {
+   "state_name": "state_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_uts",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sl__no_",
+    "state_uts"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "e30835de-a6b7-41dc-bc15-a8cd0d574cf1": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "e5491ee9-a899-4a2f-8c8d-9411b8855c4e": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/e5491ee9-a899-4a2f-8c8d-9411b8855c4e.csv",
+  "geo_columns": {
+   "state_name": "State"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Sr.No.",
+    "State"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "e6bf3cb1-aa43-4f7c-b9fe-942d7209a536": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "e6bf3cb1-aa43-4f7c-b9fe-942d7209a536.json",
+  "geo_columns": {
+   "state_name": "states_uts"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_uts",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2018-19",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "e6feebe1-8b84-4c34-9c5a-1123d8d0c983": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "e6feebe1-8b84-4c34-9c5a-1123d8d0c983.json",
+  "geo_columns": {
+   "state_name": "state_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_name",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "sn__no_",
+    "state_name"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "e7ee2e1e-570c-47d6-9183-9dad3773dd16": {
+  "deferred": "single-period table with no year column and no single FY in title"
+ },
+ "ea03aba7-d66a-41e2-9f1e-87135e80024e": {
+  "column_types": {
+   "financial_year": "fy"
+  },
+  "file": "ea03aba7-d66a-41e2-9f1e-87135e80024e.json",
+  "geo_columns": null,
+  "geo_level": "national",
+  "grain_key_columns": [
+   "financial_year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "national",
+  "source_id": "SRC_RS"
+ },
+ "ec1ee20d-7989-4b02-8e59-11cdc135a7fb": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "ec1ee20d-7989-4b02-8e59-11cdc135a7fb.json",
+  "geo_columns": {
+   "state_name": "states_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states_ut",
+   "_fin_year"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sl_no",
+    "states_ut"
+   ],
+   "melt": "simple",
+   "year_columns": [
+    "__2015_16",
+    "__2016_17",
+    "_2017_18",
+    "_2018_19",
+    "_2019_20_"
+   ]
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "ede4109e-073e-4896-9ee0-19476c1f72d9": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "ede4109e-073e-4896-9ee0-19476c1f72d9.json",
+  "geo_columns": {
+   "state_name": "state"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "state"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "eeb479a7-e6d6-4a03-bf01-1df8f3ba8444": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "eeb479a7-e6d6-4a03-bf01-1df8f3ba8444.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_si__no_",
+    "states"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "f40bf2b4-bfc8-45c2-8556-46b7436946a4": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/f40bf2b4-bfc8-45c2-8556-46b7436946a4.csv",
+  "geo_columns": {
+   "state_name": "State/UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "Category",
+    "State/UT"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "f8f93164-c5c4-4465-ab6a-d00c4abde2f5": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/f8f93164-c5c4-4465-ab6a-d00c4abde2f5.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ },
+ "fa8585f4-2648-4435-b3be-1dc105fc4fd5": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "fa8585f4-2648-4435-b3be-1dc105fc4fd5.json",
+  "geo_columns": {
+   "state_name": "state__ut_name"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state__ut_name",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "_sr__no_",
+    "state__ut_name"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "fadc1024-8f09-4be2-bd3c-3d6e4e39de57": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "fadc1024-8f09-4be2-bd3c-3d6e4e39de57.json",
+  "geo_columns": {
+   "state_name": "states"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "states",
+   "_fin_year"
+  ],
+  "reshape": {
+   "inject_fin_year": "2016-17",
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "fc212c38-13ca-4b79-b676-bc763a7b67ee": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "fc212c38-13ca-4b79-b676-bc763a7b67ee.json",
+  "geo_columns": {
+   "state_name": "state_ut"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "state_ut",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "state_ut",
+    "_"
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_RS"
+ },
+ "fca48797-7fc0-406e-96c6-2dc7b447bb9b": {
+  "deferred": "unattributed department None"
+ },
+ "fcebf9f9-e415-4a6b-b2c3-b6132c4b678a": {
+  "deferred": "district grain without a state column (cannot scope district to LGD)"
+ },
+ "fd7c50d2-122e-4d75-9f36-b06c0273420b": {
+  "column_types": {
+   "_fin_year": "fy"
+  },
+  "file": "csv/fd7c50d2-122e-4d75-9f36-b06c0273420b.csv",
+  "geo_columns": {
+   "state_name": "State/ UT"
+  },
+  "geo_level": "state",
+  "grain_key_columns": [
+   "State/ UT",
+   "_fin_year",
+   "_metric"
+  ],
+  "reshape": {
+   "id_columns": [
+    "State/ UT",
+    "",
+    ""
+   ],
+   "melt": "compound"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "state",
+  "source_id": "SRC_MOSPI"
+ },
+ "ff821c3b-5d0a-403b-9435-8081c474cd65": {
+  "column_types": {
+   "Fin_Year": "fy"
+  },
+  "file": "csv/ff821c3b-5d0a-403b-9435-8081c474cd65.csv",
+  "geo_columns": {
+   "district_name": "District_Name",
+   "state_name": "State_Name"
+  },
+  "geo_level": "district",
+  "grain_key_columns": [
+   "State_Name",
+   "District_Name",
+   "Fin_Year"
+  ],
+  "reshape": {
+   "melt": "none"
+  },
+  "scheme_label": "MGNREGA",
+  "source_grain": "district",
+  "source_id": "SRC_MORD"
+ }
+}
