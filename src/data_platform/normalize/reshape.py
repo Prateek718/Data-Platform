@@ -21,10 +21,18 @@ separate start year.
 from __future__ import annotations
 
 import re
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict
 
 from data_platform.normalize.models import RawCell
 
 Row = dict[str, RawCell]
+
+# Lineage notes stamped on synthesized columns so the applied reshape is auditable (§4).
+_MELT_NOTE = {"simple": "R3.5-MELT-SIMPLE", "compound": "R3.5-MELT-COMPOUND"}
+_PERIOD_NOTE = "R3.5-PERIOD-FROM-TITLE"
+_GEO_NOTE = "R3.5-GEO-FROM-TITLE"
 
 # One financial-year token: a 4-digit start year then a 2- or 4-digit end, joined by - or _.
 _FY_TOKEN = re.compile(r"(?:19|20)\d{2}[-_]\d{2,4}")
@@ -121,3 +129,53 @@ def _all_columns(rows: list[Row]) -> list[str]:
         for key in row:
             seen.setdefault(key, None)
     return list(seen)
+
+
+class ReshapeSpec(BaseModel):
+    """Per-resource reshape rule applied before Stage-2 cleaning (a no-op default for long tables).
+
+    ``melt`` selects the melt shape (``none`` for already-long / single-period tables); the
+    ``inject_*`` fields add a constant column derived from the dataset title (the FY of a
+    single-period table, the state of a single-state table). Melt runs first, then the injections.
+    """
+
+    model_config = ConfigDict(strict=True, frozen=True)
+
+    melt: Literal["none", "simple", "compound"] = "none"
+    id_columns: list[str] = []
+    year_columns: list[str] = []
+    inject_fin_year: str | None = None
+    inject_state: str | None = None
+
+
+def apply_reshape(
+    rows: list[Row], columns: list[str], spec: ReshapeSpec
+) -> tuple[list[Row], list[str]]:
+    """Run a resource's configured reshape, returning the long rows + their column names."""
+    if spec.melt == "simple":
+        rows, columns = simple_melt(
+            rows, id_columns=spec.id_columns, year_columns=spec.year_columns
+        )
+    elif spec.melt == "compound":
+        rows, columns = compound_melt(rows, id_columns=spec.id_columns)
+    if spec.inject_fin_year is not None:
+        rows, columns = inject_period(rows, fin_year=spec.inject_fin_year, columns=columns)
+    if spec.inject_state is not None:
+        rows, columns = inject_geo(rows, state_name=spec.inject_state, columns=columns)
+    return rows, columns
+
+
+def reshape_notes(spec: ReshapeSpec) -> dict[str, str]:
+    """The lineage note for each column synthesized by ``spec`` (empty when reshape is a no-op)."""
+    notes: dict[str, str] = {}
+    if spec.melt != "none":
+        note = _MELT_NOTE[spec.melt]
+        notes["_fin_year"] = note
+        notes["_value"] = note
+        if spec.melt == "compound":
+            notes["_metric"] = note
+    if spec.inject_fin_year is not None:
+        notes["_fin_year"] = _PERIOD_NOTE
+    if spec.inject_state is not None:
+        notes["_state"] = _GEO_NOTE
+    return notes

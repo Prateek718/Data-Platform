@@ -1,17 +1,18 @@
 """Stage 2 orchestrator — ``normalize_batch``.
 
 Pure, deterministic transform: a Stage 1 ``RawLandingBatch`` in, a :class:`NormalizedBatch` out.
-Composes the Stage 2 rules in the locked order:
+Per-resource config (keyed by ``resource_id``) drives the locked rule order:
 
-1. **R2-FMT-01** on every cell of every row (strip commas, NA/blank/"-" → null).
+0. **reshape (Stage 3.5)** — wide/single-period sources are melted / period-or-geo-injected into
+   long one-fact-per-row form (a no-op for the flagship and other already-long tables). Recorded
+   in lineage on the synthesized columns.
+1. **R2-FMT-01** on every cell of every (reshaped) row (strip commas, NA/blank/"-" → null).
 2. **R2-DEDUP-01** on the FMT-cleaned grain keys — collapse snapshot duplicates row-atomically
-   (Q3) and quarantine identity-less rows (MISSING_GRAIN_KEY). Runs BEFORE coercion so a
-   coercion failure is never charged to a row that is about to be dropped, and so null-token
-   keys (``"NA"`` → null) are seen as missing.
-3. **R2-TYPE-01 / R2-DATE-01** on the surviving rows, dispatched per the config column-type spec
-   (counts→int, money/rate→Decimal, FY/month→canonical strings; unspec'd columns stay strings).
+   and quarantine identity-less rows (MISSING_GRAIN_KEY). Runs BEFORE coercion so a coercion
+   failure is never charged to a row about to be dropped, and null-token keys are seen as missing.
+3. **R2-TYPE-01 / R2-DATE-01** on surviving rows, dispatched per the config column-type spec.
 
-Every per-cell transformation and the dedupe summary are recorded in lineage (DATA_CONTRACT §4).
+Every per-cell transformation, the reshape applied, and the dedupe summary are recorded in lineage.
 """
 
 from __future__ import annotations
@@ -19,11 +20,11 @@ from __future__ import annotations
 from data_platform.ingest.landing import RawLandingBatch
 from data_platform.normalize.coerce import coerce_cell
 from data_platform.normalize.config import (
-    COLUMN_TYPES,
     DEDUPE_TIE_BREAK_RULE_ID,
     DEFAULT_COLUMN_TYPE,
-    GRAIN_KEY_COLUMNS,
+    NORMALIZE_CONFIG,
     ColumnType,
+    ResourceNormalizeConfig,
 )
 from data_platform.normalize.dates import normalize_fy, normalize_month
 from data_platform.normalize.dedupe import DedupeCandidate, dedupe
@@ -35,37 +36,49 @@ from data_platform.normalize.models import (
     NormalizedRecord,
     RawCell,
 )
+from data_platform.normalize.reshape import Row, apply_reshape, reshape_notes
 
 
-def normalize_batch(batch: RawLandingBatch) -> NormalizedBatch:
-    """Normalize one landing batch into a typed, de-duplicated, lineage-stamped batch."""
-    column_types = COLUMN_TYPES.get(batch.source_id)
-    grain_key_columns = GRAIN_KEY_COLUMNS.get(batch.source_id)
-    if column_types is None or grain_key_columns is None:
-        raise ValueError(f"no Stage 2 config for source {batch.source_id!r}")
+def normalize_batch(
+    batch: RawLandingBatch, config: ResourceNormalizeConfig | None = None
+) -> NormalizedBatch:
+    """Normalize one landing batch into a reshaped, typed, de-duplicated, lineage-stamped batch.
 
-    # 1. R2-FMT-01 every cell, cached per row (reused for keys and for surviving rows).
+    ``config`` defaults to the per-resource entry looked up by ``batch.resource_id``; it may be
+    passed explicitly (dependency injection) to normalize a resource whose config the caller holds.
+    """
+    if config is None:
+        config = NORMALIZE_CONFIG.get(batch.resource_id)
+    if config is None:
+        raise ValueError(f"no Stage 2 config for resource {batch.resource_id!r}")
+
+    # 0. Reshape wide/single-period rows into long form (no-op for already-long tables).
+    raw_rows: list[Row] = [record.raw for record in batch.records]
+    rows, column_names = apply_reshape(raw_rows, batch.column_names, config.reshape)
+    synth_notes = reshape_notes(config.reshape)
+
+    # 1. R2-FMT-01 every cell of every (reshaped) row, cached by row index.
     fmt_by_row: dict[int, dict[str, FmtOutcome]] = {
-        record.row_index: {col: apply_fmt(record.raw.get(col)) for col in batch.column_names}
-        for record in batch.records
+        index: {col: apply_fmt(row.get(col)) for col in column_names}
+        for index, row in enumerate(rows)
     }
 
     # 2. R2-DEDUP-01 on FMT-cleaned grain keys.
     candidates = [
         DedupeCandidate(
-            row_index=record.row_index,
-            raw=record.raw,
-            key=tuple(fmt_by_row[record.row_index][col].value for col in grain_key_columns),
+            row_index=index,
+            raw=rows[index],
+            key=tuple(fmt_by_row[index][col].value for col in config.grain_key_columns),
             source_as_of=batch.source_as_of,
         )
-        for record in batch.records
+        for index in range(len(rows))
     ]
     deduped = dedupe(candidates, tie_break_rule_id=DEDUPE_TIE_BREAK_RULE_ID)
 
     # 3. R2-TYPE-01 / R2-DATE-01 on the surviving rows.
     records = [
-        _build_record(row_index, fmt_by_row[row_index], batch.column_names, column_types)
-        for row_index in deduped.surviving_row_indexes
+        _build_record(index, fmt_by_row[index], column_names, config.column_types, synth_notes)
+        for index in deduped.surviving_row_indexes
     ]
 
     return NormalizedBatch(
@@ -76,7 +89,7 @@ def normalize_batch(batch: RawLandingBatch) -> NormalizedBatch:
         schema_version=batch.schema_version,
         source_grain=batch.source_grain,
         pull_completeness=batch.pull_completeness,
-        column_names=batch.column_names,
+        column_names=column_names,
         records=records,
         quarantined=deduped.quarantined,
         dedupe=deduped.lineage,
@@ -88,13 +101,16 @@ def _build_record(
     fmt_cells: dict[str, FmtOutcome],
     column_names: list[str],
     column_types: dict[str, ColumnType],
+    synth_notes: dict[str, str],
 ) -> NormalizedRecord:
     cells: dict[str, CleanCell] = {}
     per_column: dict[str, list[str]] = {}
     for col in column_names:
         fmt = fmt_cells[col]
         value, typed_note = _apply_type(fmt.value, column_types.get(col, DEFAULT_COLUMN_TYPE))
-        notes = [note for note in (fmt.note, typed_note) if note is not None]
+        # A reshape note leads the column's lineage (the value was synthesized before FMT/TYPE ran).
+        reshape_note = synth_notes.get(col)
+        notes = [n for n in (reshape_note, fmt.note, typed_note) if n is not None]
         cells[col] = value
         if notes:
             per_column[col] = notes
