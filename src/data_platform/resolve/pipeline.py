@@ -1,29 +1,37 @@
 """Stage 3 orchestrator — ``resolve_batch``.
 
 Pure, deterministic transform: a Stage 2 :class:`NormalizedBatch` + an LGD-built
-:class:`GeoResolver` in, a :class:`ResolvedBatch` out. Per record, in source order:
+:class:`GeoResolver` in, a :class:`ResolvedBatch` out. Config is per-resource (keyed by
+``resource_id``), and the geographic grain drives dispatch — a ragged hierarchy resolved at the
+level the resource publishes:
 
-1. **R3-SCHEME-01** — resolve the source's scheme label to canonical ``MGNREGA``; unknown →
-   quarantine ``unknown_scheme``. (The flagship carries no scheme column, so its declared label
+1. **R3-SCHEME-01** — resolve the source's scheme label to canonical ``MGNREGA`` for every grain;
+   unknown → quarantine ``unknown_scheme``. (Sources carry no scheme column; the declared label
    from config is run through the same rule.)
-2. **R3-GEO-02/03** — resolve the state NAME to an LGD state, then the district NAME within that
-   state. Flagship MIS codes are never matched directly (DATA_CONTRACT §2.2); they are recorded
-   in lineage as the source side of the MIS→LGD translation (R3-GEO-04).
-3. **R3-GEO-05** — a state or district that resolves to neither exact nor alias → quarantine
+2. **grain dispatch** —
+   * ``NATIONAL``: no geography exists to resolve (LGD starts at state); the record is filed with
+     ``geo_level=national`` and NO LGD code — an honest ``None``, never a sentinel (R3-GEO-04).
+   * ``STATE``: resolve the state NAME to an LGD state (R3-GEO-02/03); district stays ``None``.
+   * ``DISTRICT``: resolve state, then district within it. Source codes are never matched directly
+     (DATA_CONTRACT §2.2); they are recorded in lineage as the source side of MIS→LGD (R3-GEO-04).
+3. **R3-GEO-05** — a state/district that resolves to neither exact nor alias → quarantine
    ``unresolved_geography`` (never a guess), with the row's normalized cells preserved.
 
 Resolved records carry canonical LGD identity only; source names/codes survive solely in the
-``geo_resolution`` lineage. ``present_in`` (R3-SET-01) lists the carrying source.
+``geo_resolution`` lineage. ``present_in`` (R3-SET-01) lists the carrying source and
+``sources_seen`` the peer count (``1`` per single-source batch) that Stage-4 reconciliation keys on.
 """
 
 from __future__ import annotations
 
 from data_platform.normalize.models import CleanCell, NormalizedBatch, NormalizedRecord
 from data_platform.resolve.aliases import GEO_QUARANTINE_NOTES
-from data_platform.resolve.config import SOURCE_GEO_COLUMNS, SOURCE_SCHEME, GeoColumns
+from data_platform.resolve.config import RESOLVE_CONFIG, ResourceResolveConfig
 from data_platform.resolve.geo import GeoResolver
 from data_platform.resolve.models import (
     GeoFieldResolution,
+    GeoLevel,
+    GeoMatch,
     GeoResolution,
     ResolutionQuarantine,
     ResolutionQuarantineReason,
@@ -34,19 +42,26 @@ from data_platform.resolve.normalize_name import normalize_geo_name
 from data_platform.resolve.scheme import resolve_scheme
 
 
-def resolve_batch(batch: NormalizedBatch, resolver: GeoResolver) -> ResolvedBatch:
-    """Resolve a normalized batch to canonical scheme + geography identity."""
-    geo_columns = SOURCE_GEO_COLUMNS.get(batch.source_id)
-    scheme_label = SOURCE_SCHEME.get(batch.source_id)
-    if geo_columns is None or scheme_label is None:
-        raise ValueError(f"no Stage 3 config for source {batch.source_id!r}")
+def resolve_batch(
+    batch: NormalizedBatch,
+    resolver: GeoResolver,
+    config: ResourceResolveConfig | None = None,
+) -> ResolvedBatch:
+    """Resolve a normalized batch to canonical scheme + geography identity at its grain.
+
+    ``config`` defaults to the per-resource entry looked up by ``batch.resource_id``; it may be
+    passed explicitly (dependency injection, like ``resolver``) to resolve a resource whose config
+    is supplied by the caller rather than the shared registry.
+    """
+    if config is None:
+        config = RESOLVE_CONFIG.get(batch.resource_id)
+    if config is None:
+        raise ValueError(f"no Stage 3 config for resource {batch.resource_id!r}")
 
     records: list[ResolvedRecord] = []
     quarantined: list[ResolutionQuarantine] = []
     for record in batch.records:
-        resolved, failure = _resolve_record(
-            record, resolver, geo_columns, scheme_label, batch.source_id
-        )
+        resolved, failure = _resolve_record(record, resolver, config, batch.source_id)
         if resolved is not None:
             records.append(resolved)
         else:
@@ -69,14 +84,43 @@ def resolve_batch(batch: NormalizedBatch, resolver: GeoResolver) -> ResolvedBatc
 def _resolve_record(
     record: NormalizedRecord,
     resolver: GeoResolver,
-    geo_columns: GeoColumns,
-    scheme_label: str,
+    config: ResourceResolveConfig,
     source_id: str,
 ) -> tuple[ResolvedRecord | None, ResolutionQuarantine | None]:
-    if resolve_scheme(scheme_label) is None:
+    if resolve_scheme(config.scheme_label) is None:
         return None, _quarantine(
-            record, ResolutionQuarantineReason.UNKNOWN_SCHEME, f"scheme:{scheme_label!r}"
+            record, ResolutionQuarantineReason.UNKNOWN_SCHEME, f"scheme:{config.scheme_label!r}"
         )
+
+    if config.geo_level is GeoLevel.NATIONAL:
+        return _national_record(record, source_id), None
+    return _geo_anchored_record(record, resolver, config, source_id)
+
+
+def _national_record(record: NormalizedRecord, source_id: str) -> ResolvedRecord:
+    """A national-grain fact: no geography to resolve, so no LGD code (honest None, no sentinel)."""
+    return ResolvedRecord(
+        row_index=record.row_index,
+        scheme_canonical_id="MGNREGA",
+        geo_level=GeoLevel.NATIONAL,
+        state_canonical_id=None,
+        state_canonical_name=None,
+        district_canonical_id=None,
+        district_canonical_name=None,
+        geo_resolution=None,
+        present_in=[source_id],
+        sources_seen=1,
+    )
+
+
+def _geo_anchored_record(
+    record: NormalizedRecord,
+    resolver: GeoResolver,
+    config: ResourceResolveConfig,
+    source_id: str,
+) -> tuple[ResolvedRecord | None, ResolutionQuarantine | None]:
+    geo_columns = config.geo_columns
+    assert geo_columns is not None  # guaranteed by ResourceResolveConfig for non-national grain
 
     state_name = _as_name(record.cells.get(geo_columns.state_name))
     state = resolver.resolve_state(state_name)
@@ -84,8 +128,28 @@ def _resolve_record(
         return None, _quarantine(
             record, ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY, f"state:{state_name!r}"
         )
+    state_field = GeoFieldResolution(
+        rule_id=state.rule_id,
+        source_code=_cell_name(record, geo_columns.state_code),
+        source_name=state_name,
+        lgd_code=state.code,
+    )
 
-    district_name = _as_name(record.cells.get(geo_columns.district_name))
+    if config.geo_level is GeoLevel.STATE:
+        return (
+            _resolved(
+                record,
+                GeoLevel.STATE,
+                state,
+                district=None,
+                geo_resolution=GeoResolution(state=state_field, district=None),
+                source_id=source_id,
+            ),
+            None,
+        )
+
+    # DISTRICT grain.
+    district_name = _cell_name(record, geo_columns.district_name)
     district = resolver.resolve_district(state.code, district_name)
     if district is None:
         detail = f"district:{district_name!r} in state {state.name}({state.code})"
@@ -94,31 +158,53 @@ def _resolve_record(
             detail = f"{detail} — {note}"
         return None, _quarantine(record, ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY, detail)
 
-    geo_resolution = GeoResolution(
-        state=GeoFieldResolution(
-            rule_id=state.rule_id,
-            source_code=_as_name(record.cells.get(geo_columns.state_code)),
-            source_name=state_name,
-            lgd_code=state.code,
-        ),
-        district=GeoFieldResolution(
-            rule_id=district.rule_id,
-            source_code=_as_name(record.cells.get(geo_columns.district_code)),
-            source_name=district_name,
-            lgd_code=district.code,
-        ),
+    district_field = GeoFieldResolution(
+        rule_id=district.rule_id,
+        source_code=_cell_name(record, geo_columns.district_code),
+        source_name=district_name,
+        lgd_code=district.code,
     )
-    resolved = ResolvedRecord(
+    return (
+        _resolved(
+            record,
+            GeoLevel.DISTRICT,
+            state,
+            district=district,
+            geo_resolution=GeoResolution(state=state_field, district=district_field),
+            source_id=source_id,
+        ),
+        None,
+    )
+
+
+def _resolved(
+    record: NormalizedRecord,
+    geo_level: GeoLevel,
+    state: GeoMatch,
+    *,
+    district: GeoMatch | None,
+    geo_resolution: GeoResolution,
+    source_id: str,
+) -> ResolvedRecord:
+    return ResolvedRecord(
         row_index=record.row_index,
         scheme_canonical_id="MGNREGA",
+        geo_level=geo_level,
         state_canonical_id=state.code,
         state_canonical_name=state.name,
-        district_canonical_id=district.code,
-        district_canonical_name=district.name,
+        district_canonical_id=district.code if district is not None else None,
+        district_canonical_name=district.name if district is not None else None,
         geo_resolution=geo_resolution,
         present_in=[source_id],
+        sources_seen=1,
     )
-    return resolved, None
+
+
+def _cell_name(record: NormalizedRecord, column: str | None) -> str | None:
+    """The string value of an optional geo column, or None when absent/unconfigured."""
+    if column is None:
+        return None
+    return _as_name(record.cells.get(column))
 
 
 def _as_name(cell: CleanCell) -> str | None:
