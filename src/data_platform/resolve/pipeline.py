@@ -25,7 +25,11 @@ Resolved records carry canonical LGD identity only; source names/codes survive s
 from __future__ import annotations
 
 from data_platform.normalize.models import CleanCell, NormalizedBatch, NormalizedRecord
-from data_platform.resolve.aliases import GEO_QUARANTINE_NOTES
+from data_platform.resolve.aliases import (
+    GEO_QUARANTINE_NOTES,
+    HISTORICAL_DISTRICT_GEOGRAPHIES,
+    HISTORICAL_STATE_GEOGRAPHIES,
+)
 from data_platform.resolve.config import RESOLVE_CONFIG, ResourceResolveConfig
 from data_platform.resolve.geo import GeoResolver
 from data_platform.resolve.models import (
@@ -125,6 +129,10 @@ def _geo_anchored_record(
     state_name = _as_name(record.cells.get(geo_columns.state_name))
     state = resolver.resolve_state(state_name)
     if state is None:
+        historical = HISTORICAL_STATE_GEOGRAPHIES.get(normalize_geo_name(state_name) or "")
+        if historical is not None:
+            reason = ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+            return None, _quarantine(record, reason, f"state:{state_name!r} — {historical}")
         return None, _quarantine(
             record, ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY, f"state:{state_name!r}"
         )
@@ -153,6 +161,12 @@ def _geo_anchored_record(
     district = resolver.resolve_district(state.code, district_name)
     if district is None:
         detail = f"district:{district_name!r} in state {state.name}({state.code})"
+        historical = HISTORICAL_DISTRICT_GEOGRAPHIES.get(
+            (state.code, normalize_geo_name(district_name) or "")
+        )
+        if historical is not None:
+            reason = ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+            return None, _quarantine(record, reason, f"{detail} — {historical}")
         note = _quarantine_note(state.code, district_name)
         if note is not None:
             detail = f"{detail} — {note}"

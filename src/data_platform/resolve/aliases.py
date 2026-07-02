@@ -191,3 +191,31 @@ GEO_QUARANTINE_NOTES: Final[dict[tuple[str, str], str]] = {
         "Bengaluru South (Karnataka) — newly notified district, absent from the LGD snapshot."
     ),
 }
+
+# Geographies that are HISTORICAL — reorganized/renamed away and absent from the CURRENT LGD, so
+# a name-match failure on them is not a resolver gap but the expected keep-both-with-validity
+# outcome (R3-SET-02: never forward-map an old entity onto a current code without an allocation
+# basis). This is an EXPLICIT, hand-verified list (not a heuristic): each entry is a known
+# reorganization, so the failure carries HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD rather than the
+# generic unresolved reason. Keys are NORMALIZED names (post &→and); a name NOT listed here that
+# fails to resolve stays generically unresolved — quarantine-over-guess.
+HISTORICAL_STATE_GEOGRAPHIES: Final[dict[str, str]] = {
+    "dadra and nagar haveli": (
+        "standalone UT merged into 'The Dadra and Nagar Haveli and Daman and Diu' in 2020; "
+        "absent from the current LGD as a standalone entity"
+    ),
+    "daman and diu": (
+        "standalone UT merged into 'The Dadra and Nagar Haveli and Daman and Diu' in 2020; "
+        "absent from the current LGD as a standalone entity"
+    ),
+}
+
+# (LGD state code, normalized district name) → why it is historical. Sikkim renamed its four
+# directional districts in 2021 (East→Gangtok, North→Mangan, South→Namchi, West→Gyalshing); the
+# old names are absent from the current LGD.
+HISTORICAL_DISTRICT_GEOGRAPHIES: Final[dict[tuple[str, str], str]] = {
+    ("11", "east district"): "old Sikkim district name (renamed Gangtok, 2021); absent from LGD",
+    ("11", "north district"): "old Sikkim district name (renamed Mangan, 2021); absent from LGD",
+    ("11", "south district"): "old Sikkim district name (renamed Namchi, 2021); absent from LGD",
+    ("11", "west district"): "old Sikkim district name (renamed Gyalshing, 2021); absent from LGD",
+}
