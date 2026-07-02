@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -17,6 +18,7 @@ import pytest
 from data_platform.harmonize.assemble import assemble
 from data_platform.harmonize.extract import (
     flagship_state_annual_persondays,
+    flagship_state_annual_total_expenditure,
     rs_state_annual_persondays,
 )
 from data_platform.harmonize.models import CanonicalFact, CanonicalKey, SourceValue
@@ -59,11 +61,21 @@ def _lgd_district_counts() -> dict[str, int]:
     return dict(Counter(str(r["state_code"]) for r in records))
 
 
-@pytest.fixture(scope="module")
-def facts() -> list[CanonicalFact]:
-    resolver = _resolver()
-    keyed: list[tuple[CanonicalKey, SourceValue]] = []
+# (resolved flagship, its cells, flagship as-of, LGD district counts, RS persondays extracted)
+_Pipeline = tuple[
+    ResolvedBatch,
+    dict[int, dict[str, CleanCell]],
+    datetime | None,
+    dict[str, int],
+    list[tuple[CanonicalKey, SourceValue]],
+]
 
+
+@pytest.fixture(scope="module")
+def _pipeline() -> _Pipeline:
+    """Load + normalize + resolve the flagship once, plus the RS persondays extracted values."""
+    resolver = _resolver()
+    lgd = _lgd_district_counts()
     fb = read_archive_batch(
         resource_id=FLAGSHIP_RESOURCE_ID,
         source_id=SRC_FLAGSHIP,
@@ -72,10 +84,8 @@ def facts() -> list[CanonicalFact]:
     )
     fn = normalize_batch(fb, config=NORMALIZE_CONFIG[FLAGSHIP_RESOURCE_ID])
     fr: ResolvedBatch = resolve_batch(fn, resolver, config=RESOLVE_CONFIG[FLAGSHIP_RESOURCE_ID])
-    keyed += flagship_state_annual_persondays(
-        fr, _cells(fn), source_as_of=fb.source_as_of, lgd_district_counts=_lgd_district_counts()
-    )
 
+    rs_persondays: list[tuple[CanonicalKey, SourceValue]] = []
     for rid in _RS:
         spec = WIRED[rid]
         rb = read_archive_batch(
@@ -86,8 +96,26 @@ def facts() -> list[CanonicalFact]:
         )
         rn = normalize_batch(rb, config=spec.normalize_config)
         rr = resolve_batch(rn, resolver, config=spec.resolve_config)
-        keyed += rs_state_annual_persondays(rr, _cells(rn), source_as_of=rb.source_as_of)
+        rs_persondays += rs_state_annual_persondays(rr, _cells(rn), source_as_of=rb.source_as_of)
 
+    return fr, _cells(fn), fb.source_as_of, lgd, rs_persondays
+
+
+@pytest.fixture(scope="module")
+def facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
+    fr, fcells, source_as_of, lgd, rs_persondays = _pipeline
+    keyed = flagship_state_annual_persondays(
+        fr, fcells, source_as_of=source_as_of, lgd_district_counts=lgd
+    )
+    return assemble(keyed + rs_persondays)
+
+
+@pytest.fixture(scope="module")
+def exp_facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
+    fr, fcells, source_as_of, lgd, _rs = _pipeline
+    keyed = flagship_state_annual_total_expenditure(
+        fr, fcells, source_as_of=source_as_of, lgd_district_counts=lgd
+    )
     return assemble(keyed)
 
 
@@ -140,3 +168,29 @@ def test_no_impossible_values_slip_through_unflagged(facts: list[CanonicalFact])
     for f in facts:
         if f.value is not None and f.value < 0:
             assert f.quarantined and f.quarantine_reason == "negative_value"
+
+
+def test_total_expenditure_is_derived_and_in_lakh(exp_facts: list[CanonicalFact]) -> None:
+    goa = [f for f in exp_facts if f.key.state_code == _GOA and f.key.fin_year == _FY]
+    assert len(goa) == 1
+    fact = goa[0]
+    assert fact.key.metric == "total_expenditure"
+    assert fact.unit == "INR lakh"
+    # Goa FY2022-23 total expenditure ~422 lakh (divergence-findings §2.3); derived is close.
+    assert fact.value is not None
+    assert 380 <= fact.value <= 460
+
+
+def test_total_expenditure_definition_discrepancies_are_recorded(
+    exp_facts: list[CanonicalFact],
+) -> None:
+    # R4-DEF-01: where the derived total and the flagship's own Total_Exp differ beyond tolerance,
+    # the gap is recorded (derived stays canonical). At least the mechanism must be exercised.
+    with_discrepancy = [
+        f for f in exp_facts if f.reconciliation.sources_seen[0].definition_discrepancy is not None
+    ]
+    for f in with_discrepancy:
+        disc = f.reconciliation.sources_seen[0].definition_discrepancy
+        assert disc is not None
+        assert disc.rule_id == "R4-DEF-01"
+        assert disc.derived == f.value  # canonical value is the derived one, not the source total

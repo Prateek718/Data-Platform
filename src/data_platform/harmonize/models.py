@@ -75,6 +75,7 @@ class SourceValue(_Frozen):
     authority_rank: int
     rounding_epsilon: Decimal = Decimal(0)
     aggregate_coverage: AggregateCoverage | None = None
+    definition_discrepancy: DefinitionDiscrepancy | None = None
 
 
 class Disagreement(_Frozen):
@@ -87,6 +88,20 @@ class Disagreement(_Frozen):
 
     pct: Decimal
     rejected_sources: list[str]
+    rule_id: str
+
+
+class DefinitionDiscrepancy(_Frozen):
+    """A within-source definition check (R4-DEF-01): a derived total vs the source's own stated one.
+
+    total_expenditure is DERIVED as wages + material/skilled + admin; where the source also carries
+    its own total, the two are compared. When they differ beyond tolerance the gap is recorded here
+    (the derived value is still the canonical one) so the inconsistency is surfaced, not hidden.
+    """
+
+    derived: Decimal
+    source_provided: Decimal
+    pct: Decimal
     rule_id: str
 
 
