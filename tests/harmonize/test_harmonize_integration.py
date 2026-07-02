@@ -16,8 +16,17 @@ from pathlib import Path
 import pytest
 
 from data_platform.harmonize.assemble import assemble
+from data_platform.harmonize.config import (
+    ACTIVE_WORKERS,
+    ADMIN_EXPENDITURE,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    HOUSEHOLDS_EMPLOYED,
+    MATERIAL_SKILLED_EXPENDITURE,
+    WAGES_EXPENDITURE,
+)
 from data_platform.harmonize.extract import (
     flagship_district_monthly_avg_wage,
+    flagship_state_annual_cumulative,
     flagship_state_annual_persondays,
     flagship_state_annual_total_expenditure,
     rs_state_annual_persondays,
@@ -214,3 +223,32 @@ def test_avg_wage_is_district_monthly_single_source_rate(wage_facts: list[Canoni
         assert f.unit == "INR"
         assert f.reconciliation.resolution_rule_id == "R4-REC-04"  # single source
         assert f.value is not None and f.value > 0  # a wage rate is positive (magnitude not judged)
+
+
+_REMAINING_METRICS = [
+    (HOUSEHOLDS_EMPLOYED, "count"),
+    (HOUSEHOLDS_COMPLETED_100_DAYS, "count"),
+    (ACTIVE_WORKERS, "count"),
+    (WAGES_EXPENDITURE, "INR lakh"),
+    (MATERIAL_SKILLED_EXPENDITURE, "INR lakh"),
+    (ADMIN_EXPENDITURE, "INR lakh"),
+]
+
+
+@pytest.mark.parametrize(("metric", "unit"), _REMAINING_METRICS)
+def test_remaining_metrics_roll_up_to_state_annual_single_source(
+    _pipeline: _Pipeline, metric: str, unit: str
+) -> None:
+    fr, fcells, source_as_of, lgd, _rs = _pipeline
+    keyed = flagship_state_annual_cumulative(
+        fr, fcells, metric=metric, source_as_of=source_as_of, lgd_district_counts=lgd
+    )
+    facts = assemble(keyed)
+    goa = [f for f in facts if f.key.state_code == _GOA and f.key.fin_year == _FY]
+    assert goa, f"expected a Goa {metric} fact"
+    fact = goa[0]
+    assert fact.key.metric == metric
+    assert fact.key.geo_level.value == "state"
+    assert fact.unit == unit
+    assert fact.reconciliation.resolution_rule_id == "R4-REC-04"  # flagship-only at this grain
+    assert fact.value is not None and fact.value >= 0

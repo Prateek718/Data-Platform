@@ -15,10 +15,17 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from data_platform.harmonize.config import (
+    ACTIVE_WORKERS,
+    ADMIN_EXPENDITURE,
     AVG_WAGE_RATE_PER_DAY,
+    CANONICAL_UNIT,
     DEFAULT_TOLERANCE_PCT,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    HOUSEHOLDS_EMPLOYED,
+    MATERIAL_SKILLED_EXPENDITURE,
     PERSONDAYS_GENERATED,
     TOTAL_EXPENDITURE,
+    WAGES_EXPENDITURE,
     tolerance_for,
 )
 from data_platform.harmonize.definition import derive_and_compare
@@ -41,6 +48,18 @@ FLAGSHIP_TOTAL_EXP_COLUMN = "Total_Exp"
 # The flagship average wage rate (INR per day per person) — a rate, taken at the native
 # district-monthly grain (not summed, not rolled up); single-source, so no cross-source peer.
 FLAGSHIP_WAGE_RATE_COLUMN = "Average_Wage_rate_per_day_per_person"
+
+# Flagship cumulative-YTD columns rolled up to state-annual (FY-final per district, summed) — one
+# per canonical metric. All single-source at this grain except persondays (RS cross-check peers).
+FLAGSHIP_CUMULATIVE_COLUMNS: dict[str, str] = {
+    PERSONDAYS_GENERATED: FLAGSHIP_PERSONDAYS_COLUMN,
+    HOUSEHOLDS_EMPLOYED: "Total_Households_Worked",
+    HOUSEHOLDS_COMPLETED_100_DAYS: "Total_No_of_HHs_completed_100_Days_of_Wage_Employment",
+    ACTIVE_WORKERS: "Total_No_of_Active_Workers",
+    WAGES_EXPENDITURE: "Wages",
+    MATERIAL_SKILLED_EXPENDITURE: "Material_and_skilled_Wages",
+    ADMIN_EXPENDITURE: "Total_Adm_Expenditure",
+}
 
 # Authority ranks (DATA_CONTRACT §3): the primary district-monthly flagship outranks the
 # downstream state-annual RS summary for the periods the flagship covers.
@@ -79,14 +98,15 @@ def _as_decimal(cell: CleanCell) -> Decimal | None:
     return None
 
 
-def flagship_state_annual_persondays(
+def flagship_state_annual_cumulative(
     resolved: ResolvedBatch,
     cells: Cells,
     *,
+    metric: str,
     source_as_of: datetime | None,
     lgd_district_counts: dict[str, int],
 ) -> list[tuple[CanonicalKey, SourceValue]]:
-    """Roll the flagship district-monthly cumulative persondays up to state-annual.
+    """Roll one flagship district-monthly cumulative-YTD column up to state-annual for ``metric``.
 
     Per district-year, the annual figure is the FY-final cumulative value (never the sum of
     monthlies); the state-annual figure is the sum of those district finals. Each rolled-up value
@@ -94,20 +114,18 @@ def flagship_state_annual_persondays(
     universe for the state (all years), and the current LGD count — so R4-REC-05 can tell a complete
     state total from a structurally-partial one. ``lgd_district_counts``: LGD state code → count.
     """
-    # (state, fin_year) -> district -> {month: cumulative persondays}
-    monthly: dict[tuple[str, str], dict[str, dict[str, int]]] = defaultdict(
+    column = FLAGSHIP_CUMULATIVE_COLUMNS[metric]
+    # (state, fin_year) -> district -> {month: cumulative value}
+    monthly: dict[tuple[str, str], dict[str, dict[str, Decimal]]] = defaultdict(
         lambda: defaultdict(dict)
     )
     for record in resolved.records:
         if record.state_canonical_id is None or record.district_canonical_id is None:
             continue
         row = cells[record.row_index]
-        fin_year, month, value = (
-            row.get("fin_year"),
-            row.get("month"),
-            row.get(FLAGSHIP_PERSONDAYS_COLUMN),
-        )
-        if isinstance(fin_year, str) and isinstance(month, str) and isinstance(value, int):
+        fin_year, month = row.get("fin_year"), row.get("month")
+        value = _as_decimal(row.get(column))
+        if isinstance(fin_year, str) and isinstance(month, str) and value is not None:
             monthly[(record.state_canonical_id, fin_year)][record.district_canonical_id][month] = (
                 value
             )
@@ -124,7 +142,7 @@ def flagship_state_annual_persondays(
         for district_series in districts.values():
             final = fy_final_of_cumulative(district_series)
             if final is not None:
-                total += Decimal(final[1])
+                total += final[1]
                 summed += 1
         if summed:
             coverage = AggregateCoverage(
@@ -134,11 +152,11 @@ def flagship_state_annual_persondays(
             )
             out.append(
                 (
-                    _state_annual_key(state_code, fin_year, PERSONDAYS_GENERATED),
+                    _state_annual_key(state_code, fin_year, metric),
                     SourceValue(
                         source_id=resolved.source_id,
                         value=total,
-                        original_unit="person-days",
+                        original_unit=CANONICAL_UNIT[metric],
                         source_as_of=source_as_of,
                         authority_rank=FLAGSHIP_RANK,
                         aggregate_coverage=coverage,
@@ -146,6 +164,23 @@ def flagship_state_annual_persondays(
                 )
             )
     return out
+
+
+def flagship_state_annual_persondays(
+    resolved: ResolvedBatch,
+    cells: Cells,
+    *,
+    source_as_of: datetime | None,
+    lgd_district_counts: dict[str, int],
+) -> list[tuple[CanonicalKey, SourceValue]]:
+    """Flagship state-annual persondays — the cumulative rollup for the persondays metric."""
+    return flagship_state_annual_cumulative(
+        resolved,
+        cells,
+        metric=PERSONDAYS_GENERATED,
+        source_as_of=source_as_of,
+        lgd_district_counts=lgd_district_counts,
+    )
 
 
 def rs_state_annual_persondays(

@@ -35,9 +35,21 @@ def tolerance_for(metric: str) -> Decimal | None:
 PERSONDAYS_GENERATED: Final = "persondays_generated"
 AVG_WAGE_RATE_PER_DAY: Final = "avg_wage_rate_per_day"
 TOTAL_EXPENDITURE: Final = "total_expenditure"
+HOUSEHOLDS_EMPLOYED: Final = "households_employed"
+HOUSEHOLDS_COMPLETED_100_DAYS: Final = "households_completed_100_days"
+ACTIVE_WORKERS: Final = "active_workers"
+WAGES_EXPENDITURE: Final = "wages_expenditure"
+MATERIAL_SKILLED_EXPENDITURE: Final = "material_skilled_expenditure"
+ADMIN_EXPENDITURE: Final = "admin_expenditure"
 
 CANONICAL_UNIT: Final[dict[str, str]] = {
     PERSONDAYS_GENERATED: "person-days",
     AVG_WAGE_RATE_PER_DAY: "INR",
     TOTAL_EXPENDITURE: "INR lakh",
+    HOUSEHOLDS_EMPLOYED: "count",
+    HOUSEHOLDS_COMPLETED_100_DAYS: "count",
+    ACTIVE_WORKERS: "count",
+    WAGES_EXPENDITURE: "INR lakh",
+    MATERIAL_SKILLED_EXPENDITURE: "INR lakh",
+    ADMIN_EXPENDITURE: "INR lakh",
 }
