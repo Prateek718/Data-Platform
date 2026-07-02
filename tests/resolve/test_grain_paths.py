@@ -199,3 +199,40 @@ def test_two_pre_merger_uts_do_not_collide_onto_merged_code() -> None:
     assert _RECOVERY_RESOLVER.resolve_state("Dadra & Nagar Haveli") is None
     merged = _RECOVERY_RESOLVER.resolve_state("The Dadra and Nagar Haveli and Daman and Diu")
     assert merged is not None and merged.code == "38"
+
+
+# District-grain config for the Sikkim historical-district case (state resolves, district doesn't).
+_DISTRICT_CFG = ResourceResolveConfig(
+    geo_level=GeoLevel.DISTRICT,
+    scheme_label="MGNREGA",
+    geo_columns=GeoColumns(state_name="state", district_name="district"),
+)
+
+
+def test_pre_merger_ut_quarantined_as_historical_not_generic_unresolved() -> None:
+    out = resolve_batch(
+        _batch(_record(0, state_ut="Daman & Diu")), _RECOVERY_RESOLVER, config=_STATE_CFG
+    )
+    assert out.records == []
+    q = out.quarantined[0]
+    assert q.reason is ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+    assert q.detail and q.detail.strip()  # honest, non-empty note on why it is historical
+
+
+def test_old_sikkim_district_quarantined_as_historical() -> None:
+    out = resolve_batch(
+        _batch(_record(0, state="Sikkim", district="EAST DISTRICT")),
+        _RECOVERY_RESOLVER,
+        config=_DISTRICT_CFG,
+    )
+    assert out.records == []
+    q = out.quarantined[0]
+    assert q.reason is ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+
+
+def test_unknown_name_stays_generic_unresolved_not_labelled_historical() -> None:
+    # A name NOT on the explicit historical list must stay UNRESOLVED — no heuristic labelling.
+    out = resolve_batch(
+        _batch(_record(0, state_ut="Atlantis")), _RECOVERY_RESOLVER, config=_STATE_CFG
+    )
+    assert out.quarantined[0].reason is ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY
