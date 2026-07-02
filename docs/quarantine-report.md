@@ -21,21 +21,23 @@ are, why each group was set aside, and the single principle behind every decisio
 
 **Scope.** The tables below cover the **107 archived datasets wired through this stage**
 (the historical and cross-source datasets newly carried into the canonical series). The
-flagship national district-monthly series and the datasets deferred for other reasons are
-accounted for separately in section 6 so that all 130 discovered datasets are traceable.
-All numbers are computed fresh from the resolution pipeline over the committed data, not
-transcribed.
+main national series (district figures reported monthly) and the datasets set aside for
+other reasons are accounted for separately in section 6, so that all 130 discovered
+datasets are traceable. All numbers are computed fresh from the resolution pipeline over
+the committed data, not transcribed.
 
 ## 2. Summary
 
 Across the 107 wired datasets:
 
-| Outcome | Rows |
-|---|---|
-| Resolved to a current LGD geography | **23,843** |
-| Quarantined (preserved with a reason) | **1,644** |
+| Outcome | Rows | Share |
+|---|---|---|
+| Resolved to a current LGD geography | **23,843** | 93.5% |
+| Quarantined (preserved with a reason) | **1,644** | 6.5% |
+| **Total** | **25,487** | 100% |
 
-The quarantine splits into two machine-readable reasons:
+So about **1 row in 15** could not be placed on the current map — and every one of those is
+itemized below. The quarantine splits into two machine-readable reasons:
 
 | Reason | Rows | Distinct datasets |
 |---|---|---|
@@ -74,7 +76,7 @@ renamed. The two clear cases here:
   territories (a union territory, or "UT", is a centrally-administered region). On 26
   January 2020 they merged into a single UT. Rows from before the merger name the two
   *separate* old territories, which no longer exist as distinct entities in the current
-  directory (~1,270 rows across the historical series).
+  directory (1,273 rows across the historical series).
 - **Sikkim's `East` / `North` / `South` / `West` districts** — renamed in 2021 (to Gangtok,
   Mangan, Namchi, and Gyalshing). The old directional names are gone from current LGD
   (40 rows).
@@ -164,8 +166,8 @@ For completeness, all **130 discovered datasets** are accounted for:
 
 | Group | Datasets | Notes |
 |---|---|---|
-| Flagship national series (district + monthly) | 1 | Resolved separately: 69,188 of 69,407 rows resolved (99.68%); 219 quarantined as unresolved geography. |
+| Main national series (districts, reported monthly) | 1 | Resolved separately: 69,188 of 69,407 rows resolved (99.68%); 219 quarantined as unresolved geography. |
 | Wired archived datasets (this report) | 107 | 23,843 rows resolved, 1,644 quarantined (sections 2–4). |
-| Deferred datasets | 22 | Set aside at the dataset level, each with a reason: 11 single-period tables with no discernible year, 6 district-grain tables lacking a state column, 3 single-state-in-title tables, 1 unattributed publisher, and 1 not retrievable (no file). |
+| Deferred datasets | 22 | Set aside whole, each with a reason, because their layout isn't yet supported: 11 give no usable time period (no year column and no year in the title), 6 report districts without naming the state (so a district can't be pinned to the right state), 3 name their single state only in the title, 1 has no identified publisher, and 1 could not be downloaded (no file). |
 
 No dataset and no row is dropped without a recorded reason.
