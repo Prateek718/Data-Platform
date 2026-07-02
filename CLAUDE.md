@@ -78,6 +78,30 @@ Postgres (governed store) · MCP server SDK · LangGraph (analyst) · Docker Com
 - Every lineage field in DATA_CONTRACT §4 is populated — a fact without lineage is a bug.
 - Config-carried thresholds (tolerances, staleness) — never hardcoded magic numbers.
 
+## Harmonization & Conflict Philosophy (applies whenever sources are combined)
+- **Normalize aggressively.** Bring every source onto common units and common semantics so
+  figures CAN be compared (unit conversion, cumulative-to-annual correction, shape). This part is
+  not optional and not conservative — comparability is the baseline.
+- **Resolve conservatively.** Do NOT collapse conflicting sources into one "winning" number by
+  default. Only pick a single canonical value where a DEFENSIBLE, SOURCE-GROUNDED rule exists
+  (e.g. a data-production authority hierarchy: a primary district-monthly MIS figure at its
+  financial-year-final value outranks a downstream state-annual summary for the same
+  district-year). When such a grounded rule applies, record the chosen value, the rejected
+  value(s), and the rule, in lineage. Where no grounded rule exists (peer sources of equal
+  standing disagreeing), do NOT pick.
+- **Publish divergence as a first-class output, not a hidden problem.** Where sources disagree and
+  no grounded rule adjudicates, the disagreement is recorded and surfaced with full lineage, not
+  smoothed away. For a definitive reference record of a concluded scheme, the reconciliation
+  apparatus (which source, where they disagreed, how it was handled) is part of the product's
+  value, not a byproduct.
+- **Never invent a value or a unit the source does not support.** When a required fact is absent or
+  ambiguous (unit not stated, only mid-year partials with no annual total, cumulative-ness
+  unclear), FLAG or QUARANTINE it — never infer, synthesize, or guess it into the canonical
+  series. A visible gap is always preferable to invisible corruption of the reference record.
+- **Decisions are made only on facts actually available.** When a design choice depends on what
+  the data actually contains (e.g. how many cells truly conflict and by how much), DEFER the
+  choice until the pipeline surfaces the real evidence; do not pre-decide on hypotheticals.
+
 ## SPECS
 Per-stage specs live in `docs/specs/`. Build order in `docs/BUILD_SEQUENCE.md`.
 Foundational decisions in `docs/DATA_CONTRACT.md` and `docs/RULES.md` — authoritative.
