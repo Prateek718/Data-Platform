@@ -28,9 +28,24 @@ STATE_ALIASES: Final[dict[str, str]] = {
     "andaman and nicobar": "andaman and nicobar islands",
     "orissa": "odisha",
     "uttrakhand": "uttarakhand",
+    "uttaranchal": "uttarakhand",  # former OFFICIAL name (2000-2007); pure rename, same entity
     "tamilnadu": "tamil nadu",
     "pondicherry": "puducherry",
+    "j and k": "jammu and kashmir",  # abbreviation ("J & K" after &->and)
+    "a and n islands": "andaman and nicobar islands",  # abbreviation ("A & N Islands")
+    "a and n island": "andaman and nicobar islands",  # abbreviation, singular ("A & N Island")
+    # The modern merged UT: the merged name (missing LGD's leading "The") -> LGD 38. This mapping is
+    # PERIOD-GATED in the pipeline — valid only from the 2020 merger onward; a merged-name row dated
+    # earlier is an anachronism and is held, not resolved. See MERGED_UT_* below.
+    "dadra and nagar haveli and daman and diu": "the dadra and nagar haveli and daman and diu",
 }
+
+# The merged UT name is period-sensitive (unlike every other alias, which is period-agnostic): it
+# only became a real entity at the 26 Jan 2020 merger, so FY2019-20 (start year 2019) is the safe
+# floor. The pipeline resolves it only for periods >= this floor and holds earlier ones as an
+# anachronism (HISTORICAL) — a pre-merger fact wearing the merged name, never silently resolved.
+MERGED_UT_NORMALIZED: Final = "dadra and nagar haveli and daman and diu"
+MERGER_FLOOR_FY_START: Final = 2019
 
 # Flagship district-name variants that R3-GEO-02 misses, keyed by (LGD state code, normalized
 # flagship name) → target LGD English name. State-scoped so a key can never fire in the wrong

@@ -24,11 +24,15 @@ Resolved records carry canonical LGD identity only; source names/codes survive s
 
 from __future__ import annotations
 
+import re
+
 from data_platform.normalize.models import CleanCell, NormalizedBatch, NormalizedRecord
 from data_platform.resolve.aliases import (
     GEO_QUARANTINE_NOTES,
     HISTORICAL_DISTRICT_GEOGRAPHIES,
     HISTORICAL_STATE_GEOGRAPHIES,
+    MERGED_UT_NORMALIZED,
+    MERGER_FLOOR_FY_START,
 )
 from data_platform.resolve.config import RESOLVE_CONFIG, ResourceResolveConfig
 from data_platform.resolve.geo import GeoResolver
@@ -136,6 +140,19 @@ def _geo_anchored_record(
         return None, _quarantine(
             record, ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY, f"state:{state_name!r}"
         )
+
+    # Period gate for the merged UT: its name only became a real entity at the 2020 merger, so a
+    # merged-name row dated before the floor is an anachronism — held, not resolved onto LGD 38.
+    if normalize_geo_name(state_name) == MERGED_UT_NORMALIZED:
+        fy_start = _period_start_year(record)
+        if fy_start is None or fy_start < MERGER_FLOOR_FY_START:
+            reason = ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+            detail = (
+                f"state:{state_name!r} — merged-UT name on a pre-merger period "
+                f"(fin_year start {fy_start}); the merged UT did not exist before FY2019-20"
+            )
+            return None, _quarantine(record, reason, detail)
+
     state_field = GeoFieldResolution(
         rule_id=state.rule_id,
         source_code=_cell_name(record, geo_columns.state_code),
@@ -224,6 +241,19 @@ def _cell_name(record: NormalizedRecord, column: str | None) -> str | None:
 def _as_name(cell: CleanCell) -> str | None:
     """A geography cell is a string identifier or null; any other type is not a usable name."""
     return cell if isinstance(cell, str) else None
+
+
+def _period_start_year(record: NormalizedRecord) -> int | None:
+    """The starting calendar year of the row's financial year (``2019-20`` → ``2019``), or None.
+
+    Read from the synthesized ``_fin_year`` column (present on every reshaped/period-injected
+    resource). Used only by the merged-UT period gate; absence is treated as unknown → held.
+    """
+    value = record.cells.get("_fin_year")
+    if not isinstance(value, str):
+        return None
+    match = re.match(r"(\d{4})", value)
+    return int(match.group(1)) if match is not None else None
 
 
 def _quarantine_note(lgd_state_code: str, district_name: str | None) -> str | None:
