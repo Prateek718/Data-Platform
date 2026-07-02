@@ -15,6 +15,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from data_platform.harmonize.config import (
+    AVG_WAGE_RATE_PER_DAY,
     DEFAULT_TOLERANCE_PCT,
     PERSONDAYS_GENERATED,
     TOTAL_EXPENDITURE,
@@ -36,6 +37,10 @@ _LAKH = Decimal(100_000)
 # three components; Total_Exp is the source's own total, compared to the derived one (R4-DEF-01).
 FLAGSHIP_EXPENDITURE_COMPONENTS = ("Wages", "Material_and_skilled_Wages", "Total_Adm_Expenditure")
 FLAGSHIP_TOTAL_EXP_COLUMN = "Total_Exp"
+
+# The flagship average wage rate (INR per day per person) — a rate, taken at the native
+# district-monthly grain (not summed, not rolled up); single-source, so no cross-source peer.
+FLAGSHIP_WAGE_RATE_COLUMN = "Average_Wage_rate_per_day_per_person"
 
 # Authority ranks (DATA_CONTRACT §3): the primary district-monthly flagship outranks the
 # downstream state-annual RS summary for the periods the flagship covers.
@@ -251,4 +256,48 @@ def flagship_state_annual_total_expenditure(
                 ),
             )
         )
+    return out
+
+
+def flagship_district_monthly_avg_wage(
+    resolved: ResolvedBatch, cells: Cells, *, source_as_of: datetime | None
+) -> list[tuple[CanonicalKey, SourceValue]]:
+    """Take the flagship average wage rate at its native district-monthly grain.
+
+    A rate is neither summed nor cumulative-rolled: each resolved district-month row contributes one
+    value directly, at the canonical district+monthly grain. Single-source (no RS wage peer), so
+    these reconcile as R4-REC-04.
+    """
+    out: list[tuple[CanonicalKey, SourceValue]] = []
+    for record in resolved.records:
+        if record.state_canonical_id is None or record.district_canonical_id is None:
+            continue
+        row = cells[record.row_index]
+        fin_year, month, wage = (
+            row.get("fin_year"),
+            row.get("month"),
+            row.get(FLAGSHIP_WAGE_RATE_COLUMN),
+        )
+        if isinstance(fin_year, str) and isinstance(month, str) and isinstance(wage, Decimal):
+            key = CanonicalKey(
+                scheme="MGNREGA",
+                geo_level=GeoLevel.DISTRICT,
+                state_code=record.state_canonical_id,
+                district_code=record.district_canonical_id,
+                fin_year=fin_year,
+                month=month,
+                metric=AVG_WAGE_RATE_PER_DAY,
+            )
+            out.append(
+                (
+                    key,
+                    SourceValue(
+                        source_id=resolved.source_id,
+                        value=wage,
+                        original_unit="INR",
+                        source_as_of=source_as_of,
+                        authority_rank=FLAGSHIP_RANK,
+                    ),
+                )
+            )
     return out

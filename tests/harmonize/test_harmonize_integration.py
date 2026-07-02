@@ -17,6 +17,7 @@ import pytest
 
 from data_platform.harmonize.assemble import assemble
 from data_platform.harmonize.extract import (
+    flagship_district_monthly_avg_wage,
     flagship_state_annual_persondays,
     flagship_state_annual_total_expenditure,
     rs_state_annual_persondays,
@@ -119,6 +120,13 @@ def exp_facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
     return assemble(keyed)
 
 
+@pytest.fixture(scope="module")
+def wage_facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
+    fr, fcells, source_as_of, _lgd, _rs = _pipeline
+    keyed = flagship_district_monthly_avg_wage(fr, fcells, source_as_of=source_as_of)
+    return assemble(keyed)
+
+
 def test_goa_2022_23_reconciles_and_agrees(facts: list[CanonicalFact]) -> None:
     goa = [f for f in facts if f.key.state_code == _GOA and f.key.fin_year == _FY]
     assert len(goa) == 1
@@ -194,3 +202,15 @@ def test_total_expenditure_definition_discrepancies_are_recorded(
         assert disc is not None
         assert disc.rule_id == "R4-DEF-01"
         assert disc.derived == f.value  # canonical value is the derived one, not the source total
+
+
+def test_avg_wage_is_district_monthly_single_source_rate(wage_facts: list[CanonicalFact]) -> None:
+    goa = [f for f in wage_facts if f.key.state_code == _GOA and f.key.fin_year == _FY]
+    assert goa, "expected Goa district-monthly avg-wage facts"
+    for f in goa:
+        assert f.key.metric == "avg_wage_rate_per_day"
+        assert f.key.geo_level.value == "district"
+        assert f.key.district_code is not None and f.key.month is not None
+        assert f.unit == "INR"
+        assert f.reconciliation.resolution_rule_id == "R4-REC-04"  # single source
+        assert f.value is not None and f.value > 0  # a wage rate is positive (magnitude not judged)
