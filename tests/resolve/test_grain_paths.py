@@ -169,6 +169,12 @@ _RECOVERY_RESOLVER = GeoResolver.from_reference(
         ("Uttrakhand", "5"),
         ("Tamilnadu", "33"),
         ("Pondicherry", "34"),
+        ("Uttaranchal", "5"),  # former OFFICIAL name (2000-2007), pure rename -> Uttarakhand
+        ("UTTARANCHAL", "5"),
+        ("J & K", "1"),  # abbreviation (&->and handles the ampersand)
+        ("j & k", "1"),
+        ("A & N Islands", "35"),  # abbreviation
+        ("A & N Island", "35"),  # abbreviation (singular)
     ],
 )
 def test_variant_state_names_resolve_to_current_lgd(name: str, code: str) -> None:
@@ -236,3 +242,36 @@ def test_unknown_name_stays_generic_unresolved_not_labelled_historical() -> None
         _batch(_record(0, state_ut="Atlantis")), _RECOVERY_RESOLVER, config=_STATE_CFG
     )
     assert out.quarantined[0].reason is ResolutionQuarantineReason.UNRESOLVED_GEOGRAPHY
+
+
+@pytest.mark.parametrize("fin_year", ["2019-20", "2020-21", "2023-24"])
+def test_merged_ut_resolves_for_post_merger_period(fin_year: str) -> None:
+    # The modern merged UT (LGD 38); its name is valid from the 2020 merger (FY2019-20 floor).
+    out = resolve_batch(
+        _batch(_record(0, state_ut="Dadra and Nagar Haveli and Daman and Diu", _fin_year=fin_year)),
+        _RECOVERY_RESOLVER,
+        config=_STATE_CFG,
+    )
+    assert out.quarantined == []
+    assert out.records[0].state_canonical_id == "38"
+
+
+def test_merged_ut_name_on_pre_merger_period_is_held_as_anachronism() -> None:
+    # A merged-name row dated before the 2020 merger is anachronistic — do NOT resolve it.
+    out = resolve_batch(
+        _batch(
+            _record(0, state_ut="Dadra and Nagar Haveli and Daman and Diu", _fin_year="2018-19")
+        ),
+        _RECOVERY_RESOLVER,
+        config=_STATE_CFG,
+    )
+    assert out.records == []
+    assert (
+        out.quarantined[0].reason
+        is ResolutionQuarantineReason.HISTORICAL_GEOGRAPHY_NOT_IN_CURRENT_LGD
+    )
+
+
+@pytest.mark.parametrize("artifact", ["Total", "None", "National", "30", "13"])
+def test_true_artifacts_still_do_not_resolve(artifact: str) -> None:
+    assert _RECOVERY_RESOLVER.resolve_state(artifact) is None
