@@ -15,6 +15,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
+from data_platform.resolve.models import GeoLevel
+
 
 class _Frozen(BaseModel):
     model_config = ConfigDict(strict=True, frozen=True)
@@ -63,3 +65,36 @@ class Reconciliation(_Frozen):
     sources_seen: list[SourceValue]
     disagreement: Disagreement | None
     resolution_rule_id: str
+
+
+class CanonicalKey(_Frozen):
+    """The identity of one canonical fact: scheme + geography (at its level) + period + metric.
+
+    ``state_code``/``district_code`` are nullable and follow ``geo_level`` (national → both None;
+    state → state set; district → both set), mirroring the resolved-record geography model.
+    ``month`` is None for annual-grain facts.
+    """
+
+    scheme: str
+    geo_level: GeoLevel
+    state_code: str | None
+    district_code: str | None
+    fin_year: str
+    month: str | None
+    metric: str
+
+
+class CanonicalFact(_Frozen):
+    """One harmonized canonical fact: the reconciled value for a key, its unit, and its lineage.
+
+    ``reconciliation`` carries the cross-source lineage (winning source, all sources seen with
+    their values, any recorded disagreement, the rule). ``quarantined`` marks a value excluded from
+    the golden store by R4-Q-01 (kept queryable) with its typed reason.
+    """
+
+    key: CanonicalKey
+    value: Decimal
+    unit: str
+    reconciliation: Reconciliation
+    quarantined: bool
+    quarantine_reason: str | None

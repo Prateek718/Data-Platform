@@ -28,3 +28,16 @@ EXACT_MATCH_METRICS: Final[frozenset[str]] = frozenset(
 def tolerance_for(metric: str) -> Decimal | None:
     """The agreement tolerance (%) for a metric, or ``None`` when exact equality is required."""
     return None if metric in EXACT_MATCH_METRICS else DEFAULT_TOLERANCE_PCT
+
+
+# Canonical metric names (DATA_CONTRACT §2.3) and their canonical units. Starter 3 first, then the
+# other 6 (mechanical repetition). The canonical unit is what every source is normalized to.
+PERSONDAYS_GENERATED: Final = "persondays_generated"
+AVG_WAGE_RATE_PER_DAY: Final = "avg_wage_rate_per_day"
+TOTAL_EXPENDITURE: Final = "total_expenditure"
+
+CANONICAL_UNIT: Final[dict[str, str]] = {
+    PERSONDAYS_GENERATED: "person-days",
+    AVG_WAGE_RATE_PER_DAY: "INR",
+    TOTAL_EXPENDITURE: "INR lakh",
+}
