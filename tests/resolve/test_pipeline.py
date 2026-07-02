@@ -25,7 +25,7 @@ from data_platform.normalize.models import (
 from data_platform.normalize.pipeline import normalize_batch
 from data_platform.resolve.geo import GeoResolver
 from data_platform.resolve.lgd import LGDDistrict, LGDState
-from data_platform.resolve.models import ResolutionQuarantineReason
+from data_platform.resolve.models import GeoLevel, ResolutionQuarantineReason
 from data_platform.resolve.pipeline import resolve_batch
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -89,6 +89,11 @@ def test_golden_goa_resolves_by_name_not_code() -> None:
     assert {r.district_canonical_name for r in out.records} == {"North Goa", "South Goa"}
     rec = out.records[0]
     assert rec.scheme_canonical_id == "MGNREGA"
+    # District grain: geo_level is district and this is a single-source fact.
+    assert rec.geo_level is GeoLevel.DISTRICT
+    assert rec.sources_seen == 1
+    assert rec.geo_resolution is not None
+    assert rec.geo_resolution.district is not None
     # §2.2: source name is an input alias, dropped from identity but kept in lineage.
     assert rec.geo_resolution.state.source_name == "GOA"
     # R3-GEO-04: the MIS→LGD code translation is recorded (10 → 30).
@@ -114,6 +119,8 @@ def test_alias_district_resolution_records_r3_geo_03() -> None:
     assert len(out.records) == 1
     rec = out.records[0]
     assert rec.district_canonical_name == "Bengaluru Urban"
+    assert rec.geo_resolution is not None
+    assert rec.geo_resolution.district is not None
     assert rec.geo_resolution.district.rule_id.startswith("R3-GEO-03")
     assert rec.geo_resolution.district.source_code == "2901"
     assert rec.geo_resolution.district.lgd_code == "540"
