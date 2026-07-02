@@ -170,4 +170,9 @@ For completeness, all **130 discovered datasets** are accounted for:
 | Wired archived datasets (this report) | 107 | 23,843 rows resolved, 1,644 quarantined (sections 2–4). |
 | Deferred datasets | 22 | Set aside whole, each with a reason, because their layout isn't yet supported: 11 give no usable time period (no year column and no year in the title), 6 report districts without naming the state (so a district can't be pinned to the right state), 3 name their single state only in the title, 1 has no identified publisher, and 1 could not be downloaded (no file). |
 
+The 99.68% above is measured per row (69,188 of 69,407 rows, after de-duplication); an earlier
+project figure of 98.8% measured the same series over distinct (state, district) geographies
+(749 of 758), so the two differ only in denominator — per row versus per distinct place — not in
+the underlying data.
+
 No dataset and no row is dropped without a recorded reason.
