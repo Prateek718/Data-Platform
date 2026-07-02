@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from data_platform.normalize.models import (
     CleanCell,
     DedupeLineage,
@@ -132,3 +134,68 @@ def test_sources_seen_is_peer_count_not_the_ab_label() -> None:
     )
     assert a.records[0].sources_seen == 1
     assert b.records[0].sources_seen == 1
+
+
+# ---------------------------------------------------------------------------------------
+# Stage 3.5 quarantine-recovery — real states/UTs that failed on fixable normalization gaps
+# (ampersand-vs-"and", old spellings) must now resolve; genuinely-historical entities absent
+# from the current LGD must NOT (never forward-map across a reorganization — R3-SET-02).
+# ---------------------------------------------------------------------------------------
+_RECOVERY_RESOLVER = GeoResolver.from_reference(
+    states=[
+        LGDState(code="1", name="Jammu and Kashmir"),
+        LGDState(code="5", name="Uttarakhand"),
+        LGDState(code="11", name="Sikkim"),
+        LGDState(code="21", name="Odisha"),
+        LGDState(code="33", name="Tamil Nadu"),
+        LGDState(code="34", name="Puducherry"),
+        LGDState(code="35", name="Andaman and Nicobar Islands"),
+        LGDState(code="38", name="The Dadra and Nagar Haveli and Daman and Diu"),
+    ],
+    districts=[],
+)
+
+
+@pytest.mark.parametrize(
+    ("name", "code"),
+    [
+        ("Jammu & Kashmir", "1"),  # ampersand form of a current state
+        ("JAMMU & KASHMIR", "1"),  # case-insensitive across the &->and change
+        ("Andaman & Nicobar", "35"),  # ampersand + LGD "Islands" suffix (via alias)
+        ("ANDAMAN & NICOBAR", "35"),
+        ("Andaman & Nicobar Islands", "35"),  # ampersand, exact once &->and
+        ("Orissa", "21"),  # old spelling -> current LGD name
+        ("ORISSA", "21"),
+        ("Uttrakhand", "5"),
+        ("Tamilnadu", "33"),
+        ("Pondicherry", "34"),
+    ],
+)
+def test_variant_state_names_resolve_to_current_lgd(name: str, code: str) -> None:
+    match = _RECOVERY_RESOLVER.resolve_state(name)
+    assert match is not None, f"{name!r} should resolve, not quarantine"
+    assert match.code == code
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Daman & Diu",  # pre-2020 standalone UT, merged away — absent from current LGD
+        "Dadra & Nagar Haveli",  # pre-2020 standalone UT, merged away
+        "EAST DISTRICT",  # old Sikkim district name (renamed) — not a state anyway
+        "NORTH DISTRICT",
+        "Total",  # pseudo/roll-up row
+        "None",  # null-ish artifact
+    ],
+)
+def test_historical_or_pseudo_names_do_not_resolve_as_state(name: str) -> None:
+    assert _RECOVERY_RESOLVER.resolve_state(name) is None
+
+
+def test_two_pre_merger_uts_do_not_collide_onto_merged_code() -> None:
+    # The never-forward-map rule: two separate pre-2020 rows must NOT both map onto the single
+    # merged UT (LGD 38). Neither resolves; only the full modern merged name reaches code 38.
+    assert _RECOVERY_RESOLVER.resolve_state("Daman & Diu") is None
+    assert _RECOVERY_RESOLVER.resolve_state("Dadra & Nagar Haveli") is None
+    merged = _RECOVERY_RESOLVER.resolve_state("The Dadra and Nagar Haveli and Daman and Diu")
+    assert merged is not None and merged.code == "38"
