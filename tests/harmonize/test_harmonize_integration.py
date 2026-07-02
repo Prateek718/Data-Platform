@@ -8,6 +8,8 @@ reconcile, producing canonical state-annual facts whose lineage records agreemen
 
 from __future__ import annotations
 
+import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -52,6 +54,11 @@ def _cells(batch: NormalizedBatch) -> dict[int, dict[str, CleanCell]]:
     return {rec.row_index: dict(rec.cells) for rec in batch.records}
 
 
+def _lgd_district_counts() -> dict[str, int]:
+    records = json.loads((ARCHIVE / "lgd" / "lgd_districts.json").read_text())["records"]
+    return dict(Counter(str(r["state_code"]) for r in records))
+
+
 @pytest.fixture(scope="module")
 def facts() -> list[CanonicalFact]:
     resolver = _resolver()
@@ -65,7 +72,9 @@ def facts() -> list[CanonicalFact]:
     )
     fn = normalize_batch(fb, config=NORMALIZE_CONFIG[FLAGSHIP_RESOURCE_ID])
     fr: ResolvedBatch = resolve_batch(fn, resolver, config=RESOLVE_CONFIG[FLAGSHIP_RESOURCE_ID])
-    keyed += flagship_state_annual_persondays(fr, _cells(fn), source_as_of=fb.source_as_of)
+    keyed += flagship_state_annual_persondays(
+        fr, _cells(fn), source_as_of=fb.source_as_of, lgd_district_counts=_lgd_district_counts()
+    )
 
     for rid in _RS:
         spec = WIRED[rid]
@@ -90,7 +99,9 @@ def test_goa_2022_23_reconciles_and_agrees(facts: list[CanonicalFact]) -> None:
     assert fact.reconciliation.resolution_rule_id == "R4-REC-01"
     assert fact.reconciliation.disagreement is None
     assert fact.reconciliation.source_id == SRC_FLAGSHIP
+    assert fact.reconciliation.adjudicated is True
     assert len(fact.reconciliation.sources_seen) >= 2  # corroborated by RS
+    assert fact.value is not None
     assert 93_000 <= fact.value <= 95_000
 
 
@@ -100,7 +111,7 @@ def test_multi_source_facts_and_recorded_disagreements_both_exist(
     multi = [f for f in facts if len(f.reconciliation.sources_seen) >= 2]
     disagreements = [f for f in facts if f.reconciliation.disagreement is not None]
     assert multi, "expected cross-source (flagship+RS) reconciled facts"
-    # The evidence showed a real ~16-20% conflict tail — it must surface as recorded disagreements.
+    # The evidence showed a real conflict tail — it must surface as recorded disagreements.
     assert disagreements, "expected some beyond-tolerance disagreements to be recorded"
     for f in disagreements:
         disagreement = f.reconciliation.disagreement
@@ -108,7 +119,24 @@ def test_multi_source_facts_and_recorded_disagreements_both_exist(
         assert disagreement.rejected_sources  # rejected sources named, not dropped
 
 
+def test_structural_gap_disagreements_are_unadjudicated_not_canonicalized(
+    facts: list[CanonicalFact],
+) -> None:
+    # R4-REC-05: where the flagship rollup is structurally incomplete (its district universe is
+    # smaller than LGD, e.g. West Bengal / Maharashtra) and a whole-state RS peer disagrees, no
+    # single value is asserted — the divergence is published (value is None, adjudicated False).
+    unadjudicated = [f for f in facts if not f.reconciliation.adjudicated]
+    assert unadjudicated, (
+        "expected some structurally-incomplete aggregates to be left unadjudicated"
+    )
+    for f in unadjudicated:
+        assert f.reconciliation.resolution_rule_id == "R4-REC-05"
+        assert f.value is None
+        assert f.reconciliation.canonical_value is None
+        assert len(f.reconciliation.sources_seen) >= 2  # all sources still published
+
+
 def test_no_impossible_values_slip_through_unflagged(facts: list[CanonicalFact]) -> None:
     for f in facts:
-        if f.value < 0:
+        if f.value is not None and f.value < 0:
             assert f.quarantined and f.quarantine_reason == "negative_value"

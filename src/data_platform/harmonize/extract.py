@@ -15,7 +15,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from data_platform.harmonize.config import PERSONDAYS_GENERATED
-from data_platform.harmonize.models import CanonicalKey, SourceValue
+from data_platform.harmonize.models import AggregateCoverage, CanonicalKey, SourceValue
 from data_platform.harmonize.rollup import fy_final_of_cumulative
 from data_platform.normalize.models import CleanCell
 from data_platform.resolve.models import GeoLevel, ResolvedBatch
@@ -30,6 +30,10 @@ _LAKH = Decimal(100_000)
 # downstream state-annual RS summary for the periods the flagship covers.
 FLAGSHIP_RANK = 0
 RS_RANK = 1
+
+# The RS tables publish person-days as lakh rounded to 2 decimals — a granularity of 0.01 lakh =
+# 1,000 raw person-days, so a published figure is within ±500 of the true value (R4-REC-01a).
+RS_ROUNDING_EPSILON = Decimal(500)
 
 Cells = dict[int, dict[str, CleanCell]]
 
@@ -47,12 +51,19 @@ def _state_annual_key(state_code: str, fin_year: str) -> CanonicalKey:
 
 
 def flagship_state_annual_persondays(
-    resolved: ResolvedBatch, cells: Cells, *, source_as_of: datetime | None
+    resolved: ResolvedBatch,
+    cells: Cells,
+    *,
+    source_as_of: datetime | None,
+    lgd_district_counts: dict[str, int],
 ) -> list[tuple[CanonicalKey, SourceValue]]:
     """Roll the flagship district-monthly cumulative persondays up to state-annual.
 
     Per district-year, the annual figure is the FY-final cumulative value (never the sum of
-    monthlies); the state-annual figure is the sum of those district finals.
+    monthlies); the state-annual figure is the sum of those district finals. Each rolled-up value
+    carries its :class:`AggregateCoverage` — districts summed this year, the flagship's own district
+    universe for the state (all years), and the current LGD count — so R4-REC-05 can tell a complete
+    state total from a structurally-partial one. ``lgd_district_counts``: LGD state code → count.
     """
     # (state, fin_year) -> district -> {month: cumulative persondays}
     monthly: dict[tuple[str, str], dict[str, dict[str, int]]] = defaultdict(
@@ -72,16 +83,26 @@ def flagship_state_annual_persondays(
                 value
             )
 
+    # The flagship's own district universe per state = distinct districts it reports over all years.
+    universe: dict[str, set[str]] = defaultdict(set)
+    for (state_code, _fy), districts in monthly.items():
+        universe[state_code].update(districts)
+
     out: list[tuple[CanonicalKey, SourceValue]] = []
     for (state_code, fin_year), districts in monthly.items():
         total = Decimal(0)
-        have_final = False
+        summed = 0
         for district_series in districts.values():
             final = fy_final_of_cumulative(district_series)
             if final is not None:
                 total += Decimal(final[1])
-                have_final = True
-        if have_final:
+                summed += 1
+        if summed:
+            coverage = AggregateCoverage(
+                units_summed=summed,
+                units_in_source_universe=len(universe[state_code]),
+                units_in_lgd=lgd_district_counts.get(state_code, 0),
+            )
             out.append(
                 (
                     _state_annual_key(state_code, fin_year),
@@ -91,6 +112,7 @@ def flagship_state_annual_persondays(
                         original_unit="person-days",
                         source_as_of=source_as_of,
                         authority_rank=FLAGSHIP_RANK,
+                        aggregate_coverage=coverage,
                     ),
                 )
             )
@@ -122,6 +144,7 @@ def rs_state_annual_persondays(
                     original_unit="lakh",
                     source_as_of=source_as_of,
                     authority_rank=RS_RANK,
+                    rounding_epsilon=RS_ROUNDING_EPSILON,
                 ),
             )
         )
