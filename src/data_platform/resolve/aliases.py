@@ -15,12 +15,21 @@ from __future__ import annotations
 
 from typing import Final
 
-# Flagship state-name variants that R3-GEO-02 misses. Two observed:
+# State-name variants that R3-GEO-02 misses, keyed by the NORMALIZED source name → target LGD
+# English name. Each target is a CURRENT LGD entity (a 1:1 rename/variant), hand-verified present
+# in the archived reference — NEVER a historical/merged/renamed entity mapped onto a current code
+# (that would fabricate a join across a reorganization; those stay quarantined, R3-SET-02).
 #   "DN HAVELI AND DD"     — heavy abbreviation (R3-GEO-01 docstring example)
-#   "ANDAMAN AND NICOBAR"  — flagship drops the "Islands" suffix LGD carries
+#   "ANDAMAN AND NICOBAR"  — source drops the "Islands" suffix LGD carries
+#   old-spelling renames   — Orissa/Uttarakhand(misspelt)/Tamil Nadu/Puducherry, each a current
+#                            state/UT published under a former or variant spelling
 STATE_ALIASES: Final[dict[str, str]] = {
     "dn haveli and dd": "the dadra and nagar haveli and daman and diu",
     "andaman and nicobar": "andaman and nicobar islands",
+    "orissa": "odisha",
+    "uttrakhand": "uttarakhand",
+    "tamilnadu": "tamil nadu",
+    "pondicherry": "puducherry",
 }
 
 # Flagship district-name variants that R3-GEO-02 misses, keyed by (LGD state code, normalized
