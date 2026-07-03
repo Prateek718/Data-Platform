@@ -17,7 +17,9 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from data_platform.harmonize.models import CanonicalKey, Reconciliation
+from data_platform.harmonize.assemble import assemble
+from data_platform.harmonize.models import CanonicalFact, CanonicalKey, Reconciliation, SourceValue
+from data_platform.harmonize.validate import flag_implausible_persondays
 
 
 class Basis(StrEnum):
@@ -76,3 +78,29 @@ def classify(
         confidence = Confidence.SINGLE_SOURCE
 
     return basis, confidence
+
+
+def to_series_fact(fact: CanonicalFact, *, flagship_source_id: str) -> SeriesFact:
+    """Wrap a reconciled canonical fact as a series point, adding its basis + confidence label."""
+    basis, confidence = classify(fact.reconciliation, flagship_source_id=flagship_source_id)
+    return SeriesFact(
+        key=fact.key,
+        value=fact.value,
+        unit=fact.unit,
+        basis=basis,
+        confidence=confidence,
+        reconciliation=fact.reconciliation,
+        quarantined=fact.quarantined,
+        quarantine_reason=fact.quarantine_reason,
+    )
+
+
+def assemble_series(
+    keyed_values: list[tuple[CanonicalKey, SourceValue]], *, flagship_source_id: str
+) -> list[SeriesFact]:
+    """Assemble the continuous series: reconcile every source per key (Stage-4 engine), apply the
+    cross-metric person-days guard, then label each with basis + confidence. Era policy is carried
+    entirely by the ``authority_rank`` on the input source values — flagship 0, historical higher —
+    so 2018+ keys resolve to the flagship and pre-2018 keys to the agreeing historical sources."""
+    facts = flag_implausible_persondays(assemble(keyed_values))
+    return [to_series_fact(fact, flagship_source_id=flagship_source_id) for fact in facts]
