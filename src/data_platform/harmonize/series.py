@@ -56,4 +56,23 @@ def classify(
     reconciliation: Reconciliation, *, flagship_source_id: str
 ) -> tuple[Basis, Confidence]:
     """Derive (basis, confidence) from a reconciled outcome — no adjudication, just labelling."""
-    raise NotImplementedError
+    has_flagship = any(s.source_id == flagship_source_id for s in reconciliation.sources_seen)
+    n = len(reconciliation.sources_seen)
+
+    if has_flagship:
+        basis = Basis.FLAGSHIP_ROLLUP  # the flagship anchors this year, even if unadjudicated
+    elif n >= 2:
+        basis = Basis.HISTORICAL_MULTI
+    else:
+        basis = Basis.HISTORICAL_SINGLE
+
+    if not reconciliation.adjudicated:
+        confidence = Confidence.UNADJUDICATED
+    elif reconciliation.disagreement is not None:
+        confidence = Confidence.FLAGGED_DISAGREEMENT
+    elif n >= 2:
+        confidence = Confidence.CORROBORATED
+    else:
+        confidence = Confidence.SINGLE_SOURCE
+
+    return basis, confidence
