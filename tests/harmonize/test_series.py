@@ -82,3 +82,48 @@ def test_unadjudicated_is_labelled_unadjudicated() -> None:
     )
     assert basis is Basis.FLAGSHIP_ROLLUP  # flagship is present, even though unadjudicated
     assert conf is Confidence.UNADJUDICATED
+
+
+def test_coverage_summary_counts_eras_and_confidence() -> None:
+    from data_platform.harmonize.config import WAGES_EXPENDITURE
+    from data_platform.harmonize.models import CanonicalFact, CanonicalKey
+    from data_platform.harmonize.series import series_coverage_summary, to_series_fact
+    from data_platform.resolve.models import GeoLevel
+
+    def fact(fy: str, sources: list[SourceValue]) -> CanonicalFact:
+        key = CanonicalKey(
+            scheme="MGNREGA",
+            geo_level=GeoLevel.STATE,
+            state_code="30",
+            district_code=None,
+            fin_year=fy,
+            month=None,
+            metric=WAGES_EXPENDITURE,
+        )
+        rec = Reconciliation(
+            canonical_value=sources[0].value,
+            source_id=sources[0].source_id,
+            sources_seen=sources,
+            disagreement=None,
+            resolution_rule_id="R4-REC-01",
+            adjudicated=True,
+        )
+        return CanonicalFact(
+            key=key,
+            value=sources[0].value,
+            unit="INR lakh",
+            reconciliation=rec,
+            quarantined=False,
+            quarantine_reason=None,
+        )
+
+    facts = [
+        to_series_fact(
+            fact("2015-16", [_sv("SRC_MOSPI", "10", 10), _sv("SRC_RS", "10", 20)]),
+            flagship_source_id=_FLAGSHIP,
+        ),
+        to_series_fact(fact("2019-20", [_sv(_FLAGSHIP, "12", 0)]), flagship_source_id=_FLAGSHIP),
+    ]
+    s = series_coverage_summary(facts)[WAGES_EXPENDITURE]
+    assert s["pre_2018"] == 1 and s["y2018_plus"] == 1
+    assert s["corroborated"] == 1 and s["single_source"] == 1

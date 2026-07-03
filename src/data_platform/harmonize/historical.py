@@ -18,7 +18,10 @@ from enum import StrEnum
 
 from data_platform.harmonize.config import (
     ADMIN_EXPENDITURE,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    HOUSEHOLDS_EMPLOYED,
     MATERIAL_SKILLED_EXPENDITURE,
+    PERSONDAYS_GENERATED,
     TOTAL_EXPENDITURE,
     WAGES_EXPENDITURE,
 )
@@ -70,6 +73,63 @@ FINANCIAL_OUTCOMES_RULES: tuple[StemRule, ...] = (
         UnitKind.MONEY_LAKH,
     ),
     StemRule(re.compile(r"expenditure on.*total", re.I), TOTAL_EXPENDITURE, UnitKind.MONEY_LAKH),
+)
+
+# MoSPI "Implementation Report" state family: households provided + 100-days as RAW counts,
+# persondays as a lakh count. (Demanded / per-category / average stems are excluded above.)
+MOSPI_IMPLEMENTATION_RULES: tuple[StemRule, ...] = (
+    StemRule(
+        re.compile(r"households provided employment", re.I), HOUSEHOLDS_EMPLOYED, UnitKind.COUNT_RAW
+    ),
+    StemRule(
+        re.compile(r"availed 100 days|100 days of employment", re.I),
+        HOUSEHOLDS_COMPLETED_100_DAYS,
+        UnitKind.COUNT_RAW,
+    ),
+    StemRule(
+        re.compile(r"persondays in lakhs - total", re.I),
+        PERSONDAYS_GENERATED,
+        UnitKind.COUNT_LAKH,
+    ),
+)
+
+# RS "households provided employment" tables — provided-employment counts published in lakh.
+RS_HOUSEHOLDS_RULES: tuple[StemRule, ...] = (
+    StemRule(
+        re.compile(r"provided.?employment|hh.*provided|household.*provided", re.I),
+        HOUSEHOLDS_EMPLOYED,
+        UnitKind.COUNT_LAKH,
+    ),
+)
+
+# RS "households completed 100 days" table — a raw count ("... in nos ...").
+RS_HUNDRED_DAYS_RULES: tuple[StemRule, ...] = (
+    StemRule(
+        re.compile(r"completed 100 days|100 days", re.I),
+        HOUSEHOLDS_COMPLETED_100_DAYS,
+        UnitKind.COUNT_RAW,
+    ),
+)
+
+# Which GENUINE historical STATE sources are wired, and the rule set each uses (resource-id prefix →
+# rules). Verified against the archive: MoSPI raw counts vs RS lakh counts agree on clean full-year
+# cells (the residual differences are real — partial-year snapshots / revisions — and get flagged).
+HISTORICAL_STATE_SOURCES: tuple[tuple[str, tuple[StemRule, ...]], ...] = (
+    ("d64434e9", FINANCIAL_OUTCOMES_RULES),
+    ("18527128", FINANCIAL_OUTCOMES_RULES),
+    ("fd7c50d2", FINANCIAL_OUTCOMES_RULES),
+    ("2d0a4136", MOSPI_IMPLEMENTATION_RULES),
+    ("3ebbea46", MOSPI_IMPLEMENTATION_RULES),
+    ("9aefcd0f", MOSPI_IMPLEMENTATION_RULES),
+    ("c11b65d4", MOSPI_IMPLEMENTATION_RULES),
+    ("34a83496", RS_HOUSEHOLDS_RULES),
+    ("6c12385f", RS_HOUSEHOLDS_RULES),
+    ("c5c8858c", RS_HOUSEHOLDS_RULES),
+    ("e5491ee9", RS_HOUSEHOLDS_RULES),
+    ("cb137c04", RS_HOUSEHOLDS_RULES),
+    ("2611cc74", RS_HOUSEHOLDS_RULES),
+    ("22f8cdb0", RS_HOUSEHOLDS_RULES),
+    ("73d68992", RS_HUNDRED_DAYS_RULES),
 )
 
 

@@ -104,3 +104,34 @@ def assemble_series(
     so 2018+ keys resolve to the flagship and pre-2018 keys to the agreeing historical sources."""
     facts = flag_implausible_persondays(assemble(keyed_values))
     return [to_series_fact(fact, flagship_source_id=flagship_source_id) for fact in facts]
+
+
+def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]]:
+    """Per-metric coverage counts for the assembly summary: how many state-years fall pre-2018 vs
+    2018+, and the confidence mix (corroborated / single-source / flagged / unadjudicated) + how
+    many were quarantined. Honest gaps are simply the (metric, era) cells that never appear."""
+    _CONF = {
+        Confidence.CORROBORATED: "corroborated",
+        Confidence.SINGLE_SOURCE: "single_source",
+        Confidence.FLAGGED_DISAGREEMENT: "flagged_disagreement",
+        Confidence.UNADJUDICATED: "unadjudicated",
+    }
+    summary: dict[str, dict[str, int]] = {}
+    for fact in facts:
+        row = summary.setdefault(
+            fact.key.metric,
+            {
+                "pre_2018": 0,
+                "y2018_plus": 0,
+                "corroborated": 0,
+                "single_source": 0,
+                "flagged_disagreement": 0,
+                "unadjudicated": 0,
+                "quarantined": 0,
+            },
+        )
+        row["pre_2018" if fact.key.fin_year < "2018" else "y2018_plus"] += 1
+        row[_CONF[fact.confidence]] += 1
+        if fact.quarantined:
+            row["quarantined"] += 1
+    return summary
