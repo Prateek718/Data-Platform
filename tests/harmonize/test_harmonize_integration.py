@@ -32,6 +32,7 @@ from data_platform.harmonize.extract import (
     rs_state_annual_persondays,
 )
 from data_platform.harmonize.models import CanonicalFact, CanonicalKey, SourceValue
+from data_platform.harmonize.pipeline import harmonize_starter_metrics
 from data_platform.ingest.archive import read_archive_batch
 from data_platform.ingest.registry import FLAGSHIP_RESOURCE_ID, SRC_FLAGSHIP
 from data_platform.normalize.config import NORMALIZE_CONFIG
@@ -252,3 +253,33 @@ def test_remaining_metrics_roll_up_to_state_annual_single_source(
     assert fact.unit == unit
     assert fact.reconciliation.resolution_rule_id == "R4-REC-04"  # flagship-only at this grain
     assert fact.value is not None and fact.value >= 0
+
+
+def test_orchestrator_produces_all_nine_metrics(_pipeline: _Pipeline) -> None:
+    fr, fcells, source_as_of, lgd, rs_persondays = _pipeline
+    facts = harmonize_starter_metrics(
+        fr, fcells, rs_persondays, source_as_of=source_as_of, lgd_district_counts=lgd
+    )
+    metrics = {f.key.metric for f in facts}
+    assert metrics == {
+        "persondays_generated",
+        "avg_wage_rate_per_day",
+        "total_expenditure",
+        "households_employed",
+        "households_completed_100_days",
+        "active_workers",
+        "wages_expenditure",
+        "material_skilled_expenditure",
+        "admin_expenditure",
+    }
+    # Cross-metric R4-Q-01 has run: no person-days fact exceeds active_workers × 366 unflagged.
+    workers = {
+        (f.key.state_code, f.key.fin_year): f.value
+        for f in facts
+        if f.key.metric == "active_workers" and f.value is not None
+    }
+    for f in facts:
+        if f.key.metric == "persondays_generated" and f.value is not None and not f.quarantined:
+            ceiling = workers.get((f.key.state_code, f.key.fin_year))
+            if ceiling is not None:
+                assert f.value <= ceiling * 366
