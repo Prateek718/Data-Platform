@@ -7,14 +7,42 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from data_platform.harmonize.config import WAGES_EXPENDITURE
-from data_platform.harmonize.extract import flagship_state_annual_cumulative
-from data_platform.harmonize.historical import FINANCIAL_OUTCOMES_RULES, extract_historical_state
-from data_platform.harmonize.series import Basis, Confidence, SeriesFact, assemble_series
+from data_platform.harmonize.config import (
+    ACTIVE_WORKERS,
+    ADMIN_EXPENDITURE,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    HOUSEHOLDS_EMPLOYED,
+    MATERIAL_SKILLED_EXPENDITURE,
+    PERSONDAYS_GENERATED,
+    TOTAL_EXPENDITURE,
+    WAGES_EXPENDITURE,
+)
+from data_platform.harmonize.extract import (
+    flagship_state_annual_cumulative,
+    flagship_state_annual_persondays,
+    flagship_state_annual_total_expenditure,
+    roll_to_national,
+)
+from data_platform.harmonize.historical import (
+    FINANCIAL_OUTCOMES_RULES,
+    HISTORICAL_NATIONAL_SOURCES,
+    HISTORICAL_STATE_SOURCES,
+    extract_historical_state,
+    extract_national_wide,
+)
+from data_platform.harmonize.models import CanonicalKey, SourceValue
+from data_platform.harmonize.series import (
+    Basis,
+    Confidence,
+    SeriesFact,
+    assemble_series,
+    series_coverage_summary,
+)
 from data_platform.ingest.archive import read_archive_batch
 from data_platform.ingest.registry import FLAGSHIP_RESOURCE_ID, SRC_FLAGSHIP
 from data_platform.normalize.config import NORMALIZE_CONFIG
@@ -23,10 +51,13 @@ from data_platform.normalize.pipeline import normalize_batch
 from data_platform.resolve.config import RESOLVE_CONFIG
 from data_platform.resolve.geo import GeoResolver
 from data_platform.resolve.lgd import load_lgd_reference
+from data_platform.resolve.models import GeoLevel, ResolvedBatch
 from data_platform.resolve.pipeline import resolve_batch
 from data_platform.wiring.specs import WIRED
 
 ARCHIVE = Path(__file__).resolve().parents[2] / "data" / "archive"
+Cells = dict[int, dict[str, CleanCell]]
+_KeyedValue = tuple[CanonicalKey, SourceValue]
 _FIN_OUTCOMES = [  # MoSPI Financial Outcomes state family (wages/material/admin, INR lakh)
     "d64434e9",
     "18527128",
@@ -142,3 +173,146 @@ def test_pre2018_expenditure_has_corroborated_cells(series: list[SeriesFact]) ->
 def test_all_three_expenditure_metrics_present(series: list[SeriesFact]) -> None:
     metrics = {f.key.metric for f in series}
     assert {"wages_expenditure", "material_skilled_expenditure", "admin_expenditure"} <= metrics
+
+
+_STATE_ANNUAL_METRICS = (
+    HOUSEHOLDS_EMPLOYED,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    ACTIVE_WORKERS,
+    WAGES_EXPENDITURE,
+    MATERIAL_SKILLED_EXPENDITURE,
+    ADMIN_EXPENDITURE,
+)
+
+
+def _flagship_state_annual(resolver: GeoResolver, lgd: dict[str, int]) -> list[_KeyedValue]:
+    """All flagship state-annual metric values (2018+ era), across all canonical metrics."""
+    fb = read_archive_batch(
+        resource_id=FLAGSHIP_RESOURCE_ID,
+        source_id=SRC_FLAGSHIP,
+        source_grain="district+monthly",
+        path=ARCHIVE / f"{FLAGSHIP_RESOURCE_ID}.json",
+    )
+    fn = normalize_batch(fb, config=NORMALIZE_CONFIG[FLAGSHIP_RESOURCE_ID])
+    fr = resolve_batch(fn, resolver, config=RESOLVE_CONFIG[FLAGSHIP_RESOURCE_ID])
+    fc = _cells(fn)
+    keyed: list[_KeyedValue] = []
+    for metric in _STATE_ANNUAL_METRICS:
+        keyed += flagship_state_annual_cumulative(
+            fr, fc, metric=metric, source_as_of=fb.source_as_of, lgd_district_counts=lgd
+        )
+    keyed += flagship_state_annual_persondays(
+        fr, fc, source_as_of=fb.source_as_of, lgd_district_counts=lgd
+    )
+    keyed += flagship_state_annual_total_expenditure(
+        fr, fc, source_as_of=fb.source_as_of, lgd_district_counts=lgd
+    )
+    return keyed
+
+
+def _load_wired(prefix: str) -> tuple[ResolvedBatch, Cells, datetime | None, str]:
+    """Load a wired source to (resolved batch, cells, source_as_of, its FY/grain-key column)."""
+    rid = _full(prefix)
+    spec = WIRED[rid]
+    rb = read_archive_batch(
+        resource_id=rid,
+        source_id=spec.source_id,
+        source_grain=spec.source_grain,
+        path=ARCHIVE / spec.file,
+    )
+    rn = normalize_batch(rb, config=spec.normalize_config)
+    rr = resolve_batch(rn, _resolver(), config=spec.resolve_config)
+    return rr, _cells(rn), rb.source_as_of, spec.normalize_config.grain_key_columns[0]
+
+
+@pytest.fixture(scope="module")
+def full_state_series() -> list[SeriesFact]:
+    """Whole STATE-annual series: flagship 2018+ (all metrics) + every wired historical source."""
+    resolver = _resolver()
+    lgd = _lgd_counts()
+    keyed = _flagship_state_annual(resolver, lgd)
+    for prefix, rules in HISTORICAL_STATE_SOURCES:
+        rr, cells, as_of, _fy = _load_wired(prefix)
+        keyed += extract_historical_state(rr, cells, rules, source_as_of=as_of, authority_rank=10)
+    return assemble_series(keyed, flagship_source_id=SRC_FLAGSHIP)
+
+
+@pytest.fixture(scope="module")
+def national_series() -> list[SeriesFact]:
+    """The NATIONAL parallel spine: historical national sources (pre-2018) + flagship rolled up."""
+    resolver = _resolver()
+    lgd = _lgd_counts()
+    keyed = roll_to_national(
+        _flagship_state_annual(resolver, lgd), source_id=SRC_FLAGSHIP, authority_rank=0
+    )
+    for prefix, rules in HISTORICAL_NATIONAL_SOURCES:
+        rr, cells, as_of, fy = _load_wired(prefix)
+        keyed += extract_national_wide(
+            rr,
+            cells,
+            rules,
+            fy_column=fy,
+            source_as_of=as_of,
+            authority_rank=10,
+        )
+    return assemble_series(keyed, flagship_source_id=SRC_FLAGSHIP)
+
+
+def test_full_state_series_covers_all_eight_metrics(full_state_series: list[SeriesFact]) -> None:
+    summary = series_coverage_summary(full_state_series)
+    assert set(summary) == {
+        HOUSEHOLDS_EMPLOYED,
+        HOUSEHOLDS_COMPLETED_100_DAYS,
+        ACTIVE_WORKERS,
+        PERSONDAYS_GENERATED,
+        WAGES_EXPENDITURE,
+        MATERIAL_SKILLED_EXPENDITURE,
+        ADMIN_EXPENDITURE,
+        TOTAL_EXPENDITURE,
+    }
+
+
+def test_state_count_metrics_span_both_eras(full_state_series: list[SeriesFact]) -> None:
+    summary = series_coverage_summary(full_state_series)
+    for metric in (HOUSEHOLDS_EMPLOYED, HOUSEHOLDS_COMPLETED_100_DAYS, PERSONDAYS_GENERATED):
+        assert summary[metric]["pre_2018"] > 0 and summary[metric]["y2018_plus"] > 0
+
+
+def test_state_household_flagged_are_real_not_scale_bugs(
+    full_state_series: list[SeriesFact],
+) -> None:
+    # A lakh/raw scale error would make almost every cell disagree by ~100,000x. The median pre-2018
+    # household disagreement must be small (partial-year/revision divergence), proving units align.
+    pcts = sorted(
+        float(f.reconciliation.disagreement.pct)
+        for f in full_state_series
+        if f.key.metric == HOUSEHOLDS_EMPLOYED
+        and f.key.fin_year < "2018"
+        and f.reconciliation.disagreement is not None
+    )
+    assert pcts, "expected some pre-2018 household disagreements"
+    assert pcts[len(pcts) // 2] < 100, "median household disagreement should be small (units align)"
+
+
+def test_national_series_is_national_grain(national_series: list[SeriesFact]) -> None:
+    assert national_series
+    for f in national_series:
+        assert f.key.geo_level is GeoLevel.NATIONAL
+        assert f.key.state_code is None and f.key.district_code is None
+
+
+def test_national_households_span_2006_to_2026(national_series: list[SeriesFact]) -> None:
+    years = sorted(f.key.fin_year for f in national_series if f.key.metric == HOUSEHOLDS_EMPLOYED)
+    assert years[0] == "2006-07"
+    assert years[-1] >= "2026-27"
+    # continuous across the seam: pre- and post-2018 both present, no missing FY in between.
+    assert any(y < "2018" for y in years) and any(y >= "2018-19" for y in years)
+
+
+def test_national_pre2018_has_corroborated_cells(national_series: list[SeriesFact]) -> None:
+    corroborated = [
+        f
+        for f in national_series
+        if f.key.fin_year < "2018" and f.confidence is Confidence.CORROBORATED
+    ]
+    assert corroborated, "expected >=2-source corroboration in the national pre-2018 spine"
