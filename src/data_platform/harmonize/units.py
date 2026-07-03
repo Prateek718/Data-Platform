@@ -54,3 +54,31 @@ def to_canonical_lakh(value: Decimal | None, source_unit: MoneyUnit) -> MoneyOut
     value_lakh = value * _RUPEES_PER_UNIT[source_unit] / _RUPEES_PER_LAKH
     note = None if source_unit is CANONICAL_MONEY_UNIT else f"R4-UNIT-01:{source_unit.value}→lakh"
     return MoneyOutcome(value_lakh, source_unit.value, note)
+
+
+class CountScale(StrEnum):
+    """The scale a count is published at. ``COUNT`` (raw) is canonical; ``LAKH`` = 100,000 units."""
+
+    COUNT = "count"
+    LAKH = "lakh"
+
+
+class CountOutcome(NamedTuple):
+    """A count in canonical raw units, its original scale (for lineage), and a conversion note."""
+
+    value: Decimal | None
+    original_unit: str
+    note: str | None
+
+
+def to_raw_count(value: Decimal | None, source_scale: CountScale) -> CountOutcome:
+    """Convert a count from its declared scale to canonical raw units (a lakh count × 100,000).
+
+    Mirrors :func:`to_canonical_lakh` for count metrics (households, workers) that sources publish
+    either as raw counts or "in lakh". ``None`` passes through as ``None`` (null ≠ 0).
+    """
+    if value is None:
+        return CountOutcome(None, source_scale.value, None)
+    if source_scale is CountScale.LAKH:
+        return CountOutcome(value * Decimal(100_000), source_scale.value, "R4-UNIT-01:lakh→count")
+    return CountOutcome(value, source_scale.value, None)
