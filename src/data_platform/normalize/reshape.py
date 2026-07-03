@@ -37,6 +37,11 @@ _GEO_NOTE = "R3.5-GEO-FROM-TITLE"
 # One financial-year token: a 4-digit start year then a 2- or 4-digit end, joined by - or _.
 _FY_TOKEN = re.compile(r"(?:19|20)\d{2}[-_]\d{2,4}")
 
+# A period-NARROWING suffix after the FY token (`..._2015_16_upto_30_09_2015`): the column reports a
+# PARTIAL slice of the financial year (upto / till a mid-year date), a DIFFERENT period — not a
+# full-year value. A trailing provisional marker (`_p_`) narrows nothing and must NOT match.
+_PERIOD_NARROWING = re.compile(r"^(?:up ?to|up ?til|till|as ?on|as ?of)\b", re.I)
+
 
 def _canonical_fy(token: str) -> str:
     """Hyphenate a raw FY token (``2019_20`` → ``2019-20``); R2-DATE-01 does the real validation."""
@@ -55,6 +60,21 @@ def parse_compound_header(name: str) -> tuple[str, str] | None:
         return None
     stem = name[: match.start()].strip("_ ")
     return stem, _canonical_fy(match.group())
+
+
+def compound_period_qualifier(name: str) -> str | None:
+    """The period-narrowing suffix of a compound header, or ``None`` for a full-year column.
+
+    A header like ``hh_provided___2015_16_upto_30_09_2015`` reports only PART of FY2015-16 (a
+    different period), so the suffix after the FY token is surfaced (space-normalized) to keep the
+    value out of the full-year comparison. Returns ``None`` when there is no FY token, no suffix, or
+    a suffix that narrows nothing (e.g. a ``_p_`` provisional marker).
+    """
+    match = _FY_TOKEN.search(name)
+    if match is None:
+        return None
+    suffix = name[match.end() :].strip("_ ").replace("_", " ")
+    return suffix if suffix and _PERIOD_NARROWING.search(suffix) else None
 
 
 def simple_melt(
@@ -94,6 +114,7 @@ def compound_melt(
     if unmeltable:
         raise ValueError(f"compound_melt: non-id columns without a year token: {unmeltable}")
 
+    qualifiers = {c: compound_period_qualifier(c) for c in measure_columns}
     out: list[Row] = []
     for row in rows:
         for col in measure_columns:
@@ -102,8 +123,9 @@ def compound_melt(
             new["_metric"] = stem
             new["_fin_year"] = fin_year
             new["_value"] = row.get(col)
+            new["_period_qualifier"] = qualifiers[col]
             out.append(new)
-    return out, [*id_columns, "_metric", "_fin_year", "_value"]
+    return out, [*id_columns, "_metric", "_fin_year", "_value", "_period_qualifier"]
 
 
 def inject_period(
@@ -174,6 +196,7 @@ def reshape_notes(spec: ReshapeSpec) -> dict[str, str]:
         notes["_value"] = note
         if spec.melt == "compound":
             notes["_metric"] = note
+            notes["_period_qualifier"] = note
     if spec.inject_fin_year is not None:
         notes["_fin_year"] = _PERIOD_NOTE
     if spec.inject_state is not None:

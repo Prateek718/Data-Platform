@@ -163,13 +163,42 @@ HISTORICAL_STATE_SOURCES: tuple[tuple[str, tuple[StemRule, ...]], ...] = (
 )
 
 
-def _normalize(value: Decimal, unit_kind: UnitKind) -> tuple[Decimal, str]:
+# A period-narrowing marker anywhere in a WIDE national column name (national sources are not
+# compound-melted, so the qualifier is not split out into a cell — it stays in the header).
+# Letter-only lookarounds (not \b): headers separate words with underscores, which are \w, so \b
+# never fires at `_upto_`. This still refuses "till" inside "still".
+_PARTIAL_COLUMN = re.compile(r"(?<![a-z])(?:up ?to|up ?til|till|as ?on|as ?of)(?![a-z])", re.I)
+
+
+def _count_lakh_epsilon(value: Decimal) -> Decimal:
+    """R4-REC-01a slack for a count published "in lakh": half the value's declared precision step.
+
+    A lakh figure printed to k decimals resolves counts to a granularity of ``10**-k`` lakh =
+    ``100_000 * 10**-k`` raw units, so any true count within HALF that step rounds to the same
+    printed figure. Derived from the source's OWN precision — not a blanket tolerance. (2-dp lakh →
+    1,000-unit granularity → ±500, matching the persondays ``RS_ROUNDING_EPSILON``.)
+    """
+    exponent = value.as_tuple().exponent
+    if not isinstance(exponent, int):  # non-finite Decimal — no meaningful precision
+        return Decimal(0)
+    return Decimal(100_000) * Decimal(10) ** exponent / 2
+
+
+def _normalize(value: Decimal, unit_kind: UnitKind) -> tuple[Decimal, str, Decimal]:
+    """Normalize to the canonical unit; return (value, original_unit, rounding_epsilon).
+
+    ``rounding_epsilon`` is the R4-REC-01a agreement slack: non-zero only for a count published in
+    lakh (its lakh precision maps to a raw-count rounding step); exact raw counts and money (which
+    reconciles on a % band) carry 0.
+    """
     if unit_kind is UnitKind.MONEY_LAKH:
         out = to_canonical_lakh(value, MoneyUnit.LAKH)
-        return out.value_lakh, out.original_unit  # type: ignore[return-value]  # value non-None here
-    scale = CountScale.LAKH if unit_kind is UnitKind.COUNT_LAKH else CountScale.COUNT
-    out2 = to_raw_count(value, scale)
-    return out2.value, out2.original_unit  # type: ignore[return-value]
+        return out.value_lakh, out.original_unit, Decimal(0)  # type: ignore[return-value]  # non-None
+    if unit_kind is UnitKind.COUNT_LAKH:
+        out2 = to_raw_count(value, CountScale.LAKH)
+        return out2.value, out2.original_unit, _count_lakh_epsilon(value)  # type: ignore[return-value]
+    out3 = to_raw_count(value, CountScale.COUNT)
+    return out3.value, out3.original_unit, Decimal(0)  # type: ignore[return-value]
 
 
 def extract_national_wide(
@@ -197,6 +226,8 @@ def extract_national_wide(
         for column, raw in row.items():
             if column == fy_column or raw is None or STEM_EXCLUDE.search(column):
                 continue
+            if _PARTIAL_COLUMN.search(column):  # partial-year slice — a different period
+                continue
             rule = next((r for r in rules if r.pattern.search(column)), None)
             if rule is None:
                 continue
@@ -204,7 +235,7 @@ def extract_national_wide(
                 value = Decimal(str(raw))
             except InvalidOperation:
                 continue
-            canonical_value, original_unit = _normalize(value, rule.unit_kind)
+            canonical_value, original_unit, epsilon = _normalize(value, rule.unit_kind)
             key = CanonicalKey(
                 scheme="MGNREGA",
                 geo_level=GeoLevel.NATIONAL,
@@ -223,6 +254,7 @@ def extract_national_wide(
                         original_unit=original_unit,
                         source_as_of=source_as_of,
                         authority_rank=authority_rank,
+                        rounding_epsilon=epsilon,
                     ),
                 )
             )
@@ -248,6 +280,8 @@ def extract_historical_state(
         raw = row.get("_value")
         if not isinstance(stem, str) or not isinstance(fin_year, str) or raw is None:
             continue
+        if row.get("_period_qualifier"):  # partial-year slice — a different period, never full-year
+            continue
         if STEM_EXCLUDE.search(stem):
             continue
         rule = next((r for r in rules if r.pattern.search(stem)), None)
@@ -257,7 +291,7 @@ def extract_historical_state(
             value = Decimal(str(raw))
         except InvalidOperation:
             continue
-        canonical_value, original_unit = _normalize(value, rule.unit_kind)
+        canonical_value, original_unit, epsilon = _normalize(value, rule.unit_kind)
         key = CanonicalKey(
             scheme="MGNREGA",
             geo_level=GeoLevel.STATE,
@@ -276,6 +310,7 @@ def extract_historical_state(
                     original_unit=original_unit,
                     source_as_of=source_as_of,
                     authority_rank=authority_rank,
+                    rounding_epsilon=epsilon,
                 ),
             )
         )

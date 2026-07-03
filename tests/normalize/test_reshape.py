@@ -11,6 +11,7 @@ from __future__ import annotations
 from data_platform.normalize.reshape import (
     Row,
     compound_melt,
+    compound_period_qualifier,
     inject_geo,
     inject_period,
     parse_compound_header,
@@ -43,6 +44,32 @@ def test_parse_compound_header_no_year_returns_none() -> None:
     assert parse_compound_header("state_ut") is None
 
 
+def test_compound_period_qualifier_detects_upto() -> None:
+    # A "upto <date>" suffix after the FY token narrows the period — this is a PARTIAL-year column
+    # (upto 30.09.2015 ≈ half of FY2015-16), a different period, not a full-year value.
+    assert (
+        compound_period_qualifier("household_provided_employment___2015_16_upto_30_09_2015")
+        == "upto 30 09 2015"
+    )
+
+
+def test_compound_period_qualifier_detects_till() -> None:
+    assert (
+        compound_period_qualifier("no_of_hh_provided_employment___2016_17_till_16_11_2016")
+        == "till 16 11 2016"
+    )
+
+
+def test_compound_period_qualifier_none_for_full_year() -> None:
+    assert compound_period_qualifier("households_provided_employment___2015_16") is None
+
+
+def test_compound_period_qualifier_ignores_provisional_marker() -> None:
+    # "_p_" (provisional) is not a period-narrowing suffix — a provisional full-year value is still
+    # a full-year value, so it must NOT be treated as partial.
+    assert compound_period_qualifier("total_works_takenup__2010_11_p_") is None
+
+
 def test_simple_melt_year_columns_to_rows() -> None:
     rows: list[Row] = [{"state_ut": "Goa", "_2019_20": 0.34, "_2020_21": 1.1}]
     out, cols = simple_melt(rows, id_columns=["state_ut"], year_columns=["_2019_20", "_2020_21"])
@@ -63,13 +90,26 @@ def test_compound_melt_splits_metric_and_year() -> None:
         }
     ]
     out, cols = compound_melt(rows, id_columns=["states"])
-    assert cols == ["states", "_metric", "_fin_year", "_value"]
+    assert cols == ["states", "_metric", "_fin_year", "_value", "_period_qualifier"]
     assert {(r["_metric"], r["_fin_year"], r["_value"]) for r in out} == {
         ("hh_demanded", "2014-15", 10),
         ("hh_demanded", "2015-16", 12),
         ("hh_provided", "2014-15", 9),
     }
     assert all(r["states"] == "Goa" for r in out)
+    # every full-year column carries a null qualifier (they are not partial-period)
+    assert all(r["_period_qualifier"] is None for r in out)
+
+
+def test_compound_melt_flags_partial_year_column() -> None:
+    # A period-narrowing column melts to its full FY stem but carries the qualifier so downstream
+    # can keep it OUT of the full-year comparison (it is a partial, different-period value).
+    rows: list[Row] = [{"states": "Goa", "hh_provided___2015_16_upto_30_09_2015": 5}]
+    out, cols = compound_melt(rows, id_columns=["states"])
+    assert cols == ["states", "_metric", "_fin_year", "_value", "_period_qualifier"]
+    assert out[0]["_metric"] == "hh_provided"
+    assert out[0]["_fin_year"] == "2015-16"
+    assert out[0]["_period_qualifier"] == "upto 30 09 2015"
 
 
 def test_compound_melt_raises_on_unmeltable_nonid_column() -> None:

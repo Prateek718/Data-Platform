@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -160,14 +161,23 @@ def test_2018plus_basis_is_flagship_pre2018_is_historical(series: list[SeriesFac
             assert f.basis in (Basis.HISTORICAL_MULTI, Basis.HISTORICAL_SINGLE)
 
 
-def test_pre2018_expenditure_has_corroborated_cells(series: list[SeriesFact]) -> None:
-    # The three Financial Outcomes files overlap ~2010-2014, so some pre-2018 wages corroborate.
+def test_pre2018_expenditure_has_single_publisher_corroborated_cells(
+    series: list[SeriesFact],
+) -> None:
+    # The three Financial Outcomes files overlap ~2010-2014, so some pre-2018 wages cells have >=2
+    # agreeing sources — but all three are MoSPI, so this is single-publisher multi-vintage (NOT
+    # independent cross-publisher corroboration; wages has no non-MoSPI pre-2018 source).
     corroborated = [
         f
         for f in _wages(series)
-        if f.key.fin_year < "2018" and f.confidence is Confidence.CORROBORATED
+        if f.key.fin_year < "2018" and f.confidence is Confidence.SINGLE_PUBLISHER
     ]
-    assert corroborated, "expected corroborated (>=2 source) pre-2018 wages cells"
+    assert corroborated, "expected single-publisher (>=2 MoSPI vintage) pre-2018 wages cells"
+    assert not any(
+        f.confidence is Confidence.CROSS_PUBLISHER
+        for f in _wages(series)
+        if f.key.fin_year < "2018"
+    ), "pre-2018 wages is MoSPI-only — must never be labelled cross-publisher"
 
 
 def test_all_three_expenditure_metrics_present(series: list[SeriesFact]) -> None:
@@ -294,6 +304,65 @@ def test_state_household_flagged_are_real_not_scale_bugs(
     assert pcts[len(pcts) // 2] < 100, "median household disagreement should be small (units align)"
 
 
+def test_partial_year_household_columns_excluded_from_full_year_cells(
+    full_state_series: list[SeriesFact],
+) -> None:
+    # The two RS partial-year columns (34a83496 FY2015-16 "upto 30.09.2015"; 6c12385f FY2016-17
+    # "till 16.11.2016") previously injected a ~half-year value into EVERY state, flagging ~all 32
+    # states in each year at 10-66%. After exclusion they cannot enter the full-year cell: the
+    # ~half value is gone from every cell's lineage, so no source deviates by anywhere near 50%.
+    cells = [
+        f
+        for f in full_state_series
+        if f.key.metric == HOUSEHOLDS_EMPLOYED and f.key.fin_year in {"2015-16", "2016-17"}
+    ]
+    assert cells, "expected FY2015-16 / FY2016-17 household cells"
+    flagged = [f for f in cells if f.reconciliation.disagreement is not None]
+    assert len(flagged) < len(cells), "no longer almost-all flagged once the partial is excluded"
+    for f in cells:
+        if f.value is None or f.value < Decimal(100_000):  # skip near-zero UTs (own noise)
+            continue
+        worst = max(abs(f.value - s.value) / f.value for s in f.reconciliation.sources_seen)
+        assert worst < Decimal("0.40"), (  # a retained partial would be ~0.45-0.66 off
+            f"partial-year value still present in {f.key.state_code} {f.key.fin_year}: {worst}"
+        )
+
+
+def test_precision_aware_count_agreement_surfaces_cross_publisher(
+    full_state_series: list[SeriesFact],
+) -> None:
+    # R4-REC-01a on the count metrics: an RS lakh-rounded count agrees with a MoSPI raw count within
+    # the RS rounding granularity instead of being flagged by exact match. This reveals genuine
+    # MoSPI+RS agreement as cross-publisher corroboration (which exact-match hid). households is the
+    # only pre-2018 state metric with two independent publishers, so it is where this shows.
+    xpub = [
+        f
+        for f in full_state_series
+        if f.key.metric == HOUSEHOLDS_EMPLOYED
+        and f.key.fin_year < "2018"
+        and f.confidence is Confidence.CROSS_PUBLISHER
+    ]
+    assert len(xpub) >= 40, "precision-aware agreement should surface many cross-publisher cells"
+    for f in xpub:
+        publishers = {s.source_id for s in f.reconciliation.sources_seen}
+        assert len(publishers) >= 2, "a cross-publisher cell must carry >=2 distinct publishers"
+
+    # at least one cross-publisher cell agrees by rounding-precision, not exact equality: two of its
+    # sources differ yet fall within the coarser source's rounding band (reconcile's max-epsilon).
+    def agrees_within_rounding(fact: SeriesFact) -> bool:
+        seen = fact.reconciliation.sources_seen
+        return any(
+            (eps := max(a.rounding_epsilon, b.rounding_epsilon)) > 0
+            and 0 < abs(a.value - b.value) <= eps
+            for a in seen
+            for b in seen
+        )
+
+    assert any(agrees_within_rounding(f) for f in xpub), (
+        "expected a cross-publisher cell agreeing within (not at) the rounding epsilon"
+    )
+
+
 def test_national_series_is_national_grain(national_series: list[SeriesFact]) -> None:
     assert national_series
     for f in national_series:
@@ -309,10 +378,19 @@ def test_national_households_span_2006_to_2026(national_series: list[SeriesFact]
     assert any(y < "2018" for y in years) and any(y >= "2018-19" for y in years)
 
 
-def test_national_pre2018_has_corroborated_cells(national_series: list[SeriesFact]) -> None:
-    corroborated = [
+def test_national_pre2018_corroboration_is_single_publisher(
+    national_series: list[SeriesFact],
+) -> None:
+    # The national historical sources are all MoSPI (Implementation + Financial Outcomes national),
+    # so pre-2018 national corroboration is single-publisher multi-vintage, never cross-publisher.
+    single_pub = [
         f
         for f in national_series
-        if f.key.fin_year < "2018" and f.confidence is Confidence.CORROBORATED
+        if f.key.fin_year < "2018" and f.confidence is Confidence.SINGLE_PUBLISHER
     ]
-    assert corroborated, "expected >=2-source corroboration in the national pre-2018 spine"
+    assert single_pub, "expected >=2 MoSPI-vintage agreement in the national pre-2018 spine"
+    assert not any(
+        f.confidence is Confidence.CROSS_PUBLISHER
+        for f in national_series
+        if f.key.fin_year < "2018"
+    ), "national pre-2018 is MoSPI-only — must never be labelled cross-publisher"

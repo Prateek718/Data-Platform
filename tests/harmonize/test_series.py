@@ -46,12 +46,22 @@ def test_flagship_source_gives_flagship_rollup_basis() -> None:
     assert conf is Confidence.SINGLE_SOURCE
 
 
-def test_pre2018_multi_source_agreement_is_historical_multi_corroborated() -> None:
+def test_two_distinct_publishers_agreeing_is_cross_publisher() -> None:
     a = _sv("SRC_MOSPI", "100", 10)
     b = _sv("SRC_RS", "100", 20)
     basis, conf = classify(_rec([a, b], winner=a), flagship_source_id=_FLAGSHIP)
     assert basis is Basis.HISTORICAL_MULTI
-    assert conf is Confidence.CORROBORATED
+    assert conf is Confidence.CROSS_PUBLISHER
+
+
+def test_multi_vintage_same_publisher_is_single_publisher_not_cross() -> None:
+    # Three MoSPI file vintages agreeing is ONE publisher — weaker than independent corroboration.
+    a = _sv("SRC_MOSPI", "100", 10)
+    b = _sv("SRC_MOSPI", "100", 10)
+    c = _sv("SRC_MOSPI", "100", 10)
+    basis, conf = classify(_rec([a, b, c], winner=a), flagship_source_id=_FLAGSHIP)
+    assert basis is Basis.HISTORICAL_MULTI
+    assert conf is Confidence.SINGLE_PUBLISHER
 
 
 def test_pre2018_single_source_is_historical_single() -> None:
@@ -126,4 +136,5 @@ def test_coverage_summary_counts_eras_and_confidence() -> None:
     ]
     s = series_coverage_summary(facts)[WAGES_EXPENDITURE]
     assert s["pre_2018"] == 1 and s["y2018_plus"] == 1
-    assert s["corroborated"] == 1 and s["single_source"] == 1
+    # pre-2018 cell has two distinct publishers (MoSPI + RS) → cross-publisher; 2018+ single-source
+    assert s["cross_publisher"] == 1 and s["single_source"] == 1

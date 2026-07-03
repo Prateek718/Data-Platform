@@ -31,9 +31,15 @@ class Basis(StrEnum):
 
 
 class Confidence(StrEnum):
-    """How much cross-source support the value has."""
+    """How much cross-source support the value has.
 
-    CORROBORATED = "corroborated"  # >=2 sources agreed within tolerance
+    Agreement is split by INDEPENDENCE: two independent publishers agreeing is stronger evidence
+    than several vintages of one publisher agreeing (which only shows the publisher is internally
+    consistent). Publisher identity is the ``source_id`` on each source seen.
+    """
+
+    CROSS_PUBLISHER = "cross-publisher"  # >=2 DISTINCT publishers agreed within tolerance
+    SINGLE_PUBLISHER = "single-publisher multi-vintage"  # >=2 sources agreed, all one publisher
     SINGLE_SOURCE = "single-source"  # only one source carried the fact
     FLAGGED_DISAGREEMENT = "flagged-disagreement"  # sources disagreed; winner taken, rest recorded
     UNADJUDICATED = "unadjudicated"  # sources disagreed and none could be chosen (R4-REC-05)
@@ -60,6 +66,7 @@ def classify(
     """Derive (basis, confidence) from a reconciled outcome — no adjudication, just labelling."""
     has_flagship = any(s.source_id == flagship_source_id for s in reconciliation.sources_seen)
     n = len(reconciliation.sources_seen)
+    publishers = {s.source_id for s in reconciliation.sources_seen}
 
     if has_flagship:
         basis = Basis.FLAGSHIP_ROLLUP  # the flagship anchors this year, even if unadjudicated
@@ -72,10 +79,12 @@ def classify(
         confidence = Confidence.UNADJUDICATED
     elif reconciliation.disagreement is not None:
         confidence = Confidence.FLAGGED_DISAGREEMENT
-    elif n >= 2:
-        confidence = Confidence.CORROBORATED
-    else:
+    elif n < 2:
         confidence = Confidence.SINGLE_SOURCE
+    elif len(publishers) >= 2:  # >=2 INDEPENDENT publishers agreed
+        confidence = Confidence.CROSS_PUBLISHER
+    else:  # >=2 sources but all one publisher — vintages, not independent corroboration
+        confidence = Confidence.SINGLE_PUBLISHER
 
     return basis, confidence
 
@@ -111,7 +120,8 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
     2018+, and the confidence mix (corroborated / single-source / flagged / unadjudicated) + how
     many were quarantined. Honest gaps are simply the (metric, era) cells that never appear."""
     _CONF = {
-        Confidence.CORROBORATED: "corroborated",
+        Confidence.CROSS_PUBLISHER: "cross_publisher",
+        Confidence.SINGLE_PUBLISHER: "single_publisher",
         Confidence.SINGLE_SOURCE: "single_source",
         Confidence.FLAGGED_DISAGREEMENT: "flagged_disagreement",
         Confidence.UNADJUDICATED: "unadjudicated",
@@ -123,7 +133,8 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
             {
                 "pre_2018": 0,
                 "y2018_plus": 0,
-                "corroborated": 0,
+                "cross_publisher": 0,
+                "single_publisher": 0,
                 "single_source": 0,
                 "flagged_disagreement": 0,
                 "unadjudicated": 0,
