@@ -111,6 +111,36 @@ RS_HUNDRED_DAYS_RULES: tuple[StemRule, ...] = (
     ),
 )
 
+# National sources are WIDE (one row per FY, one column per metric) — not melted. Column names use
+# underscores, so patterns use ``.`` between words. Provided-employment / availed-100-days are raw
+# counts; persondays is a lakh count. (The subcategory persondays "___scs/sts/…" columns don't match
+# the specific "…total" pattern; "demanded"/"average" are dropped by STEM_EXCLUDE.)
+NATIONAL_IMPLEMENTATION_RULES: tuple[StemRule, ...] = (
+    StemRule(
+        re.compile(r"households.provided.employment", re.I),
+        HOUSEHOLDS_EMPLOYED,
+        UnitKind.COUNT_RAW,
+    ),
+    StemRule(
+        re.compile(r"availed.100.days", re.I), HOUSEHOLDS_COMPLETED_100_DAYS, UnitKind.COUNT_RAW
+    ),
+    StemRule(
+        re.compile(r"persondays.in.lakhs.+total", re.I), PERSONDAYS_GENERATED, UnitKind.COUNT_LAKH
+    ),
+)
+
+# Wired historical NATIONAL sources: (resource-id prefix, rules). Financial-Outcomes national reuses
+# the expenditure rules — the "% Age …" and "Central Release" columns are dropped by STEM_EXCLUDE.
+HISTORICAL_NATIONAL_SOURCES: tuple[tuple[str, tuple[StemRule, ...]], ...] = (
+    ("04476f1d", NATIONAL_IMPLEMENTATION_RULES),
+    ("1878204d", NATIONAL_IMPLEMENTATION_RULES),
+    ("54d1a5fa", NATIONAL_IMPLEMENTATION_RULES),
+    ("d88e2cb6", NATIONAL_IMPLEMENTATION_RULES),
+    ("7496d75d", FINANCIAL_OUTCOMES_RULES),
+    ("8d734637", FINANCIAL_OUTCOMES_RULES),
+    ("99a91845", FINANCIAL_OUTCOMES_RULES),
+)
+
 # Which GENUINE historical STATE sources are wired, and the rule set each uses (resource-id prefix →
 # rules). Verified against the archive: MoSPI raw counts vs RS lakh counts agree on clean full-year
 # cells (the residual differences are real — partial-year snapshots / revisions — and get flagged).
@@ -140,6 +170,63 @@ def _normalize(value: Decimal, unit_kind: UnitKind) -> tuple[Decimal, str]:
     scale = CountScale.LAKH if unit_kind is UnitKind.COUNT_LAKH else CountScale.COUNT
     out2 = to_raw_count(value, scale)
     return out2.value, out2.original_unit  # type: ignore[return-value]
+
+
+def extract_national_wide(
+    resolved: ResolvedBatch,
+    cells: Cells,
+    rules: tuple[StemRule, ...],
+    *,
+    fy_column: str,
+    source_as_of: datetime | None,
+    authority_rank: int,
+) -> list[tuple[CanonicalKey, SourceValue]]:
+    """Map a WIDE national source (one row per FY, one column per metric) to national SourceValues.
+
+    ``fy_column`` names the financial-year column (the source's grain key). Each other column is
+    matched against ``rules`` (after ``STEM_EXCLUDE``); the matching cell's value is normalized.
+    """
+    out: list[tuple[CanonicalKey, SourceValue]] = []
+    for record in resolved.records:
+        if record.geo_level is not GeoLevel.NATIONAL:
+            continue
+        row = cells[record.row_index]
+        fin_year = row.get(fy_column)
+        if not isinstance(fin_year, str):
+            continue
+        for column, raw in row.items():
+            if column == fy_column or raw is None or STEM_EXCLUDE.search(column):
+                continue
+            rule = next((r for r in rules if r.pattern.search(column)), None)
+            if rule is None:
+                continue
+            try:
+                value = Decimal(str(raw))
+            except InvalidOperation:
+                continue
+            canonical_value, original_unit = _normalize(value, rule.unit_kind)
+            key = CanonicalKey(
+                scheme="MGNREGA",
+                geo_level=GeoLevel.NATIONAL,
+                state_code=None,
+                district_code=None,
+                fin_year=fin_year,
+                month=None,
+                metric=rule.metric,
+            )
+            out.append(
+                (
+                    key,
+                    SourceValue(
+                        source_id=resolved.source_id,
+                        value=canonical_value,
+                        original_unit=original_unit,
+                        source_as_of=source_as_of,
+                        authority_rank=authority_rank,
+                    ),
+                )
+            )
+    return out
 
 
 def extract_historical_state(

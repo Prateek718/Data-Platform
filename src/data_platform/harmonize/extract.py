@@ -73,6 +73,47 @@ RS_ROUNDING_EPSILON = Decimal(500)
 Cells = dict[int, dict[str, CleanCell]]
 
 
+def roll_to_national(
+    keyed_state_values: list[tuple[CanonicalKey, SourceValue]],
+    *,
+    source_id: str,
+    authority_rank: int,
+) -> list[tuple[CanonicalKey, SourceValue]]:
+    """Roll STATE-annual source values up to national totals per (fin_year, metric): national = sum
+    of the reporting states (additive metrics). Only STATE-grain inputs contribute; a state that did
+    not report simply has no source value here (it does not zero the national total — null≠0)."""
+    grouped: dict[tuple[str, str], list[SourceValue]] = defaultdict(list)
+    for key, source_value in keyed_state_values:
+        if key.geo_level is GeoLevel.STATE:
+            grouped[(key.fin_year, key.metric)].append(source_value)
+    out: list[tuple[CanonicalKey, SourceValue]] = []
+    for (fin_year, metric), source_values in grouped.items():
+        total = sum((sv.value for sv in source_values), Decimal(0))
+        as_of = next((sv.source_as_of for sv in source_values if sv.source_as_of is not None), None)
+        key = CanonicalKey(
+            scheme="MGNREGA",
+            geo_level=GeoLevel.NATIONAL,
+            state_code=None,
+            district_code=None,
+            fin_year=fin_year,
+            month=None,
+            metric=metric,
+        )
+        out.append(
+            (
+                key,
+                SourceValue(
+                    source_id=source_id,
+                    value=total,
+                    original_unit=source_values[0].original_unit,
+                    source_as_of=as_of,
+                    authority_rank=authority_rank,
+                ),
+            )
+        )
+    return out
+
+
 def _state_annual_key(state_code: str, fin_year: str, metric: str) -> CanonicalKey:
     return CanonicalKey(
         scheme="MGNREGA",
