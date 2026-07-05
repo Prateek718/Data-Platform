@@ -26,7 +26,7 @@ exactly. This is a coverage report, not new logic.
 
 ## STATE-annual spine
 
-- **4,151 facts**, 8 canonical metrics, **35 states/UTs**, **FY 2010-11 → FY 2026-27**.
+- **4,216 facts**, 8 canonical metrics, **35 states/UTs**, **FY 2010-11 → FY 2026-27**.
 
 The table below is the **pre-2018** confidence mix per metric (where all the multi-source
 reconciliation happens); **2018+ is 304 single-source flagship cells** for every metric. Labels:
@@ -40,7 +40,7 @@ earlier one and the latest edition was taken (R4-REC-10); `single-source` = one 
 |---|--:|--:|--:|--:|--:|--:|--:|
 | households_employed | 254 | 118 | 14 | 48 | 33 | 4 | 37 |
 | households_completed_100_days | 254 | 0 | 83 | 106 | 65 | 0 | 0 |
-| persondays_generated | 189 | 0 | 136 | 20 | 33 | 0 | 0 |
+| persondays_generated | 254 | 0 | 110 | 78 | 66 | 0 | 0 |
 | active_workers | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | wages_expenditure | 255 | 0 | 123 | 67 | 65 | 0 | 0 |
 | material_skilled_expenditure | 257 | 0 | 118 | 72 | 67 | 0 | 0 |
@@ -53,11 +53,13 @@ MoSPI-only — its multiple files are dated EDITIONS of one MoSPI table, so it i
 (agreeing editions) or `edition-superseded` (latest edition taken) at best, never overstated as
 independent corroboration.
 
-- **No pre-2018 cell is left unadjudicated for want of a peer.** The earlier build left the
-  MoSPI-only expenditure cells where the three editions disagreed as `single-publisher divergence`
-  (R4-REC-09, value = null): admin 76, material 106, wages 100, total 95, 100-days 78, persondays
-  43, households 20. Edition supersession (R4-REC-10) now resolves every one of these to the latest
-  edition's value — **414 state cells resolved by edition supersession, R4-REC-09 count now 0.**
+- **No pre-2018 cell is left unadjudicated for want of a peer.** With edition supersession OFF, the
+  MoSPI-only cells where a publisher's dated editions disagree would be `single-publisher divergence`
+  (R4-REC-09, value = null): admin 76, material 106, wages 100, total 95, 100-days 78, persondays 97,
+  households 20 — **572 state cells**. Edition supersession (R4-REC-10) adjudicates every one to the
+  latest edition, so **R4-REC-09 is now 0**; **472** of the resolved cells carry the
+  `edition-superseded` label (a later edition actually restated an earlier one), the rest resolving
+  to plain single-/cross-publisher agreement.
 - **The only genuine cross-PUBLISHER material disagreements remaining are 4** — all in
   `households_employed` (MoSPI's latest edition vs a Rajya Sabha answer). Collapsing the MoSPI
   editions to the latest before comparing to RS also un-hid real agreement: `cross-publisher` rose
@@ -71,7 +73,7 @@ The MoSPI Financial Outcomes files (3: SYB 2016/2017/2018) and MoSPI Implementat
 
 ## NATIONAL-annual spine (parallel — no LGD anchor, not merged into the state series)
 
-- **146 facts**, 8 metrics. Households / 100-days / persondays span **FY 2006-07 → 2026-27**;
+- **148 facts**, 8 metrics. Households / 100-days / persondays span **FY 2006-07 → 2026-27**;
   expenditure spans **FY 2008-09 → 2026-27** (the national financial sources begin 2008-09).
 - Pre-2018 (2006-07 → 2017-18) comes from the wide national historical sources — MoSPI
   Implementation (national) and Financial Outcomes (national); 2018+ is the flagship rolled to a
@@ -90,7 +92,7 @@ were not put through the empirical unidirectional-restatement check the state fa
 |---|--:|--:|--:|--:|
 | households_employed | 0 | 4 | 11 | 6 |
 | households_completed_100_days | 0 | 4 | 13 | 4 |
-| persondays_generated | 0 | 7 | 10 | 2 |
+| persondays_generated | 0 | 7 | 11 | 3 |
 | active_workers | 0 | 0 | 9 | 0 |
 | wages_expenditure | 0 | 5 | 11 | 3 |
 | material_skilled_expenditure | 0 | 4 | 11 | 4 |
@@ -127,8 +129,9 @@ noise. Five mechanisms do this, in the order reconciliation applies them:
   earlier years. Where a later edition restated an earlier one, the **latest edition is taken** and
   the earlier value is kept in lineage as `edition_superseded` — not a conflict, not a rejected peer.
   This is a source-grounded editorial hierarchy (same catalog + dated edition markers + verified
-  one-directional restatement, see below), NOT a blind "newest file wins". It resolved **414 state
-  cells** that the earlier build could not adjudicate and left null.
+  one-directional restatement, see below), NOT a blind "newest file wins". It carries the
+  `edition-superseded` label on **472 state cells**, and adjudicates every one of the 572 cells the
+  earlier build could not (leaving them null) to a value.
 - **Partial-terminal-year exclusion (R4-REC-11) — the "incompleteness" rule.** An edition's LAST
   year is a mid-year partial (e.g. SYB 2016's 2014-15 is "as on 31.12.2014" — three quarters of a
   year). When a later edition carries that year in full, the earlier edition's part-year value is a

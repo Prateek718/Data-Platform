@@ -58,6 +58,14 @@ STEM_EXCLUDE = re.compile(
     re.I,
 )
 
+# The persondays "Total" column, across every unit-spelling the MoSPI files use: spaced
+# ("Persondays In Lakhs - Total"), hyphen-tight ("...Lakhs-Total"), underscored
+# ("persondays_in_lakhs___total"), and PARENTHESIZED ("Persondays (In Lakhs) - Total", the SYB2018
+# editions c11b65d4/d88e2cb6). `[\s(_]` / `[\s_]` tolerate any of those separators (an earlier
+# one-char pattern silently missed the two-char " (" of the parenthesized form). "total" only — the
+# SC/ST/Women/Others sub-category breakdowns never match (no "total"); they are dropped either way.
+_PERSONDAYS_TOTAL = r"persondays[\s(_]*in[\s_]*lakhs.*total"
+
 # The MoSPI "Financial Outcomes" family: wages / material / administration / total expenditure,
 # published in INR lakh. One rule set covers all three files' stem-spelling variants.
 FINANCIAL_OUTCOMES_RULES: tuple[StemRule, ...] = (
@@ -87,7 +95,7 @@ MOSPI_IMPLEMENTATION_RULES: tuple[StemRule, ...] = (
         UnitKind.COUNT_RAW,
     ),
     StemRule(
-        re.compile(r"persondays in lakhs - total", re.I),
+        re.compile(_PERSONDAYS_TOTAL, re.I),
         PERSONDAYS_GENERATED,
         UnitKind.COUNT_LAKH,
     ),
@@ -124,9 +132,7 @@ NATIONAL_IMPLEMENTATION_RULES: tuple[StemRule, ...] = (
     StemRule(
         re.compile(r"availed.100.days", re.I), HOUSEHOLDS_COMPLETED_100_DAYS, UnitKind.COUNT_RAW
     ),
-    StemRule(
-        re.compile(r"persondays.in.lakhs.+total", re.I), PERSONDAYS_GENERATED, UnitKind.COUNT_LAKH
-    ),
+    StemRule(re.compile(_PERSONDAYS_TOTAL, re.I), PERSONDAYS_GENERATED, UnitKind.COUNT_LAKH),
 )
 
 # Wired historical NATIONAL sources: (resource-id prefix, rules). Financial-Outcomes national reuses

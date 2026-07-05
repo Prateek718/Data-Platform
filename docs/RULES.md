@@ -189,10 +189,11 @@ as an edition family before ordinary adjudication.
     publication identity (same catalog / original source / statistical table); (ii) dated edition
     markers (the edition year, plus nesting FY spans); and (iii) empirically unidirectional
     restatement (a later edition restates earlier ones, with no reversion to a superseded value).
-    (The MoSPI household family's single raw-data reversion — Sikkim persondays FY2013-14, a 43↔44
-    lakh sub-rounding flicker on the smallest state — is immaterial and resolves as an ordinary
-    later-edition supersession, so it does not disqualify the family.) A same-publisher group that
-    does not meet all three is peer vintages, not editions → R4-REC-09
+    (The MoSPI household family has ONE reversion — Sikkim persondays FY2013-14, a one-lakh flicker
+    (43↔44 lakh, the finest step at whole-lakh precision) on the smallest state — which is
+    immaterial and resolves as an ordinary later-edition supersession: the latest edition's 43 lakh
+    is taken, the middle edition's 44 recorded superseded, so it does not disqualify the family.) A
+    same-publisher group that does not meet all three is peer vintages, not editions → R4-REC-09
     (material disagreement among one publisher's vintages, published unadjudicated), never R4-REC-10.
   - **Constraints**: (a) an edition value NEVER outranks a primary MoRD / flagship MIS source for the
     same cell — edition supersession orders a publisher's own re-issues; it does not lift a secondary

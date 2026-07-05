@@ -6,6 +6,7 @@ rolled up to state-annual. Skips when the gitignored archive snapshot is absent.
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import datetime
 from decimal import Decimal
@@ -394,3 +395,79 @@ def test_national_pre2018_corroboration_is_single_publisher(
         for f in national_series
         if f.key.fin_year < "2018"
     ), "national pre-2018 is MoSPI-only — must never be labelled cross-publisher"
+
+
+# --- extraction-coverage regression guard ---------------------------------------------------------
+# A column whose NAME advertises a canonical metric (any casing, with or without a parenthesized
+# unit) but that never produces a value is a silent extractor miss — how the SYB2018 parenthesized
+# persondays column ('Persondays (In Lakhs) - Total') was dropped from c11b65d4 / d88e2cb6. This
+# guard fails if any pattern change re-introduces such a gap.
+_CONCEPT_EXCLUDE = re.compile(
+    r"demanded|central release|funds available|opening balance|%|percentage|wage rate|per day|"
+    r"per personday|not paid|rejection|allot|registered|released|liability|beneficiar|average|"
+    r"\bs[ct]s\b|\bscs\b|\bsts\b|women|others|per household|complaint",
+    re.I,
+)
+
+
+def _metric_concept(col: str) -> str | None:
+    """The canonical metric a column NAME advertises (broad, unit-agnostic), or None."""
+    low = re.sub(r"\d{4}[-_]\d{2}", "", col).lower()
+    if _CONCEPT_EXCLUDE.search(col):
+        return None
+    if "persondays" in low.replace(" ", ""):
+        return PERSONDAYS_GENERATED if "total" in low else None
+    if (
+        "provided employment" in low
+        or "households worked" in low
+        or "households_worked" in low
+        or re.search(r"\bhh.*provided", low)
+    ):
+        return HOUSEHOLDS_EMPLOYED
+    if "100 days" in low or "100days" in low.replace(" ", ""):
+        return HOUSEHOLDS_COMPLETED_100_DAYS
+    if "active worker" in low:
+        return ACTIVE_WORKERS
+    if "expenditure on" in low or "expenditure_on" in low:
+        if "wage" in low:
+            return WAGES_EXPENDITURE
+        if "material" in low:
+            return MATERIAL_SKILLED_EXPENDITURE
+        if "administ" in low or "admin" in low:
+            return ADMIN_EXPENDITURE
+        if "total" in low:
+            return TOTAL_EXPENDITURE
+    return None
+
+
+def test_no_canonical_metric_column_is_silently_unextracted() -> None:
+    misses: list[tuple[str, str, str]] = []
+    for prefix, rules in HISTORICAL_STATE_SOURCES:
+        rr, cells, _as_of, _fy = _load_wired(prefix)
+        stems = {m for c in cells.values() if isinstance((m := c.get("_metric")), str)}
+        produced = {
+            k.metric
+            for k, _ in extract_historical_state(
+                rr, cells, rules, source_as_of=None, authority_rank=10
+            )
+        }
+        misses += [
+            (prefix, s, con)
+            for s in stems
+            if (con := _metric_concept(s)) is not None and con not in produced
+        ]
+    for prefix, rules in HISTORICAL_NATIONAL_SOURCES:
+        rr, cells, _as_of, fy = _load_wired(prefix)
+        cols = {k for c in cells.values() for k in c if k != fy}
+        produced = {
+            k.metric
+            for k, _ in extract_national_wide(
+                rr, cells, rules, fy_column=fy, source_as_of=None, authority_rank=10
+            )
+        }
+        misses += [
+            (prefix, c, con)
+            for c in cols
+            if (con := _metric_concept(c)) is not None and con not in produced
+        ]
+    assert not misses, f"canonical-metric columns silently unextracted: {sorted(misses)}"
