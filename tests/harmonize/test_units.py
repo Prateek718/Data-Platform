@@ -1,10 +1,16 @@
-"""R4-UNIT-01 — money values normalize to canonical INR lakh, exactly and with lineage."""
+"""R4-UNIT-01 — money → canonical INR lakh, and counts → canonical raw units, with lineage."""
 
 from __future__ import annotations
 
 from decimal import Decimal
 
-from data_platform.harmonize.units import CANONICAL_MONEY_UNIT, MoneyUnit, to_canonical_lakh
+from data_platform.harmonize.units import (
+    CANONICAL_MONEY_UNIT,
+    CountScale,
+    MoneyUnit,
+    to_canonical_lakh,
+    to_raw_count,
+)
 
 
 def test_lakh_is_canonical_and_unchanged() -> None:
@@ -41,3 +47,20 @@ def test_none_passes_through_as_none_never_zero() -> None:
 
 def test_canonical_unit_is_lakh() -> None:
     assert CANONICAL_MONEY_UNIT is MoneyUnit.LAKH
+
+
+def test_lakh_count_converts_to_raw() -> None:
+    out = to_raw_count(Decimal("0.94"), CountScale.LAKH)
+    assert out.value == Decimal("94000.00")
+    assert out.original_unit == "lakh"
+    assert out.note == "R4-UNIT-01:lakh→count"
+
+
+def test_raw_count_is_unchanged() -> None:
+    out = to_raw_count(Decimal("6200423"), CountScale.COUNT)
+    assert out.value == Decimal("6200423")
+    assert out.note is None
+
+
+def test_none_count_passes_through() -> None:
+    assert to_raw_count(None, CountScale.LAKH).value is None

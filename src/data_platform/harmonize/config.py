@@ -30,6 +30,10 @@ def tolerance_for(metric: str) -> Decimal | None:
     return None if metric in EXACT_MATCH_METRICS else DEFAULT_TOLERANCE_PCT
 
 
+# R4-REC-07 scale-error detection: the dropped-/added-digit factors a value may be off by (10^k).
+SCALE_ERROR_FACTORS: Final[tuple[Decimal, ...]] = (Decimal(10), Decimal(100), Decimal(1_000))
+
+
 # Canonical metric names (DATA_CONTRACT §2.3) and their canonical units. Starter 3 first, then the
 # other 6 (mechanical repetition). The canonical unit is what every source is normalized to.
 PERSONDAYS_GENERATED: Final = "persondays_generated"
@@ -53,3 +57,36 @@ CANONICAL_UNIT: Final[dict[str, str]] = {
     MATERIAL_SKILLED_EXPENDITURE: "INR lakh",
     ADMIN_EXPENDITURE: "INR lakh",
 }
+
+
+# R4-REC-08 materiality: a disagreement is MATERIAL only if its largest pairwise spread is
+# significant in BOTH absolute and relative terms — clearing an absolute floor AND a percentage
+# floor. This filters two kinds of manufactured conflict on the count metrics: a near-zero-
+# denominator swing (77 vs 174 completers = 126% but a ~100-hh spread → fails the absolute floor)
+# and a rounding-level split on a large base (two RS vintages of 21.74 vs 21.76 lakh = a 2,000-hh
+# spread on 2.1M → clears absolute but fails the 1% floor). Config-carried, per metric; expenditure
+# and rates keep 0/0 (their 0.5% agreement band already governs), so their behaviour is unchanged.
+_COUNT_MATERIALITY_ABS: Final = Decimal(1_000)
+_COUNT_MATERIALITY_REL_PCT: Final = Decimal(1)
+_COUNT_METRICS: Final = (
+    HOUSEHOLDS_EMPLOYED,
+    HOUSEHOLDS_COMPLETED_100_DAYS,
+    ACTIVE_WORKERS,
+    PERSONDAYS_GENERATED,
+)
+MATERIALITY_ABS_FLOOR: Final[dict[str, Decimal]] = {
+    m: _COUNT_MATERIALITY_ABS for m in _COUNT_METRICS
+}
+MATERIALITY_REL_PCT: Final[dict[str, Decimal]] = {
+    m: _COUNT_MATERIALITY_REL_PCT for m in _COUNT_METRICS
+}
+
+
+def materiality_floor_for(metric: str) -> Decimal:
+    """Absolute spread below which a disagreement is immaterial (0 = no absolute gate)."""
+    return MATERIALITY_ABS_FLOOR.get(metric, Decimal(0))
+
+
+def materiality_rel_pct_for(metric: str) -> Decimal:
+    """Percentage spread below which a disagreement is immaterial (0 = no relative gate)."""
+    return MATERIALITY_REL_PCT.get(metric, Decimal(0))
