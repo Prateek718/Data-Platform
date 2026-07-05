@@ -66,6 +66,14 @@ class SourceValue(_Frozen):
     canonical units) below which a difference from this source is within its own published rounding
     (R4-REC-01a) — 0 for an exact source. ``aggregate_coverage`` is set when the value was rolled up
     from a finer grain, ``None`` for a natively whole-geography value (R4-REC-05).
+
+    ``edition_span_end`` marks a value belonging to a same-publisher EDITION FAMILY — successive
+    dated editions of one statistical table (e.g. the MoSPI Statistical Year Book 2016/2017/2018).
+    It is the latest financial-year the edition covers (its span end): the DATA-DERIVED ordering key
+    the family is ranked by, a later span end being a later edition (R4-REC-10). ``None`` for a
+    value outside any edition family. ``is_edition_terminal`` is ``True`` when this value's own year
+    IS its edition's terminal (span-end) year — a documented mid-year partial that a later edition
+    carries as a full year, so it is excluded first (R4-REC-11).
     """
 
     source_id: str
@@ -76,6 +84,8 @@ class SourceValue(_Frozen):
     rounding_epsilon: Decimal = Decimal(0)
     aggregate_coverage: AggregateCoverage | None = None
     definition_discrepancy: DefinitionDiscrepancy | None = None
+    edition_span_end: str | None = None
+    is_edition_terminal: bool = False
 
 
 class Disagreement(_Frozen):
@@ -83,12 +93,15 @@ class Disagreement(_Frozen):
 
     ``pct`` is the largest pairwise difference (relative to the winning value) among the sources;
     ``rejected_sources`` are the source ids whose values were not chosen (kept, never discarded);
-    ``rule_id`` is the Stage-4 rule that adjudicated.
+    ``rule_id`` is the Stage-4 rule that adjudicated. ``material`` is ``False`` when the largest
+    ABSOLUTE spread is below the metric's materiality floor (R4-REC-08): the % divergence rests on a
+    near-zero base, so it is recorded but not counted as a material cross-source conflict.
     """
 
     pct: Decimal
     rejected_sources: list[str]
     rule_id: str
+    material: bool = True
 
 
 class DefinitionDiscrepancy(_Frozen):
@@ -109,10 +122,18 @@ class Reconciliation(_Frozen):
     """The reconciled outcome for one canonical key.
 
     ``canonical_value``/``source_id`` are the chosen value and the source it came from — both
-    ``None`` when the outcome is UNADJUDICATED (``adjudicated=False``): sources diverge but the
-    authoritative source is a structurally-incomplete aggregate, so no single value is asserted and
-    the divergence is published instead (R4-REC-05). ``sources_seen`` always lists every source
-    (with its value); ``disagreement`` is ``None`` when sources agreed (or only one existed).
+    ``None`` when the outcome is UNADJUDICATED (``adjudicated=False``): either the authoritative
+    source is a structurally-incomplete aggregate (R4-REC-05) or the material disagreement is among
+    a SINGLE publisher's vintages with no independent peer to adjudicate (R4-REC-09) — no single
+    value is asserted and the divergence is published instead. ``sources_seen`` always lists every
+    source (with its value); ``disagreement`` is ``None`` when sources agreed (or only one existed).
+    ``coverage_absent`` holds sources excluded as a missing 0 against non-zero peers (R4-REC-06);
+    ``scale_quarantined`` holds dropped-digit scale-error values (R4-REC-07). ``edition_superseded``
+    holds earlier-edition values a LATER edition of the same publisher's table restated (R4-REC-10);
+    ``partial_period`` holds an edition's terminal-year mid-year partials excluded when a later
+    edition carries that year in full (R4-REC-11). All four are recorded here (and remain in
+    ``sources_seen``) — superseded/partial editions are retained lineage, not conflicts, never
+    silently discarded.
     """
 
     canonical_value: Decimal | None
@@ -121,6 +142,10 @@ class Reconciliation(_Frozen):
     disagreement: Disagreement | None
     resolution_rule_id: str
     adjudicated: bool
+    coverage_absent: list[SourceValue] = []
+    scale_quarantined: list[SourceValue] = []
+    edition_superseded: list[SourceValue] = []
+    partial_period: list[SourceValue] = []
 
 
 class CanonicalKey(_Frozen):

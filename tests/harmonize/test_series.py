@@ -94,6 +94,32 @@ def test_unadjudicated_is_labelled_unadjudicated() -> None:
     assert conf is Confidence.UNADJUDICATED
 
 
+def test_single_publisher_material_divergence_is_labelled_distinctly() -> None:
+    # R4-REC-09: two MoSPI vintages disagree materially, no independent peer → published, no winner.
+    a = _sv("SRC_MOSPI", "7512", 10)
+    b = _sv("SRC_MOSPI", "69264", 10)
+    d = Disagreement(pct=Decimal("822"), rejected_sources=["SRC_MOSPI"], rule_id="R4-REC-09")
+    basis, conf = classify(
+        _rec([a, b], winner=None, disagreement=d, adjudicated=False, rule="R4-REC-09"),
+        flagship_source_id=_FLAGSHIP,
+    )
+    assert basis is Basis.HISTORICAL_MULTI
+    assert conf is Confidence.SINGLE_PUBLISHER_DIVERGENCE
+
+
+def test_immaterial_disagreement_is_labelled_immaterial() -> None:
+    # R4-REC-08: a disagreement flagged material=False is not a real conflict.
+    a = _sv("SRC_MOSPI", "77", 10)
+    b = _sv("SRC_MOSPI", "174", 10)
+    d = Disagreement(
+        pct=Decimal("126"), rejected_sources=["SRC_MOSPI"], rule_id="R4-REC-08", material=False
+    )
+    basis, conf = classify(
+        _rec([a, b], winner=a, disagreement=d, rule="R4-REC-08"), flagship_source_id=_FLAGSHIP
+    )
+    assert conf is Confidence.IMMATERIAL_DIVERGENCE
+
+
 def test_coverage_summary_counts_eras_and_confidence() -> None:
     from data_platform.harmonize.config import WAGES_EXPENDITURE
     from data_platform.harmonize.models import CanonicalFact, CanonicalKey

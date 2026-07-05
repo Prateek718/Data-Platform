@@ -14,11 +14,13 @@ exactly. This is a coverage report, not new logic.
 - **2018-19 → 2026-27** — the flagship (district-monthly MIS) rolled up to state-annual is
   authoritative (`authority_rank = 0`, basis `flagship (district-monthly, rolled up)`). The finer
   district-monthly detail is not discarded; it rides beneath, reachable via lineage.
-- **2006-07 → 2017-18** — assembled from historical sources (`authority_rank = 10`). Multiple
-  agreeing sources → one canonical value, labelled by INDEPENDENCE: `cross-publisher` when ≥2
-  distinct publishers agree, `single-publisher` when only multiple vintages of ONE publisher agree
-  (weaker evidence); material disagreement → a winner is taken and the rejected value(s) recorded,
-  `flagged-disagreement`; a lone source → `single-source`.
+- **2006-07 → 2017-18** — assembled from historical sources (`authority_rank = 10`), labelled by
+  INDEPENDENCE: `cross-publisher` when ≥2 distinct publishers agree, `single-publisher` when only
+  multiple editions/vintages of ONE publisher agree (weaker evidence); a lone source →
+  `single-source`. Where one publisher's DATED EDITIONS of the same table disagree, the latest
+  edition is taken and the earlier recorded as `edition-superseded` (R4-REC-10, a grounded editorial
+  hierarchy); where two INDEPENDENT publishers disagree materially, a winner is taken on authority
+  and the rejected value recorded (`flagged`).
 - The **seam is continuous** at state-annual grain: each fact carries its `basis` + `confidence` +
   the full `Reconciliation` lineage (sources seen with ids and as-of, any disagreement, the rule).
 
@@ -26,28 +28,46 @@ exactly. This is a coverage report, not new logic.
 
 - **4,151 facts**, 8 canonical metrics, **35 states/UTs**, **FY 2010-11 → FY 2026-27**.
 
-Counts are totals across both eras (cross-/single-publisher and flagged fall entirely in the
-pre-2018 multi-source years; 2018+ is single-source flagship). `cross-publisher` = ≥2 independent
-publishers agreed; `single-publisher` = ≥2 vintages of ONE publisher agreed.
+The table below is the **pre-2018** confidence mix per metric (where all the multi-source
+reconciliation happens); **2018+ is 304 single-source flagship cells** for every metric. Labels:
+`cross-publisher` = ≥2 INDEPENDENT publishers agreed; `single-publisher` = ≥2 editions/vintages of
+ONE publisher agreed; `edition-superseded` = a later edition of one publisher's table restated an
+earlier one and the latest edition was taken (R4-REC-10); `single-source` = one source only;
+`flagged` = a material cross-PUBLISHER disagreement, a winner taken and the rejected value recorded
+(R4-REC-02); `immaterial` = a divergence below the magnitude floor (near-zero base, R4-REC-08).
 
-| metric | pre-2018 cells | 2018+ cells | cross-publisher | single-publisher | single-source | flagged |
-|---|--:|--:|--:|--:|--:|--:|
-| households_employed | 254 | 304 | 53 | 14 | 337 | 154 |
-| households_completed_100_days | 254 | 304 | 0 | 38 | 369 | 151 |
-| persondays_generated | 189 | 304 | 0 | 105 | 337 | 51 |
-| active_workers | 0 | 304 | 0 | 0 | 304 | 0 |
-| wages_expenditure | 255 | 304 | 0 | 90 | 369 | 100 |
-| material_skilled_expenditure | 257 | 304 | 0 | 84 | 371 | 106 |
-| admin_expenditure | 255 | 304 | 0 | 113 | 369 | 77 |
-| total_expenditure | 255 | 304 | 0 | 95 | 369 | 95 |
+| metric | pre-2018 cells | cross-publisher | single-publisher | edition-superseded | single-source | flagged | immaterial |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| households_employed | 254 | 118 | 14 | 48 | 33 | 4 | 37 |
+| households_completed_100_days | 254 | 0 | 83 | 106 | 65 | 0 | 0 |
+| persondays_generated | 189 | 0 | 136 | 20 | 33 | 0 | 0 |
+| active_workers | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| wages_expenditure | 255 | 0 | 123 | 67 | 65 | 0 | 0 |
+| material_skilled_expenditure | 257 | 0 | 118 | 72 | 67 | 0 | 0 |
+| admin_expenditure | 255 | 0 | 148 | 42 | 65 | 0 | 0 |
+| total_expenditure | 255 | 0 | 131 | 59 | 65 | 0 | 0 |
 
 `households_employed` is the ONLY pre-2018 state metric with two independent publishers (MoSPI +
 Rajya Sabha), so it is the only one with `cross-publisher` cells; every other pre-2018 metric is
-MoSPI-only, hence `single-publisher` (cross-vintage) at best — never overstated as independent.
+MoSPI-only — its multiple files are dated EDITIONS of one MoSPI table, so it is `single-publisher`
+(agreeing editions) or `edition-superseded` (latest edition taken) at best, never overstated as
+independent corroboration.
+
+- **No pre-2018 cell is left unadjudicated for want of a peer.** The earlier build left the
+  MoSPI-only expenditure cells where the three editions disagreed as `single-publisher divergence`
+  (R4-REC-09, value = null): admin 76, material 106, wages 100, total 95, 100-days 78, persondays
+  43, households 20. Edition supersession (R4-REC-10) now resolves every one of these to the latest
+  edition's value — **414 state cells resolved by edition supersession, R4-REC-09 count now 0.**
+- **The only genuine cross-PUBLISHER material disagreements remaining are 4** — all in
+  `households_employed` (MoSPI's latest edition vs a Rajya Sabha answer). Collapsing the MoSPI
+  editions to the latest before comparing to RS also un-hid real agreement: `cross-publisher` rose
+  53 → 118 and household `flagged` fell 69 → 4.
 
 Sources wired: flagship (2018+, all metrics); MoSPI Financial Outcomes state files (expenditure,
 INR lakh); MoSPI Implementation Report state files (households / 100-days as raw counts, persondays
 in lakh); Rajya Sabha "households provided employment" (lakh) and "completed 100 days" (raw) tables.
+The MoSPI Financial Outcomes files (3: SYB 2016/2017/2018) and MoSPI Implementation Report files
+(4: SYB 2015/2016/2017/2018) are each an **edition family** — see edition supersession below.
 
 ## NATIONAL-annual spine (parallel — no LGD anchor, not merged into the state series)
 
@@ -59,7 +79,12 @@ in lakh); Rajya Sabha "households provided employment" (lakh) and "completed 100
   across up to **7** national sources pre-2018.
 
 The national historical sources are all MoSPI, so national agreement is `single-publisher`
-(cross-vintage) — never `cross-publisher` (0 across every metric).
+(cross-edition) — never `cross-publisher` (0 across every metric). The `flagged` column here still
+lumps the not-yet-resolved single-publisher divergences: **edition supersession (R4-REC-10) was
+scoped to the two VERIFIED state edition families and is NOT yet applied to the national tier.** The
+national MoSPI files are the same SYB-edition structure (Table 35.1 / 35.3 national), so extending
+R4-REC-10 there is a same-mechanism follow-up — deferred here only because the national families
+were not put through the empirical unidirectional-restatement check the state families passed.
 
 | metric | cross-publisher | single-publisher | single-source | flagged |
 |---|--:|--:|--:|--:|
@@ -88,53 +113,80 @@ The national historical sources are all MoSPI, so national agreement is `single-
 - Within 2010-2017, coverage is 32-33 states/UTs per metric-year (not the full 35) — states that a
   given historical source did not report that year are simply absent (null ≠ 0).
 
-## How divergence is kept truthful (three corrections applied)
+## How divergence is kept truthful
 
-The `flagged` counts above are only the cells where sources genuinely disagree — three non-conflict
-artifacts are handled BEFORE comparison so the flag means "real disagreement", not noise:
+The `flagged` count means ONE thing only: a material disagreement between two INDEPENDENT publishers.
+Everything that is not that — a shorter reporting period, a rounding difference, a near-zero swing, or
+one publisher restating its own earlier edition — is separated out FIRST, so the flag is signal, not
+noise. Five mechanisms do this, in the order reconciliation applies them:
 
-- **Partial-year columns are excluded from full-year comparison.** A compound header like
-  `..._2015_16_upto_30_09_2015` reports only PART of the financial year (a different period). Reshape
-  now detects the period-narrowing suffix (`upto` / `till` / `as-on` + date) and surfaces it as
-  `_period_qualifier`; the historical extractors do NOT promote such a value into the full-year
-  `(state, FY, metric)` cell (the value still lives in the normalized layer — not dropped). The two
-  known cases (`34a83496` FY2015-16, `6c12385f` FY2016-17, `households_employed`) previously injected
-  a ~half-year value into every state, flagging ~all 32 states each at 10-66 %. `households_employed`
-  flagged fell **206 → 154**; median pre-2018 household disagreement **≈10 % → ≈2 %**.
-- **Precision-aware count agreement (R4-REC-01a).** Count metrics require exact equality, so an RS
-  lakh-rounded count (e.g. 36.07 lakh → 3,607,000) was flagged against a MoSPI raw count
-  (3,606,783) despite agreeing to the RS rounding. Each count-in-lakh value now carries a
-  `rounding_epsilon` DERIVED FROM ITS OWN DECLARED PRECISION — half the last-decimal step (2-dp lakh
-  → ±500; 1-dp lakh → ±5,000) — not a blanket tolerance, so genuine small-state gaps (RS 129,000 vs
-  MoSPI 94,674, a real 26 %) stay flagged. This surfaces real MoSPI+RS agreement previously hidden by
-  exact match: `households_employed` `cross-publisher` cells rose **15 → 53**.
-- **Cross-publisher vs cross-vintage corroboration.** Agreement is now labelled by INDEPENDENCE.
-  Three vintages of ONE publisher (e.g. the MoSPI Financial-Outcomes files for `total_expenditure`)
-  agreeing is `single-publisher` (95 pre-2018 total_expenditure cells), NOT the stronger
-  `cross-publisher` — which requires ≥2 distinct publishers. Only `households_employed` earns
-  `cross-publisher` in the state spine; the national spine (all MoSPI) earns it nowhere.
+- **Edition supersession (R4-REC-10).** Most pre-2018 corroboration comes from ONE publisher (MoSPI)
+  that re-issued the same table across successive **Statistical Year Book editions** — Financial
+  Outcomes as SYB 2016/2017/2018, Implementation Report as SYB 2015/2016/2017/2018. These are not
+  three or four independent readings; they are one publisher's successive drafts, each restating the
+  earlier years. Where a later edition restated an earlier one, the **latest edition is taken** and
+  the earlier value is kept in lineage as `edition_superseded` — not a conflict, not a rejected peer.
+  This is a source-grounded editorial hierarchy (same catalog + dated edition markers + verified
+  one-directional restatement, see below), NOT a blind "newest file wins". It resolved **414 state
+  cells** that the earlier build could not adjudicate and left null.
+- **Partial-terminal-year exclusion (R4-REC-11) — the "incompleteness" rule.** An edition's LAST
+  year is a mid-year partial (e.g. SYB 2016's 2014-15 is "as on 31.12.2014" — three quarters of a
+  year). When a later edition carries that year in full, the earlier edition's part-year value is a
+  DIFFERENT period and is excluded before comparison (`partial_period` in lineage), never flagged as
+  a disagreement. Real example: `households_employed` state 17, FY 2014-15 — the SYB 2016 edition's
+  182,449 (part-year) vs the full-year 351,192; the partial is dropped, the full-year value stands.
+- **Partial-year *columns* excluded (Stage-2 reshape).** The same principle for a compound header
+  like `..._2015_16_upto_30_09_2015`: reshape detects the `upto`/`till`/`as-on` suffix and refuses
+  to promote that value into the full-year cell. The two RS cases (`34a83496` FY2015-16, `6c12385f`
+  FY2016-17) previously injected a ~half-year value into every state; excluded, they no longer flag.
+- **Precision-aware count agreement (R4-REC-01a).** A lakh-rounded count (RS 36.07 lakh → 3,607,000)
+  agrees with a raw count (MoSPI 3,606,783) within the source's OWN declared precision (2-dp lakh →
+  ±500), instead of being flagged by exact-match. Genuine small-state gaps (RS 129,000 vs MoSPI
+  94,674, a real 26 %) still flag. This surfaces real MoSPI+RS agreement exact-match had hidden.
+- **Near-zero materiality (R4-REC-08).** A percentage on a near-zero base is meaningless: 77 vs 174
+  completers is 126 % but a 97-household spread. A disagreement is `immaterial` unless it clears BOTH
+  an absolute floor AND a relative floor — so tiny UTs (Lakshadweep, etc.) are recorded, not counted
+  as a material conflict. 37 pre-2018 `households_employed` cells land here.
 
-Residual pre-2018 `households_employed` flags (154): median ≈2 %, and the divergence is genuine
-cross-source / cross-vintage reporting differences (e.g. two RS answers of 35.95 vs 36.07 lakh) plus
-near-zero-denominator UTs — no partial-year or lakh-rounding artifact remains.
+**What "single-publisher divergence" (R4-REC-09) means to a reader.** When ONE publisher's sources
+disagree materially and there is NO groundable edition hierarchy to order them (they are peer
+vintages, not dated editions), no winner is invented — the value is published as `unadjudicated`
+with every reading in lineage. After edition supersession, the state spine has **zero** such cells
+(the MoSPI expenditure/household editions are now ordered as editions, not left as peer vintages).
+
+**The one 10× scale bug is corrected, never averaged.** `households_employed` state 2, FY 2013-14:
+the MoSPI editions carried 539,223 / 53,890 / 539,024 (53,890 is a dropped-digit error, ≈ 539,000 ÷
+10). Edition supersession takes the latest edition (539,024) and records the erroneous 53,890 as
+superseded/partial lineage; RS corroborates at 539,000. The final value is 539,000 — the bad figure
+is excluded, never blended into an average. (The cross-publisher form of this is R4-REC-07 scale
+quarantine.)
+
+*Labeling nuance:* in this cell the two `53,890` copies are recorded under `edition_superseded` and
+`partial_period`, NOT under a distinct scale-error reason. Edition normalization (R4-REC-10/11) runs
+BEFORE scale detection (R4-REC-07) and removes them first, so `_scale_errors` never sees them.
+Re-attributing them to a scale-error reason would mean running scale detection ahead of the edition
+logic — entangled with it, and it would perturb the verified edition-supersession result set — so it
+is left as-is. The outcome is unchanged (the `53,890` is excluded and never averaged); only the
+recorded *reason* is edition/partial rather than scale.
 
 ## Design fork flagged for review — pre-2018 peer authority
 
-All pre-2018 historical sources are given **equal `authority_rank = 10`** (MoSPI and Rajya Sabha as
-peers). No MoSPI-over-RS hierarchy was invented — an entity/harmonization ordering not written in
-`RULES.md` is an Open Question, not something to guess (TIER 1 rule 1).
+The MoSPI-vs-MoSPI question is now **resolved by R4-REC-10**: those files are dated editions, so the
+latest edition is authoritative (grounded, not guessed). What remains is the **cross-publisher**
+peer question: MoSPI and Rajya Sabha are still given **equal `authority_rank = 10`**, because a
+MoSPI-over-RS ordering is an entity/harmonization decision not written in `RULES.md` — an Open
+Question, not something to guess (TIER 1 rule 1).
 
-Consequence: when two equal-rank peers disagree beyond tolerance, the reused reconcile engine's
-deterministic tiebreak (**latest `source_as_of`, then `source_id`**) takes a winner and records the
-rejected peer(s) + max pairwise % as `flagged-disagreement` — the divergence is **published in
-lineage, not hidden**. The `flagged` counts in the tables above are exactly the cells this tiebreak
-decided (e.g. 154 state `households_employed` cells, after the three corrections above).
+Consequence: the only cells this affects are the **4** pre-2018 `households_employed` cells where
+MoSPI's latest edition and an RS answer disagree materially. There the reconcile engine's
+deterministic tiebreak (**latest `source_as_of`, then latest edition, then `source_id`**) takes a
+winner and records the rejected peer + max pairwise % as `flagged` — divergence published, not
+hidden. Median pre-2018 household disagreement is now ≈2 %, and every larger gap is explained by the
+mechanisms above (verified by a spot-check of the 5-50 % band — no unexplained pattern remains).
 
-Verified this is genuine divergence, not a unit bug: MoSPI raw counts and RS lakh counts (× 100,000)
-agree within the RS rounding band on clean full-year cells (now treated as agreement, not a flag);
-the residual flagged cells are genuine cross-source / cross-vintage reporting differences and
-near-zero-denominator UTs (Lakshadweep: 0 vs 100-500 households → large %). Median pre-2018 household
-disagreement ≈ 2 %.
+**Question for review:** should a grounded authority ordering between the two *independent
+publishers* (MoSPI/MoRD final figures over an RS answer for the same fact) be written into
+`RULES.md`, or is the equal-rank recency tiebreak the intended resolution for those 4 cells?
 
 **Question for review:** is the equal-rank recency tiebreak the desired resolution for pre-2018 peer
 disagreement, or should a grounded authority ordering (e.g. MoSPI/MoRD final figures over an RS

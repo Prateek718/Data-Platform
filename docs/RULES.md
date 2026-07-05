@@ -160,6 +160,45 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
 - **R4-REC-04 (single-source value)**: if only one source has the fact, take it but mark
   `sources_seen = 1` so the trust report can flag "unverified by a second source."
 
+### Edition-family reconciliation (same-publisher successive editions)
+
+Some publishers re-issue the SAME statistical table as a series of DATED EDITIONS, each extending
+the series by a year and restating earlier years (e.g. the MoSPI Statistical Year Book editions of
+one table — 2015 → 2016 → 2017 → 2018). These are neither independent corroborating sources nor
+peer vintages in conflict: they are one publisher's successive drafts of one table, and are handled
+as an edition family before ordinary adjudication.
+
+- **R4-REC-11 (partial-terminal-year exclusion — the incompleteness rule)**: an edition's TERMINAL
+  year (the latest financial year it covers) is a mid-year partial — the year had not closed when
+  that edition was compiled (e.g. a note "data for 2014-15 are as on 31.12.2014"). When a LATER
+  edition of the same family carries that year IN FULL, the earlier edition's terminal-year value
+  reports a different (shorter) period, so it is excluded from the full-year cell FIRST — recorded
+  in lineage (`partial_period`), never compared or counted as a disagreement. If no later edition
+  covers that year, the terminal value is the only value and is kept (never excluded into nothing).
+  Detection is DATA-DERIVED: an edition's terminal year is the source's own maximum financial year;
+  family membership and span are read from the data, not hardcoded per file.
+
+- **R4-REC-10 (edition supersession)**: among the remaining editions of a family, the LATEST edition
+  (the one whose span extends furthest) is authoritative for a year it carries as a FULL year. Any
+  earlier edition it restated is recorded in lineage as `edition_superseded` — kept for audit, NOT a
+  rejected-in-disagreement value and NOT a conflict. Earlier editions that AGREE with the latest
+  remain as corroboration. Independent-publisher peers are untouched and still reconcile normally
+  against the latest edition (R4-REC-01/02).
+  - **Grounding is REQUIRED before this rule may be applied to a family** — it is a source-grounded
+    editorial hierarchy, NOT a "latest file wins" default. All three must hold: (i) shared
+    publication identity (same catalog / original source / statistical table); (ii) dated edition
+    markers (the edition year, plus nesting FY spans); and (iii) empirically unidirectional
+    restatement (a later edition restates earlier ones, with no reversion to a superseded value).
+    (The MoSPI household family's single raw-data reversion — Sikkim persondays FY2013-14, a 43↔44
+    lakh sub-rounding flicker on the smallest state — is immaterial and resolves as an ordinary
+    later-edition supersession, so it does not disqualify the family.) A same-publisher group that
+    does not meet all three is peer vintages, not editions → R4-REC-09
+    (material disagreement among one publisher's vintages, published unadjudicated), never R4-REC-10.
+  - **Constraints**: (a) an edition value NEVER outranks a primary MoRD / flagship MIS source for the
+    same cell — edition supersession orders a publisher's own re-issues; it does not lift a secondary
+    republication above the production authority (DATA_CONTRACT §3). (b) It NEVER applies to an
+    edition's own terminal year — those are documented mid-year partials removed by R4-REC-11 first.
+
 ### Quarantine (the validation-gate handoff)
 - **R4-Q-01**: any row failing unit normalization (R4-UNIT-01) — or already quarantined
   upstream by Stage 2 cleanup (R2-FMT-01 / R2-TYPE-01) — or carrying an impossible value

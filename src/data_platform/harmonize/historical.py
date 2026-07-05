@@ -163,6 +163,53 @@ HISTORICAL_STATE_SOURCES: tuple[tuple[str, tuple[StemRule, ...]], ...] = (
 )
 
 
+# MoSPI Statistical Year Book EDITION FAMILIES (state tier) — successive dated editions of ONE SYB
+# table by one publisher (SRC_MOSPI). VERIFIED in docs/stage-4-5-series-assembly-summary.md:
+# identical catalog + nesting FY spans + documented terminal-year mid-year partials + empirically
+# unidirectional restatement (a later edition restates earlier ones; ~0 reversions). Reconcile
+# applies R4-REC-10 (supersession) / R4-REC-11 (partial-terminal exclusion) to any value carrying
+# edition markers; this set is where the markers are stamped. Membership is by resource id, but the
+# span end + terminal-year flag are DATA-DERIVED (the source's own maximum FY), never hardcoded.
+MOSPI_EDITION_FAMILIES: frozenset[str] = frozenset(
+    {
+        "18527128",  # Financial Outcomes  (SYB Table 35.3): SYB2016
+        "fd7c50d2",  #                                        SYB2017
+        "d64434e9",  #                                        SYB2018
+        "3ebbea46",  # Implementation Report (SYB Table 35.1): SYB2015
+        "9aefcd0f",  #                                         SYB2016
+        "2d0a4136",  #                                         SYB2017
+        "c11b65d4",  #                                         SYB2018
+    }
+)
+
+
+def _stamp_edition_markers(
+    out: list[tuple[CanonicalKey, SourceValue]], resource_id: str
+) -> list[tuple[CanonicalKey, SourceValue]]:
+    """Stamp the DATA-DERIVED edition span-end + terminal-year flag on an edition family's values.
+
+    No-op unless ``resource_id`` names a registered MoSPI SYB edition file. The edition's span end
+    is the source's own maximum financial-year (the latest year it covers); a value whose year is
+    that span end is the edition's terminal year — a documented mid-year partial (R4-REC-11).
+    Reconcile ranks editions by this span end so the latest supersedes earlier ones (R4-REC-10).
+    """
+    if not out or not any(resource_id.startswith(prefix) for prefix in MOSPI_EDITION_FAMILIES):
+        return out
+    span_end = max(key.fin_year for key, _ in out)
+    return [
+        (
+            key,
+            value.model_copy(
+                update={
+                    "edition_span_end": span_end,
+                    "is_edition_terminal": key.fin_year == span_end,
+                }
+            ),
+        )
+        for key, value in out
+    ]
+
+
 # A period-narrowing marker anywhere in a WIDE national column name (national sources are not
 # compound-melted, so the qualifier is not split out into a cell — it stays in the header).
 # Letter-only lookarounds (not \b): headers separate words with underscores, which are \w, so \b
@@ -314,4 +361,4 @@ def extract_historical_state(
                 ),
             )
         )
-    return out
+    return _stamp_edition_markers(out, resolved.resource_id)

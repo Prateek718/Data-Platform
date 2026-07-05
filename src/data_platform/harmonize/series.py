@@ -41,8 +41,11 @@ class Confidence(StrEnum):
     CROSS_PUBLISHER = "cross-publisher"  # >=2 DISTINCT publishers agreed within tolerance
     SINGLE_PUBLISHER = "single-publisher multi-vintage"  # >=2 sources agreed, all one publisher
     SINGLE_SOURCE = "single-source"  # only one source carried the fact
-    FLAGGED_DISAGREEMENT = "flagged-disagreement"  # sources disagreed; winner taken, rest recorded
-    UNADJUDICATED = "unadjudicated"  # sources disagreed and none could be chosen (R4-REC-05)
+    FLAGGED_DISAGREEMENT = "flagged-disagreement"  # material cross-publisher conflict (R4-REC-02)
+    IMMATERIAL_DIVERGENCE = "immaterial divergence"  # spread below the magnitude floor (R4-REC-08)
+    SINGLE_PUBLISHER_DIVERGENCE = "single-publisher divergence"  # material, 1 publisher (R4-REC-09)
+    EDITION_SUPERSEDED = "edition-superseded"  # latest edition restated an earlier one (R4-REC-10)
+    UNADJUDICATED = "unadjudicated"  # structural-gap divergence, no winner (R4-REC-05)
 
 
 class SeriesFact(BaseModel):
@@ -76,13 +79,25 @@ def classify(
         basis = Basis.HISTORICAL_SINGLE
 
     if not reconciliation.adjudicated:
-        confidence = Confidence.UNADJUDICATED
+        # No winner asserted: single-publisher vintage divergence (R4-REC-09) vs structural gap.
+        confidence = (
+            Confidence.SINGLE_PUBLISHER_DIVERGENCE
+            if reconciliation.resolution_rule_id == "R4-REC-09"
+            else Confidence.UNADJUDICATED
+        )
     elif reconciliation.disagreement is not None:
-        confidence = Confidence.FLAGGED_DISAGREEMENT
+        # A disagreement below the magnitude floor (absolute or relative) is not material.
+        confidence = (
+            Confidence.FLAGGED_DISAGREEMENT
+            if reconciliation.disagreement.material
+            else Confidence.IMMATERIAL_DIVERGENCE
+        )
     elif n < 2:
         confidence = Confidence.SINGLE_SOURCE
-    elif len(publishers) >= 2:  # >=2 INDEPENDENT publishers agreed
+    elif len(publishers) >= 2:  # >=2 INDEPENDENT publishers agreed (headline over edition lineage)
         confidence = Confidence.CROSS_PUBLISHER
+    elif reconciliation.edition_superseded:  # 1 publisher, latest edition restated an earlier one
+        confidence = Confidence.EDITION_SUPERSEDED
     else:  # >=2 sources but all one publisher — vintages, not independent corroboration
         confidence = Confidence.SINGLE_PUBLISHER
 
@@ -124,6 +139,9 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
         Confidence.SINGLE_PUBLISHER: "single_publisher",
         Confidence.SINGLE_SOURCE: "single_source",
         Confidence.FLAGGED_DISAGREEMENT: "flagged_disagreement",
+        Confidence.IMMATERIAL_DIVERGENCE: "immaterial_divergence",
+        Confidence.SINGLE_PUBLISHER_DIVERGENCE: "single_publisher_divergence",
+        Confidence.EDITION_SUPERSEDED: "edition_superseded",
         Confidence.UNADJUDICATED: "unadjudicated",
     }
     summary: dict[str, dict[str, int]] = {}
@@ -137,6 +155,9 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
                 "single_publisher": 0,
                 "single_source": 0,
                 "flagged_disagreement": 0,
+                "immaterial_divergence": 0,
+                "single_publisher_divergence": 0,
+                "edition_superseded": 0,
                 "unadjudicated": 0,
                 "quarantined": 0,
             },
