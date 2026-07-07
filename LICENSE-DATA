@@ -1,0 +1,31 @@
+DATA LICENSE — MGNREGA Canonical Series (the derived dataset in dist/)
+
+The derived dataset produced by this repository (the files under dist/, i.e. the state and national
+annual series, the district flagship drill-down, and lineage.jsonl) is licensed under the
+
+    Creative Commons Attribution 4.0 International License (CC BY 4.0)
+    SPDX-License-Identifier: CC-BY-4.0
+    Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+    Human-readable summary: https://creativecommons.org/licenses/by/4.0/
+
+You are free to share and adapt the dataset for any purpose, including commercially, provided you
+give appropriate credit as described below.
+
+(The CODE in this repository is licensed separately under the MIT License — see LICENSE.)
+
+---------------------------------------------------------------------------
+ATTRIBUTION (required by CC BY 4.0 and by the upstream GODL-India sources)
+---------------------------------------------------------------------------
+
+This dataset is a reconciled derivative of MGNREGA data published on the Open Government Data (OGD)
+Platform India (https://data.gov.in) by the Ministry of Rural Development (MoRD), the Ministry of
+Statistics and Programme Implementation (MoSPI), and Rajya Sabha parliamentary answers, licensed
+under the Government Open Data License – India (GODL-India,
+https://data.gov.in/government-open-data-license-india). The original data providers do not endorse
+this derivative work or its author. The data is provided "as is", without warranty of any kind. The
+specific source resource identifiers for every fact are recorded in dist/*/lineage.jsonl
+(contributing_resource_ids), satisfying GODL-India's requirement to publish the source URL/URI of
+each dataset used (GODL-India §4.b permits a linked list where sources are many).
+
+When you reuse this dataset, please retain the paragraph above (the GODL-India attribution and
+non-endorsement notice) in addition to crediting this work — cite the DOI / CITATION.cff.
