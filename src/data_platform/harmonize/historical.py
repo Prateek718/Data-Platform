@@ -119,6 +119,16 @@ RS_HUNDRED_DAYS_RULES: tuple[StemRule, ...] = (
     ),
 )
 
+# RS "person-days generated" state tables — a count published in lakh. Used for the wide-COMPOUND
+# vintage whose header fuses the metric stem with the year (``person_days_generated__in_lakh…``).
+# The wide-PURE vintage (year-only headers, metric in the title only) carries the metric via
+# ``implicit_metric`` on the peer list below.
+RS_PERSONDAYS_RULES: tuple[StemRule, ...] = (
+    StemRule(
+        re.compile(r"person.?days.?generated", re.I), PERSONDAYS_GENERATED, UnitKind.COUNT_LAKH
+    ),
+)
+
 # National sources are WIDE (one row per FY, one column per metric) — not melted. Column names use
 # underscores, so patterns use ``.`` between words. Provided-employment / availed-100-days are raw
 # counts; persondays is a lakh count. (The subcategory persondays "___scs/sts/…" columns don't match
@@ -166,6 +176,34 @@ HISTORICAL_STATE_SOURCES: tuple[tuple[str, tuple[StemRule, ...]], ...] = (
     ("2611cc74", RS_HOUSEHOLDS_RULES),
     ("22f8cdb0", RS_HOUSEHOLDS_RULES),
     ("73d68992", RS_HUNDRED_DAYS_RULES),
+)
+
+# One peer entry: (resource-id prefix, stem rules, implicit_metric-for-wide-pure|None).
+_PeerEntry = tuple[str, tuple[StemRule, ...], tuple[str, UnitKind] | None]
+
+# One-off Rajya Sabha STATE peer tables reconciled against the spine at the EXPORT layer (not part
+# of the pre-2018 harmonize set above). They overlap the flagship rollup and/or the historical
+# sources and must reconcile against them, not be dropped — across whichever eras each table carries
+# (the person-days tables are flagship-era-only; the expenditure / 100-days tables span both eras).
+# Same shape as HISTORICAL_STATE_SOURCES, but each entry also carries an ``implicit_metric`` for
+# wide-PURE tables (year-only headers, one title-defined measure, no ``_metric`` stem). Fed at peer
+# ``authority_rank`` (flagship stays 0), so flagship/edition finals win where whole-geography, the
+# peer is flagged on material disagreement, and structural-gap disagreement goes unadjudicated.
+#
+# Verified byte-by-byte (raw headers, unit, printed precision, terminal-year finality) before
+# wiring. Sources that failed verification or need machinery not yet built are DEFERRED (see docs).
+# NOTE (v1.1): the expenditure/100-days peers expose that MoSPI's SYB2018 terminal year (FY2017-18)
+# is a mid-year partial; the amended R4-REC-11 now withholds it.
+RS_STATE_PEERS: tuple[_PeerEntry, ...] = (
+    # cea6ee41 — RS person-days (in lakh), wide-PURE, FY 2019-20→2023-24, all years final.
+    ("cea6ee41", (), (PERSONDAYS_GENERATED, UnitKind.COUNT_LAKH)),
+    # e289a8fe — RS person-days (in lakh), wide-COMPOUND, FY 2021-22→2023-24, all years final.
+    ("e289a8fe", RS_PERSONDAYS_RULES, None),
+    # 57bff16a — RS total expenditure (in lakh), wide-PURE, FY 2014-15→2018-19, terminal year final.
+    ("57bff16a", (), (TOTAL_EXPENDITURE, UnitKind.MONEY_LAKH)),
+    # a1c9803c — RS households-completed-100-days (count in lakh), wide-PURE, FY 2016-17→2018-19,
+    # terminal 2018-19 final. Bytes carry ONE metric (100-days), not the two the inventory listed.
+    ("a1c9803c", (), (HOUSEHOLDS_COMPLETED_100_DAYS, UnitKind.COUNT_LAKH)),
 )
 
 
@@ -321,8 +359,14 @@ def extract_historical_state(
     *,
     source_as_of: datetime | None,
     authority_rank: int,
+    implicit_metric: tuple[str, UnitKind] | None = None,
 ) -> list[tuple[CanonicalKey, SourceValue]]:
-    """Map a resolved historical STATE batch to per-(state, FY, metric) SourceValues."""
+    """Map a resolved historical/peer STATE batch to per-(state, FY, metric) SourceValues.
+
+    A melted/compound source carries a ``_metric`` stem per row, keyed against ``rules``. A
+    wide-PURE source (year-only headers, one title-defined measure) has no stem; pass its metric +
+    unit via ``implicit_metric`` and every value row maps to it. Period-narrowed rows are excluded.
+    """
     out: list[tuple[CanonicalKey, SourceValue]] = []
     for record in resolved.records:
         if record.state_canonical_id is None:
@@ -331,20 +375,26 @@ def extract_historical_state(
         stem = row.get("_metric")
         fin_year = row.get("_fin_year")
         raw = row.get("_value")
-        if not isinstance(stem, str) or not isinstance(fin_year, str) or raw is None:
+        if not isinstance(fin_year, str) or raw is None:
             continue
         if row.get("_period_qualifier"):  # partial-year slice — a different period, never full-year
             continue
-        if STEM_EXCLUDE.search(stem):
-            continue
-        rule = next((r for r in rules if r.pattern.search(stem)), None)
-        if rule is None:
+        if isinstance(stem, str):
+            if STEM_EXCLUDE.search(stem):
+                continue
+            rule = next((r for r in rules if r.pattern.search(stem)), None)
+            if rule is None:
+                continue
+            metric, unit_kind = rule.metric, rule.unit_kind
+        elif implicit_metric is not None:  # wide-pure single-measure source (no _metric stem)
+            metric, unit_kind = implicit_metric
+        else:
             continue
         try:
             value = Decimal(str(raw))
         except InvalidOperation:
             continue
-        canonical_value, original_unit, epsilon = _normalize(value, rule.unit_kind)
+        canonical_value, original_unit, epsilon = _normalize(value, unit_kind)
         key = CanonicalKey(
             scheme="MGNREGA",
             geo_level=GeoLevel.STATE,
@@ -352,7 +402,7 @@ def extract_historical_state(
             district_code=None,
             fin_year=fin_year,
             month=None,
-            metric=rule.metric,
+            metric=metric,
         )
         out.append(
             (

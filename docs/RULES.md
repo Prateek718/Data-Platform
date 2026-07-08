@@ -173,10 +173,14 @@ as an edition family before ordinary adjudication.
   that edition was compiled (e.g. a note "data for 2014-15 are as on 31.12.2014"). When a LATER
   edition of the same family carries that year IN FULL, the earlier edition's terminal-year value
   reports a different (shorter) period, so it is excluded from the full-year cell FIRST — recorded
-  in lineage (`partial_period`), never compared or counted as a disagreement. If no later edition
-  covers that year, the terminal value is the only value and is kept (never excluded into nothing).
-  Detection is DATA-DERIVED: an edition's terminal year is the source's own maximum financial year;
-  family membership and span are read from the data, not hardcoded per file.
+  in lineage (`partial_period`), never compared or counted as a disagreement. **A terminal partial
+  with NO superseding edition is still excluded**: the year is withheld (value null,
+  `confidence = partial-period-only`) rather than published as a mid-year figure masquerading as an
+  annual — UNLESS an independent full-year PEER (a different publisher) covers that year, in which
+  case the peer's full-year value stands as the annual. The terminal MARKER is always the trigger;
+  the exclusion never depends on the value. Detection is DATA-DERIVED: an edition's terminal year is
+  the source's own maximum financial year; family membership and span are read from the data, not
+  hardcoded per file.
 
 - **R4-REC-10 (edition supersession)**: among the remaining editions of a family, the LATEST edition
   (the one whose span extends furthest) is authoritative for a year it carries as a FULL year. Any

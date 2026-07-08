@@ -46,6 +46,7 @@ from data_platform.harmonize.extract import (
 from data_platform.harmonize.historical import (
     HISTORICAL_NATIONAL_SOURCES,
     HISTORICAL_STATE_SOURCES,
+    RS_STATE_PEERS,
     extract_historical_state,
     extract_national_wide,
 )
@@ -293,13 +294,27 @@ def build_export(archive: Path) -> ExportBundle:
         resource_map,
     )
 
-    # --- STATE spine: flagship (2018+) + every wired historical state source (pre-2018) ----------
+    # --- STATE spine: flagship (2018+) + historical peers (pre-2018) + RS one-off peers (both eras)
     state_keyed = list(flagship_state)
     for prefix, rules in HISTORICAL_STATE_SOURCES:
         resolved, cells, as_of, rid = _load_wired(archive, resolver, prefix)
         state_keyed += _tag(
             extract_historical_state(
                 resolved, cells, rules, source_as_of=as_of, authority_rank=_HISTORICAL_RANK
+            ),
+            rid,
+            resource_map,
+        )
+    for prefix, rules, implicit in RS_STATE_PEERS:
+        resolved, cells, as_of, rid = _load_wired(archive, resolver, prefix)
+        state_keyed += _tag(
+            extract_historical_state(
+                resolved,
+                cells,
+                rules,
+                source_as_of=as_of,
+                authority_rank=_HISTORICAL_RANK,
+                implicit_metric=implicit,
             ),
             rid,
             resource_map,

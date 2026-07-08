@@ -17,10 +17,10 @@ explains where every value came from.
 
 | File | Grain | Rows | Span |
 |---|---|--:|---|
-| `state_annual_series.csv` / `.parquet` | one value per (state, financial-year, metric) | 4,216 | FY 2010-11 → 2026-27 |
+| `state_annual_series.csv` / `.parquet` | one value per (state, financial-year, metric) | 4,219 | FY 2010-11 → 2026-27 |
 | `national_annual_series.csv` / `.parquet` | one value per (financial-year, metric) | 148 | FY 2006-07 → 2026-27 |
 | `district_flagship.csv` / `.parquet` | flagship drill-down: (state, district, FY, metric) annual + monthly wage | 120,724 | FY 2018-19 → 2026-27 |
-| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 125,088 | — |
+| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 125,091 | — |
 
 The CSVs are flat and friendly; the deep provenance (every source seen, every rejected/superseded
 value, coverage descriptors) lives in `lineage.jsonl`, joined to the CSVs on **`fact_id`**. The
@@ -43,9 +43,9 @@ year is 2025-26.
 | `state_name` | string | The state/UT's **current** LGD English name (canonical display; a record from a period when the area was named differently still shows today's name). |
 | `financial_year` | string | Indian financial year (April→March), e.g. `2019-20`. |
 | `metric` | string | One of the eight canonical metrics (§3). |
-| `value` | number | The reconciled value in the metric's canonical `unit`. **Empty means null** (unknown / unadjudicated), never zero (§5). |
+| `value` | number | The reconciled value in the metric's canonical `unit`. **Empty means null** (unknown, unadjudicated, or withheld as a documented partial), never zero (§5). |
 | `unit` | string | The canonical unit for the metric (§3). |
-| `era_basis` | string | `flagship-rollup` (value derived from the district-monthly flagship, FY 2018-19 →) or `historical` (value from a pre-2018 historical source). The 2018 seam is explained in §7. |
+| `era_basis` | string | `flagship-rollup` (value derived from the district-monthly flagship, FY 2018-19 →) or `historical` (value from a non-flagship source — the pre-2018 sources, or a flagship-era RS peer in a year the flagship has no such state, the three Telangana cells in §8). The 2018 seam is explained in §7. |
 | `confidence` | string | How much cross-source support the value has (§6). |
 | `sources_seen_count` | integer | How many source **values** were seen for this fact (all of them — including editions later superseded and peers later rejected; nothing is dropped from the count). |
 | `contributing_resource_ids` | string | The distinct data.gov.in **resource ids** that carried a value for this fact, `;`-separated. (Reconciliation records publisher identity; these resource ids are recovered by the export. The per-source breakdown is in `lineage.jsonl`.) |
@@ -151,10 +151,11 @@ missing.
 | `single-publisher multi-vintage` | ≥2 sources agreed, but all from **one** publisher (multiple editions/vintages) — internal consistency, not independent corroboration. |
 | `edition-superseded` | One publisher re-issued the same table across dated editions; the **latest edition** restated an earlier one and was taken (see below). |
 | `single-source` | Only one source carried the fact. |
-| `flagged-disagreement` | A **material** disagreement between two **independent** publishers of equal standing. No authority ordering separates them, so a documented deterministic tie-break (the more recent source vintage) selects the displayed value; both values and the gap are recorded in lineage. |
-| `immaterial divergence` | Sources differed, but the spread was below the materiality floor (a near-zero base, or a rounding-level split on a large base) — recorded, not counted as a real conflict. This is the "near-zero-flagged" case. |
-| `single-publisher divergence` | A material disagreement among **one** publisher's vintages with no groundable edition order — **no winner is invented**; the value is left null and the divergence published (see §8, national persondays). |
-| `unadjudicated` | A structural-coverage divergence where the authoritative source is an incomplete aggregate against a native peer — value withheld. |
+| `flagged-disagreement` | A **material** disagreement between two **independent** publishers. The displayed value is the whole-geography / higher-authority reading — the flagship rollup where its district coverage is complete, or (between equal-rank historical publishers, e.g. a MoSPI edition and a Rajya Sabha answer) the one a documented deterministic tie-break selects; the rejected value and the gap are recorded in lineage. |
+| `immaterial divergence` | Sources differed, but below the materiality floor. **One standard across metrics** (config-carried): a disagreement is material only if its largest spread clears BOTH an absolute floor — in the metric's own unit, **1,000** for raw counts / **100 lakh** for money (a spread is dimensional, so the absolute floor is sized to the unit, not a single cross-unit number) — AND a **1%** relative floor. A near-zero-base swing (77 vs 174 completers, a Lakshadweep 38-vs-27-lakh UT) fails the absolute floor; a rounding-level split on a large base fails the 1%. Both readings stay in lineage. |
+| `single-publisher divergence` | A material disagreement among **one** publisher's vintages with no groundable edition order — **no winner is invented**; the value is left null and the divergence published (see §8, the national divergence table). |
+| `unadjudicated` | A structural-coverage divergence: the authoritative source is a **structurally-incomplete** aggregate (its district universe < the state's LGD districts) that materially disagrees with a native whole-geography peer — value withheld. Realized on **10 flagship-era state cells** (`persondays_generated`, `total_expenditure`, `households_completed_100_days`) where a structural-gap flagship rollup disagrees with an RS peer (§8). |
+| `partial-period-only` | The only reading for the year was an edition's **documented terminal-year mid-year partial** (R4-REC-11) — excluded rather than published as an annual, with no full-year peer to fill it — so the value is **withheld**. Realized on the **164 FY2017-18 state cells** where MoSPI's SYB2018 edition (a mid-year partial) is the sole source (§8). |
 
 **Edition supersession.** Most pre-2018 corroboration comes from one publisher (MoSPI) that
 re-issued the same statistical table across successive Statistical Year Book editions. These are one
@@ -201,25 +202,89 @@ cumulative) and is exported at its native district-monthly grain.
 - **`avg_wage_rate_per_day` is district-monthly only.** It is a rate, native to district-monthly
   grain and single-source; it does not sum to a state or national annual, so it is kept only in
   `district_flagship`, never forced into the spines.
-- **Exactly four genuine cross-publisher material disagreements exist pre-2018**, all in
-  `households_employed` (MoSPI's latest edition vs a Rajya Sabha answer): **Bihar FY 2015-16**
-  (~4.2%), **Mizoram FY 2013-14** (~3.1%), **Telangana FY 2014-15** (~1.3%), and **Andaman &
-  Nicobar Islands FY 2014-15** (~7.7%). For each, the MoSPI edition and the Rajya Sabha answer
-  carry equal authority, so a documented deterministic tie-break (the more recent source vintage)
-  selects the displayed value; the rejected value and the percentage are recorded in lineage —
-  the disagreement is surfaced, not hidden.
-- **Three national `persondays_generated` cells remain unadjudicated** — FY 2012-13, 2013-14, and
-  2014-15 — where one publisher's national vintages disagree materially and no groundable edition
-  order exists. Their `value` is null and every reading is in lineage. The edition-supersession
-  mechanism that resolves the equivalent *state* cells was verified only for the two state edition
-  families; extending it to the national tier is a documented, deferred follow-up (same mechanism,
-  not yet put through the empirical restatement check on the national files).
+- **Pre-2018 genuine cross-publisher material disagreements: nine, in two metrics.** After edition
+  supersession and materiality filtering, the residual pre-2018 disagreements are:
+  - **Four in `households_employed`** (a MoSPI edition vs a Rajya Sabha answer): **Bihar FY 2015-16**
+    (~4.2%), **Mizoram FY 2013-14** (~3.1%), **Telangana FY 2014-15** (~1.3%), **Andaman & Nicobar
+    Islands FY 2014-15** (~7.7%). MoSPI and RS carry equal authority, so a documented deterministic
+    tie-break (the more recent vintage) selects the displayed value.
+  - **Five in `total_expenditure`** — surfaced once the RS expenditure table (`57bff16a`) made RS an
+    independent publisher on expenditure: **Andhra Pradesh FY 2014-15** (~1.9%) & **FY 2015-16**
+    (~1.8%), **Bihar FY 2014-15** (~2.0%), **Jammu & Kashmir FY 2016-17** (~1.4%), **Telangana FY
+    2016-17** (~22%).
+
+  Each records the rejected value and the percentage in lineage — surfaced, not hidden. (Wiring RS
+  expenditure also produced **117 new `total_expenditure` and 20 `households_completed_100_days`
+  cross-publisher corroborations** pre-2018 — RS independently confirming MoSPI.)
+- **Flagship-era (FY 2018-19 →) reconciliation against the RS state peers.** Four Rajya Sabha state
+  tables are reconciled against the flagship rollup: person-days (`cea6ee41` 2019-24, `e289a8fe`
+  2021-24), total-expenditure (`57bff16a`, to 2018-19) and households-completed-100-days
+  (`a1c9803c`, to 2018-19). Outcomes by metric (corroborated / flagged / unadjudicated):
+
+  | metric | cross-publisher | flagged | unadjudicated |
+  |---|--:|--:|--:|
+  | `persondays_generated` | 146 | 12 | 7 |
+  | `total_expenditure` | 12 | 10 | 2 |
+  | `households_completed_100_days` | 22 | 3 | 1 |
+
+  - **Corroboration** (e.g. Goa FY2022-23 persondays, flagship 94,004 vs RS 94,000) — agreement
+    within the RS tables' lakh precision.
+  - **Flagged** — the flagship has whole-geography coverage but the RS peer materially disagrees; the
+    flagship value is taken and the rejected RS value + percentage recorded.
+  - **Unadjudicated (10 cells)** — a **structural-gap** flagship rollup materially disagrees with the
+    RS peer, so no value is asserted (`value` null, rule `R4-REC-05`); flagship + both RS readings in
+    lineage: `persondays` — West Bengal 2019-20/2020-21/2021-22, Maharashtra 2021-22/2022-23/2023-24,
+    Telangana 2021-22; `total_expenditure` — Madhya Pradesh & Rajasthan 2018-19; `households_completed_100_days`
+    — West Bengal 2018-19.
+
+  Three cells are **RS-only** (a year the flagship "at a glance" does not cover — Telangana enters the
+  flagship in 2020-21), carried single-source from the RS table with `era_basis = historical`:
+  Telangana **FY2019-20 persondays** (107,114,000), **FY2018-19 total_expenditure**, and **FY2018-19
+  households_completed_100_days**. These are the three state-spine rows beyond the 4,216
+  flagship-anchored cells (**4,219** total).
+- **FY2017-18 is thin: MoSPI's SYB2018 edition publishes it as a mid-year partial, so it is withheld
+  where no full-year peer exists.** SYB2018's terminal year (2017-18) is a documented mid-year partial
+  (R4-REC-11); it is excluded rather than published as an annual. Where an RS full-year peer covers it
+  the RS value stands (`total_expenditure`, `households_completed_100_days`); otherwise the cell is
+  **withheld** — **164 state cells** are `partial-period-only` (value null): `persondays_generated`
+  33, `households_employed`/`wages`/`material`/`admin` 32 each, `households_completed_100_days` 3. The
+  MoSPI partial is kept in each cell's lineage. **These nulls are expected to be temporary**: the
+  deferred RS vintages `7efb084d`/`ec1ee20d` carry FY2017-18 as a NON-terminal (full) year and are
+  queued for v1.1 to fill them.
+- **The national spine carries 22 unadjudicated `single-publisher divergence` cells** (FY 2012-13 →
+  2015-16, across 7 metrics), where one publisher's (MoSPI) national vintages disagree materially and
+  no groundable edition order exists. Their `value` is null and every reading is in lineage
+  (`confidence = single-publisher divergence`, rule `R4-REC-09`). Extending the state
+  edition-supersession mechanism to the national tier is a documented, deferred follow-up.
+
+  | FY | unadjudicated metrics |
+  |---|---|
+  | 2012-13 | households_employed, households_completed_100_days, persondays_generated, wages_expenditure, material_skilled_expenditure, admin_expenditure, total_expenditure (7) |
+  | 2013-14 | households_completed_100_days, persondays_generated, wages_expenditure, material_skilled_expenditure, admin_expenditure, total_expenditure (6) |
+  | 2014-15 | households_employed, households_completed_100_days, persondays_generated, wages_expenditure, material_skilled_expenditure, admin_expenditure, total_expenditure (7) |
+  | 2015-16 | material_skilled_expenditure, admin_expenditure (2) |
+
+  (The three `persondays_generated` rows — 2012-13, 2013-14, 2014-15 — are the persondays subset.)
 - **Within FY 2010-11 → 2017-18, coverage is 32-33 states/UTs per metric-year, not the full 35.** A
   state a given historical source did not report that year is simply absent (null ≠ 0).
 - **The `district_flagship` drill-down is flagship-era (FY 2018-19 →) only** — there is no
   district-level pre-2018 source. Its additive district-annual values sum to the state spine by
   construction; where a state's flagship district set is smaller than its current LGD district count,
   that structural incompleteness is recorded in each fact's `aggregate_coverage` in lineage.
+- **Known unharmonized archive overlaps (deferred, not lost).** A few RS state peers remain unwired,
+  each held back for a byte-verified **machinery-reach or defect** reason (no source is deferred for
+  scope alone): RS persondays vintages whose **terminal year is itself a mid-year partial**
+  (`7efb084d`, `ec1ee20d`) and a compound total-expenditure table likewise (`aeca8112`) — these carry
+  FY2017-18 as a non-terminal full year and are the v1.1 path to fill the FY2017-18 nulls, but need
+  per-vintage partial handling not yet built; an RS total-expenditure table whose **scale does not
+  reconcile** to the flagship (`8e7b41be`); and tables **never eligible** as a canonical peer —
+  `eeb479a7` (persons, not households, provided employment), `0fecf99b` (ST-subcategory persondays),
+  `fc212c38` (crore/partial); and RS tables measuring a **non-canonical subject or an unverified
+  metric identity** — `d1d29e37` (asset-works expenditure by category, not scheme total), `bd9922fb`
+  (employment demanded/offered/provided — the "provided" column's identity vs `households_employed`
+  needs byte-verification before it can peer a headline metric), `5dcb2b3e` (wage-rate text +
+  average-days, neither a canonical additive metric), `c0350589` (one value per FY, metric ambiguous
+  from the bytes). All remain in the archive and in `docs/`; none is deferred for scope alone.
 
 For the full account of rows set aside during geography resolution (and why), see
 `docs/quarantine-report.md`. For the reconciliation mechanics summarized above, see

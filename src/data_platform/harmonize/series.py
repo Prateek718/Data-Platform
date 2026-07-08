@@ -46,6 +46,7 @@ class Confidence(StrEnum):
     SINGLE_PUBLISHER_DIVERGENCE = "single-publisher divergence"  # material, 1 publisher (R4-REC-09)
     EDITION_SUPERSEDED = "edition-superseded"  # latest edition restated an earlier one (R4-REC-10)
     UNADJUDICATED = "unadjudicated"  # structural-gap divergence, no winner (R4-REC-05)
+    PARTIAL_ONLY = "partial-period-only"  # only reading was a terminal partial (R4-REC-11)
 
 
 class SeriesFact(BaseModel):
@@ -68,8 +69,21 @@ def classify(
 ) -> tuple[Basis, Confidence]:
     """Derive (basis, confidence) from a reconciled outcome — no adjudication, just labelling."""
     has_flagship = any(s.source_id == flagship_source_id for s in reconciliation.sources_seen)
-    n = len(reconciliation.sources_seen)
-    publishers = {s.source_id for s in reconciliation.sources_seen}
+    # Corroboration is judged on the SURVIVING readings: sources excluded before adjudication
+    # (coverage-absent 0s, scale errors, documented terminal partials) are lineage, not support — a
+    # full-year RS value beside an excluded MoSPI partial is single-source, not cross-publisher.
+    excluded = {
+        id(s)
+        for bucket in (
+            reconciliation.coverage_absent,
+            reconciliation.scale_quarantined,
+            reconciliation.partial_period,
+        )
+        for s in bucket
+    }
+    surviving = [s for s in reconciliation.sources_seen if id(s) not in excluded]
+    n = len(surviving)
+    publishers = {s.source_id for s in surviving}
 
     if has_flagship:
         basis = Basis.FLAGSHIP_ROLLUP  # the flagship anchors this year, even if unadjudicated
@@ -79,10 +93,14 @@ def classify(
         basis = Basis.HISTORICAL_SINGLE
 
     if not reconciliation.adjudicated:
-        # No winner asserted: single-publisher vintage divergence (R4-REC-09) vs structural gap.
+        # No value asserted: single-publisher vintage divergence (R4-REC-09), a documented terminal
+        # partial with no full-year reading (R4-REC-11), else structural-gap divergence (R4-REC-05).
+        rule = reconciliation.resolution_rule_id
         confidence = (
             Confidence.SINGLE_PUBLISHER_DIVERGENCE
-            if reconciliation.resolution_rule_id == "R4-REC-09"
+            if rule == "R4-REC-09"
+            else Confidence.PARTIAL_ONLY
+            if rule == "R4-REC-11"
             else Confidence.UNADJUDICATED
         )
     elif reconciliation.disagreement is not None:
@@ -143,6 +161,7 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
         Confidence.SINGLE_PUBLISHER_DIVERGENCE: "single_publisher_divergence",
         Confidence.EDITION_SUPERSEDED: "edition_superseded",
         Confidence.UNADJUDICATED: "unadjudicated",
+        Confidence.PARTIAL_ONLY: "partial_period_only",
     }
     summary: dict[str, dict[str, int]] = {}
     for fact in facts:
@@ -159,6 +178,7 @@ def series_coverage_summary(facts: list[SeriesFact]) -> dict[str, dict[str, int]
                 "single_publisher_divergence": 0,
                 "edition_superseded": 0,
                 "unadjudicated": 0,
+                "partial_period_only": 0,
                 "quarantined": 0,
             },
         )

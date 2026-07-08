@@ -15,10 +15,10 @@ Running the export (`uv run python -m data_platform.export`) produces, under `di
 
 | File | What it is |
 |---|---|
-| `state_annual_series.csv` / `.parquet` | 4,216 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
+| `state_annual_series.csv` / `.parquet` | 4,219 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
 | `national_annual_series.csv` / `.parquet` | 148 facts — one value per (financial-year, metric), FY 2006-07 → 2026-27. |
 | `district_flagship.csv` / `.parquet` | 120,724 facts — the flagship district drill-down (2018+): additive metrics at district-annual grain, plus `avg_wage_rate_per_day` at its native district-monthly grain. |
-| `lineage.jsonl` | 125,088 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
+| `lineage.jsonl` | 125,091 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
 
 The CSVs are flat and friendly; the deep provenance lives in `lineage.jsonl`, joined on `fact_id`.
 Every column and metric is defined in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)** — a reader needs
@@ -47,13 +47,21 @@ state), and year-slices. Turning that into one trustworthy series meant defusing
   cells; partial periods and partial columns are excluded before comparison) collapsed the apparent
   conflict and *revealed* real agreement: cross-publisher corroboration on households rose from 53 to
   118 cells while flagged household conflicts fell from 69 to 4.
-- **The honest residual is small, and named.** After all of that, exactly **four** genuine
-  cross-publisher material disagreements remain in the whole pre-2018 series — all in
-  `households_employed` (Bihar FY 2015-16, Mizoram FY 2013-14, Telangana FY 2014-15, Andaman &
-  Nicobar FY 2014-15), each between a MoSPI edition and a Rajya Sabha answer of equal authority.
-  Because no authority ordering separates them, a documented deterministic tie-break (the more
-  recent source vintage) selects the displayed value; the rejected value and the percentage are
-  recorded in lineage.
+- **The pre-2018 residual is small, and named.** After all of that, **nine** genuine cross-publisher
+  material disagreements remain in the pre-2018 series: **four** in `households_employed` (Bihar FY
+  2015-16, Mizoram FY 2013-14, Telangana FY 2014-15, Andaman & Nicobar FY 2014-15 — a MoSPI edition
+  vs a Rajya Sabha answer, settled by a documented tie-break between equal-authority publishers) and
+  **five** in `total_expenditure` (Andhra Pradesh FY 2014-15 & 2015-16, Bihar FY 2014-15, Jammu &
+  Kashmir & Telangana FY 2016-17), surfaced once the RS expenditure table made RS an independent
+  publisher there. Each records the rejected value and percentage in lineage. (That same wiring also
+  produced **137** new cross-publisher *corroborations* pre-2018 — RS independently confirming MoSPI.)
+- **The flagship era reconciles too.** Four Rajya Sabha state tables (person-days, total-expenditure,
+  100-days) are peers to the flagship rollup, not dropped: across FY 2018-24 that yields **180**
+  cross-publisher corroborations, **25** flagged conflicts where the flagship has whole-geography
+  coverage (flagship value taken, RS value recorded), and **10** *unadjudicated* cells where a
+  structurally-incomplete flagship rollup materially disagrees with the RS peer — value withheld, both
+  readings in lineage. Maharashtra's FY2021-24 person-days going null is the honest outcome (flagship
+  34/36 districts vs RS +11 to +19.6%), not a number silently chosen.
 
 Edition supersession is a *source-grounded editorial hierarchy*, not "newest file wins": it is
 applied to a family only after shared publication identity, dated edition markers, and empirically
@@ -90,10 +98,21 @@ query (that serving layer is roadmap, not part of this v1 data release).
   not sum to a state or national annual, so it is not in the spines.
 - Within FY 2010-11 → 2017-18, coverage is **32–33 of 35** states/UTs per metric-year (a source that
   did not report a state that year is absent, not zero).
-- **Three national `persondays_generated` cells** (FY 2012-13, 2013-14, 2014-15) remain
-  **unadjudicated** (value null): one publisher's national vintages disagree and the
-  edition-supersession check was verified only for the state families — extending it to the national
-  tier is a documented, deferred follow-up.
+- **FY2017-18 is thin.** MoSPI's SYB2018 edition publishes 2017-18 as a mid-year partial, excluded
+  rather than published as an annual (R4-REC-11). Where an RS full-year peer exists it fills the year;
+  otherwise the cell is withheld — **164 state cells** are `partial-period-only` (value null). These
+  nulls are expected to be temporary (deferred RS vintages carry 2017-18 in full — a v1.1 fill).
+- **10 flagship-era state cells** are **unadjudicated** (value null): a structurally-incomplete
+  flagship rollup materially disagrees with the RS peer — `persondays_generated` (West Bengal
+  2019-21, Maharashtra 2021-24, Telangana 2021-22), `total_expenditure` (Madhya Pradesh, Rajasthan
+  2018-19), `households_completed_100_days` (West Bengal 2018-19). Both readings are in lineage.
+- **22 national cells** (FY 2012-13 → 2015-16, across 7 metrics) remain **unadjudicated** (value
+  null): one publisher's national vintages disagree and the edition-supersession check was verified
+  only for the state families — extending it to the national tier is a documented, deferred
+  follow-up. (The three `persondays_generated` cells are a subset.)
+- **Known unharmonized archive overlaps are deferred, not lost** — a few RS state peers (partial
+  terminal years, a scale mismatch) are held back with byte-verified machinery/defect reasons,
+  listed in [DATA_DICTIONARY.md](DATA_DICTIONARY.md) §8.
 
 The same coverage account, in full, is in [DATA_DICTIONARY.md](DATA_DICTIONARY.md).
 
