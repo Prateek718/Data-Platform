@@ -28,8 +28,32 @@ exactly. This is a coverage report, not new logic.
 
 - **4,216 facts**, 8 canonical metrics, **35 states/UTs**, **FY 2010-11 → FY 2026-27**.
 
+> **Stage-5 note.** These figures are the Stage-4.5 harmonize output (this test uses the pre-2018
+> `HISTORICAL_STATE_SOURCES` only). The Stage-5 **export** additionally reconciles four flagship-era
+> Rajya Sabha state peers — person-days (`cea6ee41`, `e289a8fe`), total-expenditure (`57bff16a`),
+> 100-days (`a1c9803c`) — against the flagship rollup and the historical sources, so the exported
+> state spine is **4,219** facts. Two consequences: (1) 2018+ cells across those metrics are no
+> longer all single-source — **180** corroborated, **25** flagged, **10** unadjudicated, **3**
+> RS-only; and pre-2018 the RS expenditure/100-days tables add **137** cross-publisher corroborations
+> and **5** genuine `total_expenditure` disagreements. (2) The amended **R4-REC-11** now excludes
+> MoSPI's SYB2018 FY2017-18 mid-year partial even with no superseding edition — filled by an RS
+> full-year peer where one exists, else withheld (**164** `partial-period-only` cells). Because of
+> (2), the per-metric table below no longer reflects FY2017-18 (now withheld); `DATA_DICTIONARY.md`
+> §8 is the authoritative current account.
+>
+> **Reclassifications from the amendment (Step 4a).** No cell moved *out of* `unadjudicated`. The
+> amended R4-REC-11 moves the FY2017-18 SYB2018 terminal cells from `single-source` (a partial
+> published as an annual) to `partial-period-only` (withheld); and the single two-floor materiality
+> standard's money floor moves West Bengal FY2018-19 `total_expenditure` from a would-be R4-REC-05
+> unadjudicated to R4-REC-08 `immaterial` (0.83% < 1%). (The review's "8→7 unadjudicated" projection
+> did not materialize — unadjudicated in fact grew 7→10 as the expenditure/100-days peers came in.)
+>
+> **v1.1 (Step 4b).** The FY2017-18 nulls are expected to be temporary: the deferred RS vintages
+> `7efb084d`/`ec1ee20d` carry FY2017-18 as a NON-terminal (full) year and are queued to fill them.
+
 The table below is the **pre-2018** confidence mix per metric (where all the multi-source
-reconciliation happens); **2018+ is 304 single-source flagship cells** for every metric. Labels:
+reconciliation happens); **2018+ is 304 single-source flagship cells** for every metric (before the
+Stage-5 export peers above). Labels:
 `cross-publisher` = ≥2 INDEPENDENT publishers agreed; `single-publisher` = ≥2 editions/vintages of
 ONE publisher agreed; `edition-superseded` = a later edition of one publisher's table restated an
 earlier one and the latest edition was taken (R4-REC-10); `single-source` = one source only;

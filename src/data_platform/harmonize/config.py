@@ -59,13 +59,12 @@ CANONICAL_UNIT: Final[dict[str, str]] = {
 }
 
 
-# R4-REC-08 materiality: a disagreement is MATERIAL only if its largest pairwise spread is
-# significant in BOTH absolute and relative terms — clearing an absolute floor AND a percentage
-# floor. This filters two kinds of manufactured conflict on the count metrics: a near-zero-
-# denominator swing (77 vs 174 completers = 126% but a ~100-hh spread → fails the absolute floor)
-# and a rounding-level split on a large base (two RS vintages of 21.74 vs 21.76 lakh = a 2,000-hh
-# spread on 2.1M → clears absolute but fails the 1% floor). Config-carried, per metric; expenditure
-# and rates keep 0/0 (their 0.5% agreement band already governs), so their behaviour is unchanged.
+# R4-REC-08 materiality: a disagreement is MATERIAL only if its largest pairwise spread clears both
+# the metric's absolute floor AND its percentage floor (0 = no gate). This filters two kinds of
+# manufactured conflict on the count metrics: a near-zero-denominator swing (77 vs 174 completers =
+# 126% but a ~100-hh spread → fails the absolute floor) and a rounding-level split on a large base
+# (two RS vintages of 21.74 vs 21.76 lakh = a 2,000-hh spread on 2.1M → clears absolute, fails 1%
+# floor). Config-carried, per metric.
 _COUNT_MATERIALITY_ABS: Final = Decimal(1_000)
 _COUNT_MATERIALITY_REL_PCT: Final = Decimal(1)
 _COUNT_METRICS: Final = (
@@ -74,11 +73,25 @@ _COUNT_METRICS: Final = (
     ACTIVE_WORKERS,
     PERSONDAYS_GENERATED,
 )
+# Money metrics get the SAME two-floor treatment as the counts (architect decision 2026-07-08,
+# "handle exactly like persondays"): an ABSOLUTE floor filters a near-zero-base UT whose few-lakh
+# spread reads as a large % (Lakshadweep 38 vs 27 lakh), and a 1% RELATIVE floor filters a small
+# split on a large base (a 0.7% inter-publisher expenditure revision). 100 lakh (1 crore) absolute.
+_MONEY_MATERIALITY_ABS: Final = Decimal(100)
+_MONEY_MATERIALITY_REL_PCT: Final = Decimal(1)
+_MONEY_METRICS: Final = (
+    WAGES_EXPENDITURE,
+    MATERIAL_SKILLED_EXPENDITURE,
+    ADMIN_EXPENDITURE,
+    TOTAL_EXPENDITURE,
+)
 MATERIALITY_ABS_FLOOR: Final[dict[str, Decimal]] = {
-    m: _COUNT_MATERIALITY_ABS for m in _COUNT_METRICS
+    **{m: _COUNT_MATERIALITY_ABS for m in _COUNT_METRICS},
+    **{m: _MONEY_MATERIALITY_ABS for m in _MONEY_METRICS},
 }
 MATERIALITY_REL_PCT: Final[dict[str, Decimal]] = {
-    m: _COUNT_MATERIALITY_REL_PCT for m in _COUNT_METRICS
+    **{m: _COUNT_MATERIALITY_REL_PCT for m in _COUNT_METRICS},
+    **{m: _MONEY_MATERIALITY_REL_PCT for m in _MONEY_METRICS},
 }
 
 

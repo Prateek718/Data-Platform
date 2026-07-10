@@ -7,10 +7,11 @@ adjudicating, two structural NON-PARTICIPANTS are removed (they are not disagree
 * **R4-REC-06** — coverage-absent: a source reporting ``0`` where a peer reports a non-zero value is
   a MISSING cell, not a disagreement — recorded in ``coverage_absent`` and excluded from comparison.
   (All sources reporting ``0`` is a genuine agreed zero.)
-* **R4-REC-11** — partial-terminal-year exclusion: within a same-publisher EDITION FAMILY, an
-  edition's terminal-year value is a documented mid-year partial; when a LATER edition carries that
-  year in full it is excluded (``partial_period``) before comparison — a period mismatch, not a
-  disagreement.
+* **R4-REC-11** — documented-terminal-partial exclusion: within a same-publisher EDITION FAMILY, an
+  edition's terminal-year value is a DOCUMENTED mid-year partial (the marker, not the value, is the
+  trigger). It is excluded (``partial_period``) before comparison — whether a LATER edition
+  carries that year in full, OR no edition does (a family-terminal with no successor: the cell is
+  withheld, value ``None``, not published as an annual). A period mismatch, not a disagreement.
 * **R4-REC-10** — edition supersession: among the remaining editions of the family, the LATEST
   (largest span end) is authoritative for a year it carries as final; any earlier edition it
   restated is recorded in ``edition_superseded`` (retained lineage, not a conflict, not rejected).
@@ -102,6 +103,11 @@ def reconcile(values: list[SourceValue], *, metric: str) -> Reconciliation | Non
         else None
     )
 
+    if not adjudicable:
+        # Everything was excluded — the only readings were documented terminal partials (R4-REC-11).
+        # No defensible annual value exists: withhold it, keeping the partials in lineage.
+        return _partial_only(values, buckets) if partial_period else None
+
     winner = min(adjudicable, key=_authority_key)
 
     if len(adjudicable) == 1:
@@ -150,24 +156,27 @@ def reconcile(values: list[SourceValue], *, metric: str) -> Reconciliation | Non
 def _normalize_editions(
     values: list[SourceValue], tolerance: Decimal | None
 ) -> tuple[list[SourceValue], list[SourceValue], list[SourceValue]]:
-    """Collapse a same-publisher edition family to its latest edition (R4-REC-11 then R4-REC-10).
+    """Collapse a same-publisher edition family: exclude terminal partials (R4-REC-11), then let the
+    latest surviving edition supersede earlier ones (R4-REC-10).
 
     A value carries ``edition_span_end`` iff it belongs to an edition family (successive dated
-    editions of one publisher's table); with fewer than two editions present there is nothing to
-    collapse. Otherwise: (R4-REC-11) an edition's terminal-year value is a documented mid-year
-    partial, excluded when a later edition carries that year in full; then (R4-REC-10) the latest
-    edition (max span end) is authoritative, and any earlier-edition final it RESTATED (disagrees
-    beyond tolerance) is superseded — earlier editions that AGREE stay as corroboration. Independent
-    peers (``edition_span_end is None``) pass through untouched. Returns
+    editions of one publisher's table). (R4-REC-11) an edition's terminal-year value is a DOCUMENTED
+    mid-year partial — excluded whether a later edition carries that year in full OR no edition does
+    (a family-terminal with no successor: withheld rather than published as an annual). The terminal
+    marker is the trigger, never the value. Then (R4-REC-10) among the surviving NON-terminal
+    editions the latest (max span end) is authoritative, and any earlier-edition final it RESTATED
+    (disagrees beyond tolerance) is superseded — earlier editions that AGREE stay as corroboration.
+    Independent peers (``edition_span_end is None``) pass through untouched. Returns
     (survivors, superseded, partial)."""
     family = [v for v in values if v.edition_span_end is not None]
-    if len(family) < 2:
+    if not family:
         return values, [], []
-    non_terminal = [v for v in family if not v.is_edition_terminal]
-    partial = [v for v in family if v.is_edition_terminal] if non_terminal else []
-    finals = non_terminal or family
-    winner = max(finals, key=lambda v: v.edition_span_end or "")
-    superseded = [v for v in finals if v is not winner and not _agrees(winner, v, tolerance)]
+    partial = [v for v in family if v.is_edition_terminal]
+    finals = [v for v in family if not v.is_edition_terminal]
+    superseded: list[SourceValue] = []
+    if finals:
+        winner = max(finals, key=lambda v: v.edition_span_end or "")
+        superseded = [v for v in finals if v is not winner and not _agrees(winner, v, tolerance)]
     dropped = {id(v) for v in partial} | {id(v) for v in superseded}
     survivors = [v for v in values if id(v) not in dropped]
     return survivors, superseded, partial
@@ -187,6 +196,23 @@ def _adjudicated(
         disagreement=disagreement,
         resolution_rule_id=rule_id,
         adjudicated=True,
+        coverage_absent=buckets.coverage_absent,
+        scale_quarantined=buckets.scale_quarantined,
+        edition_superseded=buckets.edition_superseded,
+        partial_period=buckets.partial_period,
+    )
+
+
+def _partial_only(sources_seen: list[SourceValue], buckets: _Buckets) -> Reconciliation:
+    """No survivor after edition normalization — the only readings were documented terminal
+    partials (R4-REC-11). Value withheld; the excluded partials are kept in lineage."""
+    return Reconciliation(
+        canonical_value=None,
+        source_id=None,
+        sources_seen=sources_seen,
+        disagreement=None,
+        resolution_rule_id="R4-REC-11",
+        adjudicated=False,
         coverage_absent=buckets.coverage_absent,
         scale_quarantined=buckets.scale_quarantined,
         edition_superseded=buckets.edition_superseded,

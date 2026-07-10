@@ -343,8 +343,8 @@ def test_edition_winner_still_flags_material_cross_publisher_conflict() -> None:
     assert [s.value for s in out.edition_superseded] == [Decimal("500000")]
 
 
-# ---- R4-REC-11: an edition's terminal-year mid-year partial is excluded when a later edition -----
-#      carries that year in full.
+# ---- R4-REC-11: an edition's terminal-year mid-year partial is excluded — whether a later edition
+#      carries that year in full OR no edition does (documented terminal partial, no successor).
 def test_terminal_year_partial_excluded_when_later_edition_carries_it_full() -> None:
     # The 2014-15 cell: the SYB2016 edition's value (300000) is its terminal year — a documented
     # mid-year partial. The SYB2018 edition carries 2014-15 as a NON-terminal full year (345000).
@@ -360,12 +360,29 @@ def test_terminal_year_partial_excluded_when_later_edition_carries_it_full() -> 
     assert len(out.sources_seen) == 2
 
 
-def test_terminal_year_kept_when_no_later_edition_supersedes_it() -> None:
-    # An edition's terminal year with NO later edition covering it (its own latest year) is the only
-    # value there — kept as-is (single source), never excluded into nothing.
+def test_terminal_year_partial_withheld_when_no_edition_carries_it_full() -> None:
+    # An edition's terminal year is a DOCUMENTED mid-year partial. With no later edition covering it
+    # in full and no independent full-year peer, there is no defensible annual value: the partial is
+    # excluded and the cell is WITHHELD (value None), the partial kept in lineage. (Amended
+    # R4-REC-11: the terminal marker triggers exclusion, not a value comparison.)
     only = _ed("400000", "2017-18", terminal=True)
     out = reconcile([only], metric="wages_expenditure")
     assert out is not None
-    assert out.canonical_value == Decimal("400000")
-    assert out.resolution_rule_id == "R4-REC-04"
-    assert out.partial_period == []
+    assert out.canonical_value is None
+    assert out.adjudicated is False
+    assert out.resolution_rule_id == "R4-REC-11"
+    assert [s.value for s in out.partial_period] == [Decimal("400000")]
+
+
+def test_terminal_year_partial_yields_to_independent_full_year_peer() -> None:
+    # The edition's terminal year is a partial; an independent full-year peer (RS) covers the same
+    # year. The documented terminal partial is excluded (not a disagreeing peer); the peer's
+    # full-year value stands as the single-source annual.
+    partial = _ed("400000", "2017-18", terminal=True)
+    peer = _sv("SRC_RS", "650000", 10)
+    out = reconcile([partial, peer], metric="wages_expenditure")
+    assert out is not None
+    assert out.canonical_value == Decimal("650000")
+    assert out.resolution_rule_id == "R4-REC-11"
+    assert [s.value for s in out.partial_period] == [Decimal("400000")]
+    assert out.disagreement is None  # the partial is not compared, so not a disagreement
