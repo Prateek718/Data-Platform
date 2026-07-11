@@ -49,8 +49,16 @@ FLAGSHIP_TOTAL_EXP_COLUMN = "Total_Exp"
 # R4-DEF-03): this column is cumulative-YTD Wages (INR lakh ×100,000) ÷ cumulative-YTD persondays —
 # NOT a monthly rate. Its FY-final month value is the true annual average wage rate; the earlier
 # months are year-to-date ratios (April can read ₹18,623/day: arrears on a near-zero persondays
-# base), unfit to publish as rates. Taken at DISTRICT-ANNUAL grain (FY-final), single-source.
+# base), unfit to publish as rates. Taken at DISTRICT-ANNUAL grain, COMPLETE financial years only
+# (FY-final month = March), single-source.
 FLAGSHIP_WAGE_RATE_COLUMN = "Average_Wage_rate_per_day_per_person"
+
+# A cumulative-YTD ratio is a genuine ANNUAL rate only for a COMPLETE financial year — one whose
+# final month, March ("03"), is present. A partial final year yields only an early year-to-date
+# ratio (arrears-contaminated, near-zero denominator), not a rate. FY2026-27 is PERMANENTLY partial:
+# MGNREGA was repealed effective 30 June 2026, so it carries April 2026 only and will never complete
+# — its wage ratio is suppressed as honestly absent (R4-DEF-03). Canonical months: "03" = March.
+_FY_FINAL_MONTH_MARCH = "03"
 
 # Flagship cumulative-YTD columns rolled up to state-annual (FY-final per district, summed) — one
 # per canonical metric. All single-source at this grain except persondays (RS cross-check peers).
@@ -341,15 +349,17 @@ def flagship_state_annual_total_expenditure(
 def flagship_district_annual_avg_wage(
     resolved: ResolvedBatch, cells: Cells, *, source_as_of: datetime | None
 ) -> list[tuple[CanonicalKey, SourceValue]]:
-    """Flagship average wage rate at DISTRICT-ANNUAL grain: the FY-final month's value per district.
+    """Flagship average wage rate at DISTRICT-ANNUAL grain: the annual rate of a COMPLETE FY.
 
-    The column is cumulative-YTD wages / cumulative-YTD persondays (R4-DEF-03), so — exactly like
-    the additive cumulative columns — its FY-final value is the annual figure and the non-final
-    months are year-to-date ratios that must not be published as monthly rates. The FY-final month
-    is located via the persondays cumulative series (the rate's denominator); where that final
-    month has ZERO cumulative persondays the rate is undefined (0/0) and the fact is honestly
-    ABSENT — never 0, and never a stale earlier month (null != 0). A rate does not sum, so this is
-    not rolled up to state; single-source (no RS wage peer) -> reconciles as R4-REC-04.
+    The column is cumulative-YTD wages / cumulative-YTD persondays (R4-DEF-03), so its FY-final
+    value is a genuine ANNUAL rate ONLY for a complete financial year — one whose final month,
+    March, is present. Emitted only then. A partial final year (e.g. permanently-partial FY2026-27,
+    April only, scheme repealed 30 Jun 2026) yields an arrears-contaminated early-YTD ratio, not a
+    rate, and is suppressed as honestly absent. The FY-final month is located via the persondays
+    cumulative series (the rate's denominator); where that final month has ZERO cumulative
+    persondays the rate is undefined (0/0) and the fact is likewise absent (null != 0), never a
+    stale earlier month. A rate does not sum, so this is not rolled to state; single-source ->
+    R4-REC-04.
     """
     # (state, district, fin_year) -> month -> (wage_rate, cumulative_persondays)
     per_year: dict[tuple[str, str, str], dict[str, tuple[Decimal, Decimal]]] = defaultdict(dict)
@@ -375,6 +385,8 @@ def flagship_district_annual_avg_wage(
         if final is None:
             continue
         final_month, final_persondays = final
+        if final_month != _FY_FINAL_MONTH_MARCH:  # incomplete FY — no genuine annual rate
+            continue
         if final_persondays == 0:  # rate undefined at zero persondays — honestly absent, never 0
             continue
         wage, _pd = months[final_month]

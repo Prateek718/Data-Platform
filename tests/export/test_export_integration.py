@@ -102,7 +102,7 @@ def test_district_drilldown_is_single_grain_district_annual(bundle: ExportBundle
     additive = [f for f in annual if f.key.metric in _ADDITIVE]
     wage = [f for f in annual if f.key.metric == "avg_wage_rate_per_day"]
     assert len(additive) == 51536
-    assert len(wage) == 6188  # FY-final rate per district-year, less zero-persondays years
+    assert len(wage) == 5645  # FY-final rate per COMPLETE-FY district-year (March final, pd > 0)
     # the rate is NOT forced into the state spine (it does not sum to a state annual)
     assert "avg_wage_rate_per_day" not in {f.key.metric for f in bundle.state_facts}
 
@@ -124,6 +124,25 @@ def test_anantnag_2018_19_avg_wage_is_fy_final_annual(bundle: ExportBundle) -> N
     assert hits[0].value == Decimal("103.392742752098")  # FY-final = 103.39274 (5dp)
 
 
+def test_no_wage_facts_for_permanently_partial_2026_27(bundle: ExportBundle) -> None:
+    # avg_wage is a cumulative-YTD ratio → a genuine annual rate only for a COMPLETE FY (March). FY
+    # 2026-27 is April-only and PERMANENTLY partial (MGNREGA repealed 30 Jun 2026, so it never
+    # completes); its arrears-contaminated ratio is not an annual rate → no wage fact for it.
+    wage_2026 = [
+        f
+        for f in bundle.district_facts
+        if f.key.metric == "avg_wage_rate_per_day" and f.key.fin_year == "2026-27"
+    ]
+    assert wage_2026 == []
+    # the ADDITIVE metrics still cover 2026-27 (only the rate is gated on a complete FY)
+    additive_2026 = [
+        f
+        for f in bundle.district_facts
+        if f.key.metric in _ADDITIVE and f.key.fin_year == "2026-27"
+    ]
+    assert additive_2026
+
+
 # --- files, join, determinism -------------------------------------------------------------------
 
 
@@ -131,15 +150,15 @@ def test_csv_row_counts_match_assembled_series(written: _Written) -> None:
     d1, _d2, counts = written
     assert counts["state_annual_series"] == 4219
     assert counts["national_annual_series"] == 148
-    assert counts["district_flagship"] == 57724  # 51,536 additive + 6,188 FY-final wage
-    assert counts["lineage"] == 4219 + 148 + 57724
+    assert counts["district_flagship"] == 57181  # 51,536 additive + 5,645 complete-FY wage
+    assert counts["lineage"] == 4219 + 148 + 57181
 
     def data_rows(path: Path) -> int:
         return len(path.read_text().splitlines()) - 1  # minus header
 
     assert data_rows(d1 / "state_annual_series.csv") == 4219
     assert data_rows(d1 / "national_annual_series.csv") == 148
-    assert data_rows(d1 / "district_flagship.csv") == 57724
+    assert data_rows(d1 / "district_flagship.csv") == 57181
 
 
 def test_every_fact_id_joins_csv_to_lineage_exactly_once(written: _Written) -> None:
@@ -147,7 +166,7 @@ def test_every_fact_id_joins_csv_to_lineage_exactly_once(written: _Written) -> N
     lineage_ids = [
         json.loads(line)["fact_id"] for line in (d1 / "lineage.jsonl").read_text().splitlines()
     ]
-    assert len(lineage_ids) == len(set(lineage_ids)) == 62091  # unique, one per exported fact
+    assert len(lineage_ids) == len(set(lineage_ids)) == 61548  # unique, one per exported fact
 
     csv_ids: set[str] = set()
     for name, columns in (

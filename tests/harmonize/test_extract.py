@@ -136,3 +136,16 @@ def test_district_annual_avg_wage_absent_when_fy_final_persondays_zero() -> None
     }
     out = flagship_district_annual_avg_wage(_district_batch(records), cells, source_as_of=_AS_OF)
     assert out == []
+
+
+def test_district_annual_avg_wage_absent_when_final_month_not_march() -> None:
+    # A cumulative-YTD ratio is a genuine ANNUAL rate only for a COMPLETE financial year (March
+    # present). FY2026-27 is April-only and PERMANENTLY partial — MGNREGA was repealed 30 Jun 2026,
+    # so that FY never completes; its arrears-contaminated early-YTD ratio is not an annual rate and
+    # the fact is honestly absent (R4-DEF-03).
+    records = [_district_record(0, "10", "333")]
+    cells: dict[int, dict[str, CleanCell]] = {
+        0: _wage_cell("2026-27", "04", "18623.25759", "12050"),  # April only — FY never completes
+    }
+    out = flagship_district_annual_avg_wage(_district_batch(records), cells, source_as_of=_AS_OF)
+    assert out == []
