@@ -2,7 +2,7 @@
 
 Ties the per-metric extractors, the assembler, and the cross-metric quarantine into one call: it
 maps each canonical metric off the flagship (the seven cumulative metrics rolled to state-annual,
-total_expenditure by derive-and-compare, and the district-monthly wage rate), folds in the
+total_expenditure by derive-and-compare, and the district-annual FY-final wage rate), folds in the
 cross-source RS person-days values, reconciles per canonical key, then applies the cross-metric
 R4-Q-01 person-days plausibility check. Dependency-injected (already-resolved batches in) so it
 stays pure and testable; the caller supplies the ingest→normalize→resolve products.
@@ -15,7 +15,7 @@ from datetime import datetime
 from data_platform.harmonize.assemble import assemble
 from data_platform.harmonize.extract import (
     FLAGSHIP_CUMULATIVE_COLUMNS,
-    flagship_district_monthly_avg_wage,
+    flagship_district_annual_avg_wage,
     flagship_state_annual_cumulative,
     flagship_state_annual_total_expenditure,
 )
@@ -58,8 +58,8 @@ def harmonize_starter_metrics(
         source_as_of=source_as_of,
         lgd_district_counts=lgd_district_counts,
     )
-    # avg_wage is a rate at the native district-monthly grain.
-    keyed += flagship_district_monthly_avg_wage(
+    # avg_wage is a cumulative-YTD ratio → published at district-annual (FY-final) grain, not month.
+    keyed += flagship_district_annual_avg_wage(
         flagship_resolved,
         flagship_cells,
         source_as_of=source_as_of,

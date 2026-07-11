@@ -45,8 +45,11 @@ _LAKH = Decimal(100_000)
 FLAGSHIP_EXPENDITURE_COMPONENTS = ("Wages", "Material_and_skilled_Wages", "Total_Adm_Expenditure")
 FLAGSHIP_TOTAL_EXP_COLUMN = "Total_Exp"
 
-# The flagship average wage rate (INR per day per person) — a rate, taken at the native
-# district-monthly grain (not summed, not rolled up); single-source, so no cross-source peer.
+# The flagship average wage rate (INR/day/person). VERIFIED (400,430/400,430 rows @ rel 1e-9,
+# R4-DEF-03): this column is cumulative-YTD Wages (INR lakh ×100,000) ÷ cumulative-YTD persondays —
+# NOT a monthly rate. Its FY-final month value is the true annual average wage rate; the earlier
+# months are year-to-date ratios (April can read ₹18,623/day: arrears on a near-zero persondays
+# base), unfit to publish as rates. Taken at DISTRICT-ANNUAL grain (FY-final), single-source.
 FLAGSHIP_WAGE_RATE_COLUMN = "Average_Wage_rate_per_day_per_person"
 
 # Flagship cumulative-YTD columns rolled up to state-annual (FY-final per district, summed) — one
@@ -335,45 +338,65 @@ def flagship_state_annual_total_expenditure(
     return out
 
 
-def flagship_district_monthly_avg_wage(
+def flagship_district_annual_avg_wage(
     resolved: ResolvedBatch, cells: Cells, *, source_as_of: datetime | None
 ) -> list[tuple[CanonicalKey, SourceValue]]:
-    """Take the flagship average wage rate at its native district-monthly grain.
+    """Flagship average wage rate at DISTRICT-ANNUAL grain: the FY-final month's value per district.
 
-    A rate is neither summed nor cumulative-rolled: each resolved district-month row contributes one
-    value directly, at the canonical district+monthly grain. Single-source (no RS wage peer), so
-    these reconcile as R4-REC-04.
+    The column is cumulative-YTD wages / cumulative-YTD persondays (R4-DEF-03), so — exactly like
+    the additive cumulative columns — its FY-final value is the annual figure and the non-final
+    months are year-to-date ratios that must not be published as monthly rates. The FY-final month
+    is located via the persondays cumulative series (the rate's denominator); where that final
+    month has ZERO cumulative persondays the rate is undefined (0/0) and the fact is honestly
+    ABSENT — never 0, and never a stale earlier month (null != 0). A rate does not sum, so this is
+    not rolled up to state; single-source (no RS wage peer) -> reconciles as R4-REC-04.
     """
-    out: list[tuple[CanonicalKey, SourceValue]] = []
+    # (state, district, fin_year) -> month -> (wage_rate, cumulative_persondays)
+    per_year: dict[tuple[str, str, str], dict[str, tuple[Decimal, Decimal]]] = defaultdict(dict)
     for record in resolved.records:
         if record.state_canonical_id is None or record.district_canonical_id is None:
             continue
         row = cells[record.row_index]
-        fin_year, month, wage = (
-            row.get("fin_year"),
-            row.get("month"),
-            row.get(FLAGSHIP_WAGE_RATE_COLUMN),
+        fin_year, month = row.get("fin_year"), row.get("month")
+        wage = _as_decimal(row.get(FLAGSHIP_WAGE_RATE_COLUMN))
+        persondays = _as_decimal(row.get(FLAGSHIP_PERSONDAYS_COLUMN))
+        if (
+            isinstance(fin_year, str)
+            and isinstance(month, str)
+            and wage is not None
+            and persondays is not None
+        ):
+            district_year = (record.state_canonical_id, record.district_canonical_id, fin_year)
+            per_year[district_year][month] = (wage, persondays)
+
+    out: list[tuple[CanonicalKey, SourceValue]] = []
+    for (state_code, district_code, fin_year), months in per_year.items():
+        final = fy_final_of_cumulative({month: pd for month, (_wage, pd) in months.items()})
+        if final is None:
+            continue
+        final_month, final_persondays = final
+        if final_persondays == 0:  # rate undefined at zero persondays — honestly absent, never 0
+            continue
+        wage, _pd = months[final_month]
+        key = CanonicalKey(
+            scheme="MGNREGA",
+            geo_level=GeoLevel.DISTRICT,
+            state_code=state_code,
+            district_code=district_code,
+            fin_year=fin_year,
+            month=None,
+            metric=AVG_WAGE_RATE_PER_DAY,
         )
-        if isinstance(fin_year, str) and isinstance(month, str) and isinstance(wage, Decimal):
-            key = CanonicalKey(
-                scheme="MGNREGA",
-                geo_level=GeoLevel.DISTRICT,
-                state_code=record.state_canonical_id,
-                district_code=record.district_canonical_id,
-                fin_year=fin_year,
-                month=month,
-                metric=AVG_WAGE_RATE_PER_DAY,
+        out.append(
+            (
+                key,
+                SourceValue(
+                    source_id=resolved.source_id,
+                    value=wage,
+                    original_unit=CANONICAL_UNIT[AVG_WAGE_RATE_PER_DAY],
+                    source_as_of=source_as_of,
+                    authority_rank=FLAGSHIP_RANK,
+                ),
             )
-            out.append(
-                (
-                    key,
-                    SourceValue(
-                        source_id=resolved.source_id,
-                        value=wage,
-                        original_unit="INR",
-                        source_as_of=source_as_of,
-                        authority_rank=FLAGSHIP_RANK,
-                    ),
-                )
-            )
+        )
     return out
