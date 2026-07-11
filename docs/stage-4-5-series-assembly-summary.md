@@ -133,9 +133,10 @@ were not put through the empirical unidirectional-restatement check the state fa
   (`c8687507…`) is a single FY 2016-17 mid-year snapshot with zero flagship overlap and no
   corroborating peer; it is coverage, not a defensible series value, so it is excluded. Active
   workers is a flagship-era (2018+) metric.
-- **`avg_wage_rate_per_day` is not in the state-annual spine.** It is a *rate* (INR/day/person),
-  native to district-monthly grain and single-source; it does not sum to a state-annual total, so
-  it is kept at its native grain (via flagship lineage), not forced into this series.
+- **`avg_wage_rate_per_day` is not in the state-annual spine.** It is a *rate* (INR/day/person) — the
+  FY-final value of a cumulative-YTD ratio (cumulative wages ÷ cumulative person-days, verified as an
+  exact identity; R4-DEF-03), single-source at district-annual grain. It does not sum to a
+  state-annual total, so it is kept in the `district_flagship` drill-down, not forced into this series.
 - Within 2010-2017, coverage is 32-33 states/UTs per metric-year (not the full 35) — states that a
   given historical source did not report that year are simply absent (null ≠ 0).
 

@@ -19,8 +19,8 @@ explains where every value came from.
 |---|---|--:|---|
 | `state_annual_series.csv` / `.parquet` | one value per (state, financial-year, metric) | 4,219 | FY 2010-11 → 2026-27 |
 | `national_annual_series.csv` / `.parquet` | one value per (financial-year, metric) | 148 | FY 2006-07 → 2026-27 |
-| `district_flagship.csv` / `.parquet` | flagship drill-down: (state, district, FY, metric) annual + monthly wage | 120,724 | FY 2018-19 → 2026-27 |
-| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 125,091 | — |
+| `district_flagship.csv` / `.parquet` | flagship drill-down: one value per (state, district, FY, metric), **district-annual** | 57,724 | FY 2018-19 → 2026-27 |
+| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 62,091 | — |
 
 The CSVs are flat and friendly; the deep provenance (every source seen, every rejected/superseded
 value, coverage descriptors) lives in `lineage.jsonl`, joined to the CSVs on **`fact_id`**. The
@@ -59,9 +59,11 @@ administrative code — that absence is honest, not a missing value.
 
 ### 2.3 `district_flagship` (the flagship drill-down)
 
-The finest grain the flagship supports, for the flagship era (FY 2018-19 →). Additive metrics are
-at **district-annual** grain and sum to the state spine (§7); the average wage rate is at its native
-**district-monthly** grain.
+The finest grain the flagship supports, for the flagship era (FY 2018-19 →). **Single-grain
+(district-annual):** all nine metrics carry one value per (state, district, financial-year). The
+eight additive metrics are FY-final district-annual figures that sum to the state spine (§7); the
+ninth, `avg_wage_rate_per_day`, is the FY-final value of a cumulative-YTD ratio — the true annual
+average wage rate (§3, §7). The raw monthly year-to-date snapshots are **not** exported (§7).
 
 | Column | Type | Meaning |
 |---|---|---|
@@ -69,11 +71,10 @@ at **district-annual** grain and sum to the state spine (§7); the average wage 
 | `district_lgd_code` | string | The district's LGD code. |
 | `district_name` | string | The district's current LGD English name. |
 | `financial_year` | string | Indian financial year. |
-| `month` | string | Calendar month number `01`–`12` for the monthly wage rows (`01` = January, which falls late in an April→March financial year — combine with `financial_year` for the actual date); **empty for the annual rows**. |
-| `metric` | string | One of the eight additive metrics (annual rows) or `avg_wage_rate_per_day` (monthly rows). |
+| `metric` | string | One of the nine canonical metrics (§3) — the eight additive metrics or `avg_wage_rate_per_day`. |
 | `value` | number | Canonical-unit value; empty = null. |
 | `unit` | string | Canonical unit. |
-| `grain` | string | `district-annual` or `district-monthly`. |
+| `grain` | string | Always `district-annual` (this file is single-grain). |
 | `confidence` | string | Always `single-source` here (the flagship is the sole source at this grain). |
 | `sources_seen_count`, `contributing_resource_ids`, `fact_id` | — | As in the state spine. |
 
@@ -105,7 +106,7 @@ integer count of households/workers.
 | `material_skilled_expenditure` | INR lakh | Expenditure on material and skilled wages. |
 | `admin_expenditure` | INR lakh | Administrative expenditure. |
 | `total_expenditure` | INR lakh | Total expenditure. **Derived** as wages + material/skilled + admin; where a source also states its own total, the two are compared and any gap is recorded in lineage (the derived value is the one published). |
-| `avg_wage_rate_per_day` | INR | Average wage rate per day per person. A **rate**, kept at its native district-monthly grain (it does not sum to an annual total), so it appears only in `district_flagship` (§8). |
+| `avg_wage_rate_per_day` | INR | Average wage rate per day per person, at **district-annual** grain. The flagship's source column is a **cumulative year-to-date ratio** — cumulative wages ÷ cumulative person-days, verified as an exact identity over the whole flagship (the numerator is unskilled wages only) — so its **financial-year-final value is the true annual average wage rate** (for a *complete* year; for an in-progress year, currently FY 2026-27, the FY-final available is only a year-to-date ratio — §7). The mid-year values are running YTD ratios, not monthly rates (early in the year a full month of wage outflow, including arrears for prior-year work, falls on a near-zero stock of new person-days, so April can read ₹18,623/day), and are **not published** as monthly figures (§7). A rate does not sum to a state/national total, so it appears only in `district_flagship` (§8). |
 
 ### Units conventions (lakh / crore)
 
@@ -172,7 +173,7 @@ The series joins two eras at a continuous state-annual grain:
 
 - **FY 2018-19 → 2026-27** (`era_basis = flagship-rollup`): the flagship *District-wise MGNREGA Data
   at a Glance* (district + monthly) is authoritative, rolled up to state-annual. The finer
-  district-monthly detail is the `district_flagship` drill-down.
+  district-annual detail is the `district_flagship` drill-down.
 - **FY 2006-07 / 2010-11 → 2017-18** (`era_basis = historical`): assembled from the historical
   datasets (MoSPI Statistical Year Book tables, Rajya Sabha parliamentary answers), reconciled and
   labelled by the confidence states above.
@@ -184,9 +185,27 @@ on Goa in FY 2022-23, a naive monthly sum gives 593,095 person-days against the 
 94,004, a 6.31× inflation. The pipeline takes the FY-final and never sums. This is also **why the
 flagship's raw monthly cumulative snapshots are not exported as flat facts**: they exist inside the
 pipeline but publishing them as if each month were a monthly flow would invite exactly that
-over-count, so `district_flagship` carries the additive metrics at **district-annual** (FY-final)
-grain instead. The one genuinely monthly flagship quantity, `avg_wage_rate_per_day`, is a rate (not
-cumulative) and is exported at its native district-monthly grain.
+over-count, so `district_flagship` carries every metric at **district-annual** (FY-final) grain.
+
+**`avg_wage_rate_per_day` is the same story, not an exception.** Its source column looks like a
+per-month wage rate but is actually a **cumulative-YTD ratio** — cumulative wages ÷ cumulative
+person-days — verified as an exact identity across the entire flagship (every non-zero row, to a
+relative tolerance of 1e-9; the numerator is unskilled wages only). So its **FY-final month is the
+annual average wage rate**, and the mid-year values are running ratios that are physically
+implausible as daily rates (early-year wage outflow, including arrears for prior-year work, divided
+by a near-zero stock of new person-days — April values above ₹1,000/day occur for 12.8% of
+district-years, versus 0.16% by March). It is therefore exported at **district-annual** grain like
+every other metric — not as twelve monthly rows. Where a district-year's FY-final row has zero
+cumulative person-days the rate is undefined (0/0) and the fact is simply absent (null ≠ 0), never a
+stale earlier month. Deriving a genuine *discrete-monthly* wage rate (Δwages ÷ Δperson-days) is
+deferred to v1.1, because payment timing makes a naive month-difference noisy.
+
+One caveat follows from the ratio being cumulative: the FY-final value is the true annual rate only
+for a **complete** financial year. For an **in-progress** year — currently **FY 2026-27**, where the
+flagship carries April 2026 only — the FY-final-available value is just the early year-to-date ratio,
+which for a rate is implausibly high (the same near-zero-denominator effect that inflates April), so
+FY 2026-27 `avg_wage_rate_per_day` should be read as year-to-date, not annual. This is the general
+in-progress-year caveat (§1: the last complete year is 2025-26); it bites hardest on the wage rate.
 
 ---
 
@@ -199,9 +218,10 @@ cumulative) and is exported at its native district-monthly grain.
 - **`active_workers` is 2018-19 onward only**, in both spines. The one pre-2018 candidate is a single
   mid-year snapshot with no corroborating peer and no flagship overlap; it is excluded as coverage,
   not a defensible series value.
-- **`avg_wage_rate_per_day` is district-monthly only.** It is a rate, native to district-monthly
-  grain and single-source; it does not sum to a state or national annual, so it is kept only in
-  `district_flagship`, never forced into the spines.
+- **`avg_wage_rate_per_day` is district-annual and single-source.** It is a rate (the FY-final value
+  of a cumulative-YTD ratio — §3, §7), so it does not sum to a state or national annual and is kept
+  only in `district_flagship`, never forced into the spines. Only the FY-final value is published;
+  the mid-year YTD ratios are not (a genuine monthly rate is a deferred v1.1 derivation).
 - **Pre-2018 genuine cross-publisher material disagreements: nine, in two metrics.** After edition
   supersession and materiality filtering, the residual pre-2018 disagreements are:
   - **Four in `households_employed`** (a MoSPI edition vs a Rajya Sabha answer): **Bihar FY 2015-16**
@@ -268,9 +288,17 @@ cumulative) and is exported at its native district-monthly grain.
 - **Within FY 2010-11 → 2017-18, coverage is 32-33 states/UTs per metric-year, not the full 35.** A
   state a given historical source did not report that year is simply absent (null ≠ 0).
 - **The `district_flagship` drill-down is flagship-era (FY 2018-19 →) only** — there is no
-  district-level pre-2018 source. Its additive district-annual values sum to the state spine by
-  construction; where a state's flagship district set is smaller than its current LGD district count,
-  that structural incompleteness is recorded in each fact's `aggregate_coverage` in lineage.
+  district-level pre-2018 source. It is single-grain district-annual; its additive district-annual
+  values sum to the state spine by construction; where a state's flagship district set is smaller than
+  its current LGD district count, that structural incompleteness is recorded in each fact's
+  `aggregate_coverage` in lineage.
+- **Scope: the canonical series covers the 9 contracted metrics (§3).** The flagship publishes ~35
+  columns per district-month; the remaining ~26 beyond the 9 canonical metrics — SC/ST/Women
+  person-day and worker breakdowns, job-card and worker totals, works counts (ongoing/completed/taken
+  up), NRM and agriculture expenditure shares, DBT/payment-timeliness percentages, the approved labour
+  budget, and others — are **outside v1 scope**. They are not dropped: every one is preserved in the
+  deposited raw archive (`data/archive/`, the flagship resource `ee03643a…`), available for anyone to
+  use directly.
 - **Known unharmonized archive overlaps (deferred, not lost).** A few RS state peers remain unwired,
   each held back for a byte-verified **machinery-reach or defect** reason (no source is deferred for
   scope alone): RS persondays vintages whose **terminal year is itself a mid-year partial**

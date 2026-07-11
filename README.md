@@ -11,14 +11,15 @@ December 2025 — so this is built as a concluded, citable reference record rath
 
 ## What you get
 
-Running the export (`uv run python -m data_platform.export`) produces, under `dist/v1.0/`:
+Running the export (`PYTHONPATH=src uv run python -m data_platform.export`) produces, under
+`dist/v1.0/`:
 
 | File | What it is |
 |---|---|
 | `state_annual_series.csv` / `.parquet` | 4,219 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
 | `national_annual_series.csv` / `.parquet` | 148 facts — one value per (financial-year, metric), FY 2006-07 → 2026-27. |
-| `district_flagship.csv` / `.parquet` | 120,724 facts — the flagship district drill-down (2018+): additive metrics at district-annual grain, plus `avg_wage_rate_per_day` at its native district-monthly grain. |
-| `lineage.jsonl` | 125,091 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
+| `district_flagship.csv` / `.parquet` | 57,724 facts — the flagship district drill-down (2018+), single-grain **district-annual**: the 8 additive metrics (which sum to the state spine) plus `avg_wage_rate_per_day` (a cumulative-YTD ratio, published at its FY-final annual value). |
+| `lineage.jsonl` | 62,091 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
 
 The CSVs are flat and friendly; the deep provenance lives in `lineage.jsonl`, joined on `fact_id`.
 Every column and metric is defined in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)** — a reader needs
@@ -94,8 +95,14 @@ query (that serving layer is roadmap, not part of this v1 data release).
 - FY 2006-07 → 2009-10 exists only in the **national** spine — no state-level source reaches before
   FY 2010-11. The gap is visible, never synthesized.
 - `active_workers` is **flagship-era (2018-19 →) only**; no defensible pre-2018 value exists.
-- `avg_wage_rate_per_day` is a rate, kept at its native **district-monthly** grain only — it does
-  not sum to a state or national annual, so it is not in the spines.
+- `avg_wage_rate_per_day` is a rate at **district-annual** grain — the flagship's source column is a
+  cumulative-YTD ratio (cumulative wages ÷ cumulative person-days, a verified exact identity), so its
+  FY-final value is the true annual rate and the mid-year YTD ratios are not published. It does not
+  sum to a state or national annual, so it is not in the spines.
+- **Scope: the 9 contracted metrics.** The flagship publishes ~35 columns per district-month; the
+  ~26 beyond the 9 canonical metrics (SC/ST/Women breakdowns, job-cards, works counts, DBT/payment
+  timeliness, labour budget, …) are outside v1 scope — not dropped, but preserved in the deposited
+  raw archive for direct use.
 - Within FY 2010-11 → 2017-18, coverage is **32–33 of 35** states/UTs per metric-year (a source that
   did not report a state that year is absent, not zero).
 - **FY2017-18 is thin.** MoSPI's SYB2018 edition publishes 2017-18 as a mid-year partial, excluded
@@ -126,7 +133,7 @@ raw archive.
 ```bash
 uv sync                                   # install (pinned via uv.lock)
 uv run ruff check . && uv run mypy src tests && uv run pytest   # gate: lint, types, tests
-uv run python -m data_platform.export     # regenerate dist/v1.0/ from data/archive/
+PYTHONPATH=src uv run python -m data_platform.export   # regenerate dist/v1.0/ from data/archive/
 ```
 
 ## How to cite

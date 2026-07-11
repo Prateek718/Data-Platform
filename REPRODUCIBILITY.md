@@ -15,8 +15,8 @@ This is enforced by the test suite, not just asserted:
   stable (hermetic, no archive needed).
 - `tests/export/test_export_integration.py` (archive-gated) rebuilds the full series, writes it
   twice, and asserts the four deliverables are byte-identical across writes — including Parquet —
-  and pins the documented row counts (state 4,219 · national 148 · district 120,724 · lineage
-  125,091) and the headline reconciliation facts.
+  and pins the documented row counts (state 4,219 · national 148 · district 57,724 · lineage
+  62,091) and the headline reconciliation facts.
 
 Scope note: byte-identity is over a **fixed archive**. If the archive contents change, the outputs
 change — which is exactly why the frozen archive is part of the reproducibility story (see the fork
@@ -36,9 +36,15 @@ JSONL are unconditionally byte-identical.
 git clone <repo> && cd Data-Platform
 uv sync                                             # install exact pinned versions (incl. pyarrow)
 uv run ruff check . && uv run mypy src tests && uv run pytest   # gate: lint, types, full suite
-uv run python -m data_platform.export               # data/archive/ → dist/v1.0/
-# or: uv run python -m data_platform.export <archive_dir> <out_dir>
+PYTHONPATH=src uv run python -m data_platform.export   # data/archive/ → dist/v1.0/
+# or: PYTHONPATH=src uv run python -m data_platform.export <archive_dir> <out_dir>
 ```
+
+`PYTHONPATH=src` is required because the repo is currently configured as an application, not an
+installable library (`[tool.uv] package = false`), so `uv sync` does not put `data_platform` on the
+import path; without it the export fails with `ModuleNotFoundError`. (`uv run pytest` is unaffected —
+pytest adds `src` itself via `pythonpath` in `pyproject.toml`.) Proper package installation, which
+removes the need for the prefix, is queued for **v1.1**.
 
 The archive-gated tests (and the export itself) **skip / cannot run** without the raw archive at
 `data/archive/` — which is the fork below. The hermetic tests run everywhere.
@@ -54,7 +60,7 @@ exactly and offline. The two options are recorded below for the deposit record.
 
 - **Total size: ~628 MB** — the API/JSON datasets (91 files), the file-only CSVs (41 files), and the
   LGD geography reference.
-- The exported deliverables (`dist/v1.0/`) are ~133 MB (dominated by the 116 MB `lineage.jsonl`).
+- The exported deliverables (`dist/v1.0/`) are ~70 MB (dominated by the ~58 MB `lineage.jsonl`).
 
 **Option A (recommended): include the frozen raw archive snapshot in the Zenodo deposit**, alongside
 the code and the outputs. Anyone can then reproduce the series exactly, offline, forever — the

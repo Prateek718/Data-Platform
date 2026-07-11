@@ -20,8 +20,8 @@ Before tagging: commit `LICENSE`, `LICENSE-DATA`, and the docs in this sprint.
 > **What's inside (`dist/v1.0/`)**
 > - `state_annual_series` — 4,219 facts, 8 metrics, FY 2010-11 → 2026-27 (CSV + Parquet)
 > - `national_annual_series` — 148 facts, FY 2006-07 → 2026-27 (CSV + Parquet)
-> - `district_flagship` — 120,724 flagship-era facts, district-annual + native monthly wage
-> - `lineage.jsonl` — 125,091 per-fact provenance records, joined on `fact_id`
+> - `district_flagship` — 57,724 flagship-era facts, single-grain district-annual (incl. FY-final wage)
+> - `lineage.jsonl` — 62,091 per-fact provenance records, joined on `fact_id`
 >
 > Every column and metric is defined in `DATA_DICTIONARY.md`. The series is built deterministically
 > and offline; repeated runs are byte-identical (`REPRODUCIBILITY.md`).
