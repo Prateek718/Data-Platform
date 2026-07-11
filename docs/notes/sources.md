@@ -145,8 +145,10 @@ The remaining 6 canonical metrics are also present here (for the later slice):
   **unskilled `Wages` only** (not +`Material_and_skilled_Wages`). So its FY-final value is the true
   annual average wage rate; the non-final months are YTD ratios (e.g. April can read ₹18,623/day —
   arrears on a near-zero persondays base). Canonical `avg_wage_rate_per_day` is therefore taken at
-  the **FY-final (district-annual)** value; a discrete-monthly rate would need Δwages÷Δpersondays
-  (OQ-OGD-4). **Now resolved for v1** (was a silent monthly-rate assumption).
+  the **FY-final (district-annual)** value, **for complete FYs only** (March present) — the
+  permanently-partial FY2026-27 (scheme repealed 30 Jun 2026, April only) carries no rate. A
+  discrete-monthly rate would need Δwages÷Δpersondays (OQ-OGD-4). **Now resolved for v1** (was a
+  silent monthly-rate assumption).
 - **Duplicate/near-duplicate rows.** PUNE 2024-25 "Jan" appears twice with slightly different
   values (558,170 vs 552,427) — likely snapshot revisions returned by the API. Stage 1 will
   need a dedupe/latest-snapshot rule; noting here as a data-quality reality.

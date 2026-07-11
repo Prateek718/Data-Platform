@@ -20,8 +20,8 @@ Before tagging: commit `LICENSE`, `LICENSE-DATA`, and the docs in this sprint.
 > **What's inside (`dist/v1.0/`)**
 > - `state_annual_series` — 4,219 facts, 8 metrics, FY 2010-11 → 2026-27 (CSV + Parquet)
 > - `national_annual_series` — 148 facts, FY 2006-07 → 2026-27 (CSV + Parquet)
-> - `district_flagship` — 57,724 flagship-era facts, single-grain district-annual (incl. FY-final wage)
-> - `lineage.jsonl` — 62,091 per-fact provenance records, joined on `fact_id`
+> - `district_flagship` — 57,181 flagship-era facts, single-grain district-annual (incl. complete-FY wage rate)
+> - `lineage.jsonl` — 61,548 per-fact provenance records, joined on `fact_id`
 >
 > Every column and metric is defined in `DATA_DICTIONARY.md`. The series is built deterministically
 > and offline; repeated runs are byte-identical (`REPRODUCIBILITY.md`).
@@ -31,9 +31,9 @@ Before tagging: commit `LICENSE`, `LICENSE-DATA`, and the docs in this sprint.
 >   badly — e.g. 6.31× on Goa FY 2022-23).
 > - Geography anchored to LGD codes by name-join (no code crosswalk exists); unresolvable rows are
 >   quarantined with a reason, never dropped.
-> - After separating period-mismatch and one-publisher re-issues (edition supersession, 472 cells),
->   exactly **4** genuine cross-publisher disagreements remain in the pre-2018 series — each published
->   with its rejected value and full lineage.
+> - After separating period-mismatch and one-publisher re-issues (edition supersession, 470 cells),
+>   **9** genuine cross-publisher disagreements remain in the pre-2018 series (4 in `households_employed`,
+>   5 in `total_expenditure`) — each published with its rejected value and full lineage.
 >
 > **Honest limitations** and the full coverage account are in `DATA_DICTIONARY.md` (§8).
 >

@@ -15,8 +15,8 @@ This is enforced by the test suite, not just asserted:
   stable (hermetic, no archive needed).
 - `tests/export/test_export_integration.py` (archive-gated) rebuilds the full series, writes it
   twice, and asserts the four deliverables are byte-identical across writes — including Parquet —
-  and pins the documented row counts (state 4,219 · national 148 · district 57,724 · lineage
-  62,091) and the headline reconciliation facts.
+  and pins the documented row counts (state 4,219 · national 148 · district 57,181 · lineage
+  61,548) and the headline reconciliation facts.
 
 Scope note: byte-identity is over a **fixed archive**. If the archive contents change, the outputs
 change — which is exactly why the frozen archive is part of the reproducibility story (see the fork

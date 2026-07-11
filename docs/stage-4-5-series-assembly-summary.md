@@ -81,13 +81,14 @@ independent corroboration.
   MoSPI-only cells where a publisher's dated editions disagree would be `single-publisher divergence`
   (R4-REC-09, value = null): admin 76, material 106, wages 100, total 95, 100-days 78, persondays 97,
   households 20 — **572 state cells**. Edition supersession (R4-REC-10) adjudicates every one to the
-  latest edition, so **R4-REC-09 is now 0**; **472** of the resolved cells carry the
+  latest edition, so **R4-REC-09 is now 0**; **470** of the resolved cells carry the
   `edition-superseded` label (a later edition actually restated an earlier one), the rest resolving
   to plain single-/cross-publisher agreement.
-- **The only genuine cross-PUBLISHER material disagreements remaining are 4** — all in
-  `households_employed` (MoSPI's latest edition vs a Rajya Sabha answer). Collapsing the MoSPI
-  editions to the latest before comparing to RS also un-hid real agreement: `cross-publisher` rose
-  53 → 118 and household `flagged` fell 69 → 4.
+- **The genuine cross-PUBLISHER material disagreements remaining are 9** — 4 in `households_employed`
+  (MoSPI's latest edition vs a Rajya Sabha answer) and 5 in `total_expenditure` (surfaced once the RS
+  expenditure table made RS an independent publisher there). Collapsing the MoSPI editions to the
+  latest before comparing to RS also un-hid real agreement: household `cross-publisher` rose 53 → 118
+  and household `flagged` fell 69 → 4.
 
 Sources wired: flagship (2018+, all metrics); MoSPI Financial Outcomes state files (expenditure,
 INR lakh); MoSPI Implementation Report state files (households / 100-days as raw counts, persondays
@@ -135,8 +136,9 @@ were not put through the empirical unidirectional-restatement check the state fa
   workers is a flagship-era (2018+) metric.
 - **`avg_wage_rate_per_day` is not in the state-annual spine.** It is a *rate* (INR/day/person) — the
   FY-final value of a cumulative-YTD ratio (cumulative wages ÷ cumulative person-days, verified as an
-  exact identity; R4-DEF-03), single-source at district-annual grain. It does not sum to a
-  state-annual total, so it is kept in the `district_flagship` drill-down, not forced into this series.
+  exact identity; R4-DEF-03), single-source at district-annual grain, complete FYs only (the
+  permanently-partial FY2026-27 carries no rate). It does not sum to a state-annual total, so it is
+  kept in the `district_flagship` drill-down, not forced into this series.
 - Within 2010-2017, coverage is 32-33 states/UTs per metric-year (not the full 35) — states that a
   given historical source did not report that year are simply absent (null ≠ 0).
 
@@ -155,7 +157,7 @@ noise. Five mechanisms do this, in the order reconciliation applies them:
   the earlier value is kept in lineage as `edition_superseded` — not a conflict, not a rejected peer.
   This is a source-grounded editorial hierarchy (same catalog + dated edition markers + verified
   one-directional restatement, see below), NOT a blind "newest file wins". It carries the
-  `edition-superseded` label on **472 state cells**, and adjudicates every one of the 572 cells the
+  `edition-superseded` label on **470 state cells**, and adjudicates every one of the 572 cells the
   earlier build could not (leaving them null) to a value.
 - **Partial-terminal-year exclusion (R4-REC-11) — the "incompleteness" rule.** An edition's LAST
   year is a mid-year partial (e.g. SYB 2016's 2014-15 is "as on 31.12.2014" — three quarters of a

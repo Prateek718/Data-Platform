@@ -19,8 +19,8 @@ explains where every value came from.
 |---|---|--:|---|
 | `state_annual_series.csv` / `.parquet` | one value per (state, financial-year, metric) | 4,219 | FY 2010-11 → 2026-27 |
 | `national_annual_series.csv` / `.parquet` | one value per (financial-year, metric) | 148 | FY 2006-07 → 2026-27 |
-| `district_flagship.csv` / `.parquet` | flagship drill-down: one value per (state, district, FY, metric), **district-annual** | 57,724 | FY 2018-19 → 2026-27 |
-| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 62,091 | — |
+| `district_flagship.csv` / `.parquet` | flagship drill-down: one value per (state, district, FY, metric), **district-annual** | 57,181 | FY 2018-19 → 2026-27 |
+| `lineage.jsonl` | one JSON object per exported fact, keyed by `fact_id` | 61,548 | — |
 
 The CSVs are flat and friendly; the deep provenance (every source seen, every rejected/superseded
 value, coverage descriptors) lives in `lineage.jsonl`, joined to the CSVs on **`fact_id`**. The
@@ -106,7 +106,7 @@ integer count of households/workers.
 | `material_skilled_expenditure` | INR lakh | Expenditure on material and skilled wages. |
 | `admin_expenditure` | INR lakh | Administrative expenditure. |
 | `total_expenditure` | INR lakh | Total expenditure. **Derived** as wages + material/skilled + admin; where a source also states its own total, the two are compared and any gap is recorded in lineage (the derived value is the one published). |
-| `avg_wage_rate_per_day` | INR | Average wage rate per day per person, at **district-annual** grain. The flagship's source column is a **cumulative year-to-date ratio** — cumulative wages ÷ cumulative person-days, verified as an exact identity over the whole flagship (the numerator is unskilled wages only) — so its **financial-year-final value is the true annual average wage rate** (for a *complete* year; for an in-progress year, currently FY 2026-27, the FY-final available is only a year-to-date ratio — §7). The mid-year values are running YTD ratios, not monthly rates (early in the year a full month of wage outflow, including arrears for prior-year work, falls on a near-zero stock of new person-days, so April can read ₹18,623/day), and are **not published** as monthly figures (§7). A rate does not sum to a state/national total, so it appears only in `district_flagship` (§8). |
+| `avg_wage_rate_per_day` | INR | Average wage rate per day per person, at **district-annual** grain. The flagship's source column is a **cumulative year-to-date ratio** — cumulative wages ÷ cumulative person-days, verified as an exact identity over the whole flagship (the numerator is unskilled wages only) — so its **financial-year-final value is the true annual average wage rate** (for a *complete* financial year, i.e. March present; a **permanently-partial final year** — FY 2026-27, the scheme having been repealed 30 June 2026 so it never completes — carries no annual rate and is omitted, §7). The mid-year values are running YTD ratios, not monthly rates (early in the year a full month of wage outflow, including arrears for prior-year work, falls on a near-zero stock of new person-days, so April can read ₹18,623/day), and are **not published** as monthly figures (§7). A rate does not sum to a state/national total, so it appears only in `district_flagship` (§8). |
 
 ### Units conventions (lakh / crore)
 
@@ -163,7 +163,7 @@ re-issued the same statistical table across successive Statistical Year Book edi
 publisher's successive drafts, not independent readings; where a later edition restated an earlier
 one, the latest edition is taken and the earlier value kept in lineage as `edition_superseded`. This
 is a source-grounded editorial hierarchy (same catalog, dated edition markers, verified
-one-directional restatement), applied to **472** state cells — not a blind "newest file wins".
+one-directional restatement), applied to **470** state cells — not a blind "newest file wins".
 
 ---
 
@@ -195,17 +195,21 @@ annual average wage rate**, and the mid-year values are running ratios that are 
 implausible as daily rates (early-year wage outflow, including arrears for prior-year work, divided
 by a near-zero stock of new person-days — April values above ₹1,000/day occur for 12.8% of
 district-years, versus 0.16% by March). It is therefore exported at **district-annual** grain like
-every other metric — not as twelve monthly rows. Where a district-year's FY-final row has zero
-cumulative person-days the rate is undefined (0/0) and the fact is simply absent (null ≠ 0), never a
-stale earlier month. Deriving a genuine *discrete-monthly* wage rate (Δwages ÷ Δperson-days) is
-deferred to v1.1, because payment timing makes a naive month-difference noisy.
+every other metric — not as twelve monthly rows — and **only for a complete financial year** (one
+whose final month, March, is present). Where a complete year's FY-final row has zero cumulative
+person-days the rate is undefined (0/0) and the fact is simply absent (null ≠ 0), never a stale
+earlier month. Deriving a genuine *discrete-monthly* wage rate (Δwages ÷ Δperson-days) is deferred to
+v1.1, because payment timing makes a naive month-difference noisy.
 
-One caveat follows from the ratio being cumulative: the FY-final value is the true annual rate only
-for a **complete** financial year. For an **in-progress** year — currently **FY 2026-27**, where the
-flagship carries April 2026 only — the FY-final-available value is just the early year-to-date ratio,
-which for a rate is implausibly high (the same near-zero-denominator effect that inflates April), so
-FY 2026-27 `avg_wage_rate_per_day` should be read as year-to-date, not annual. This is the general
-in-progress-year caveat (§1: the last complete year is 2025-26); it bites hardest on the wage rate.
+Because the ratio is cumulative, the FY-final value is a true annual rate only for a **complete**
+year. A **partial final year** carries no annual rate — only the arrears-contaminated early-YTD
+ratio, which for a rate is implausibly high (the near-zero-denominator effect that inflates April) —
+so `avg_wage_rate_per_day` is **omitted** for it. This applies to **FY 2026-27**, which is
+**permanently partial**: MGNREGA was repealed effective **30 June 2026**, so the flagship carries
+April 2026 only and that year will never complete. Its April-only wage ratio (median ~₹1,167/day, up
+to ₹14.8M/day across districts) is not an annual rate, so no `avg_wage_rate_per_day` fact is emitted
+for FY 2026-27 — the year is present in `district_flagship` for the *additive* metrics but carries no
+wage rate. (The last complete financial year is 2025-26; §1.)
 
 ---
 
@@ -218,10 +222,13 @@ in-progress-year caveat (§1: the last complete year is 2025-26); it bites harde
 - **`active_workers` is 2018-19 onward only**, in both spines. The one pre-2018 candidate is a single
   mid-year snapshot with no corroborating peer and no flagship overlap; it is excluded as coverage,
   not a defensible series value.
-- **`avg_wage_rate_per_day` is district-annual and single-source.** It is a rate (the FY-final value
-  of a cumulative-YTD ratio — §3, §7), so it does not sum to a state or national annual and is kept
-  only in `district_flagship`, never forced into the spines. Only the FY-final value is published;
-  the mid-year YTD ratios are not (a genuine monthly rate is a deferred v1.1 derivation).
+- **`avg_wage_rate_per_day` is district-annual, complete-FY, and single-source.** It is a rate (the
+  FY-final value of a cumulative-YTD ratio — §3, §7), so it does not sum to a state or national annual
+  and is kept only in `district_flagship`, never forced into the spines. Only the FY-final value of a
+  **complete** financial year is published; mid-year YTD ratios are not (a genuine monthly rate is a
+  deferred v1.1 derivation), and the **permanently-partial FY 2026-27** (scheme repealed 30 June 2026,
+  April only) carries **no** wage rate — that year appears in `district_flagship` for the additive
+  metrics but not for `avg_wage_rate_per_day`.
 - **Pre-2018 genuine cross-publisher material disagreements: nine, in two metrics.** After edition
   supersession and materiality filtering, the residual pre-2018 disagreements are:
   - **Four in `households_employed`** (a MoSPI edition vs a Rajya Sabha answer): **Bihar FY 2015-16**

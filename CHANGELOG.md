@@ -12,10 +12,10 @@ artifacts.
 - **State spine** — 4,219 facts, one value per (state, financial-year, metric), 8 canonical metrics,
   FY 2010-11 → 2026-27, each LGD-anchored and lineage-traced.
 - **National spine** — 148 facts, FY 2006-07 → 2026-27 (the only tier reaching back to 2006-07).
-- **District drill-down** (`district_flagship`) — 57,724 flagship-era (2018+) facts, single-grain
+- **District drill-down** (`district_flagship`) — 57,181 flagship-era (2018+) facts, single-grain
   district-annual: 8 additive metrics (they sum to the state spine) plus `avg_wage_rate_per_day`
-  (a cumulative-YTD ratio, published at its FY-final annual value — see below).
-- **`lineage.jsonl`** — 62,091 per-fact provenance records keyed by `fact_id`: every source seen,
+  (a cumulative-YTD ratio, published at its FY-final annual value for complete FYs only — see below).
+- **`lineage.jsonl`** — 61,548 per-fact provenance records keyed by `fact_id`: every source seen,
   every superseded/rejected value with the deciding rule, coverage descriptors, and flags.
 - Both CSV and Parquet for every table; deterministic and byte-identical across runs.
 
@@ -24,8 +24,10 @@ artifacts.
   historical sources (MoSPI Statistical Year Book editions, Rajya Sabha answers) before.
 - Person-days corrected from cumulative-YTD to financial-year-final (never summed across months). The
   `avg_wage_rate_per_day` column, verified to be a cumulative-YTD ratio (cumulative wages ÷ cumulative
-  person-days, an exact identity across the flagship), is likewise taken at its FY-final annual value;
-  its mid-year year-to-date ratios (April can read ₹18,623/day) are not published as monthly rates.
+  person-days, an exact identity across the flagship), is likewise taken at its FY-final annual value —
+  for complete financial years only (March present); its mid-year YTD ratios (April can read
+  ₹18,623/day) are not published, and the permanently-partial FY2026-27 (scheme repealed 30 June 2026,
+  April only) carries no wage rate.
 - Geography resolved to current LGD codes by name-join; unresolvable rows quarantined with a reason,
   not dropped (see `docs/quarantine-report.md`).
 - Edition supersession (source-grounded editorial hierarchy) labels 470 state cells; after separating
@@ -51,8 +53,8 @@ artifacts.
 
 ### Known limitations
 - FY 2006-07 → 2009-10: national spine only (no state-level source before FY 2010-11).
-- `active_workers`: flagship-era (2018+) only. `avg_wage_rate_per_day`: district-annual only (a rate;
-  not in the state/national spines).
+- `active_workers`: flagship-era (2018+) only. `avg_wage_rate_per_day`: district-annual, complete-FY
+  only (a rate; not in the spines; no fact for the permanently-partial FY2026-27).
 - FY 2010-11 → 2017-18 state coverage is 32–33 of 35 states/UTs per metric-year.
 - FY2017-18 is thin: MoSPI's SYB2018 mid-year partial is withheld where no full-year peer exists —
   164 `partial-period-only` state cells (value null); expected temporary (v1.1 fill).

@@ -18,8 +18,8 @@ Running the export (`PYTHONPATH=src uv run python -m data_platform.export`) prod
 |---|---|
 | `state_annual_series.csv` / `.parquet` | 4,219 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
 | `national_annual_series.csv` / `.parquet` | 148 facts — one value per (financial-year, metric), FY 2006-07 → 2026-27. |
-| `district_flagship.csv` / `.parquet` | 57,724 facts — the flagship district drill-down (2018+), single-grain **district-annual**: the 8 additive metrics (which sum to the state spine) plus `avg_wage_rate_per_day` (a cumulative-YTD ratio, published at its FY-final annual value). |
-| `lineage.jsonl` | 62,091 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
+| `district_flagship.csv` / `.parquet` | 57,181 facts — the flagship district drill-down (2018+), single-grain **district-annual**: the 8 additive metrics (which sum to the state spine) plus `avg_wage_rate_per_day` (a cumulative-YTD ratio, published at its FY-final annual value for complete financial years only). |
+| `lineage.jsonl` | 61,548 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
 
 The CSVs are flat and friendly; the deep provenance lives in `lineage.jsonl`, joined on `fact_id`.
 Every column and metric is defined in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)** — a reader needs
@@ -44,7 +44,7 @@ state), and year-slices. Turning that into one trustworthy series meant defusing
 - **Apparent conflict was mostly disguised incompleteness.** Much of what looked like cross-source
   disagreement was really *period mismatch* — an edition's mid-year partial terminal year, a
   half-year "upto 30.09" column — or one publisher re-issuing its own table across successive
-  Statistical Year Book editions. Separating those out first (edition supersession labels 472 state
+  Statistical Year Book editions. Separating those out first (edition supersession labels 470 state
   cells; partial periods and partial columns are excluded before comparison) collapsed the apparent
   conflict and *revealed* real agreement: cross-publisher corroboration on households rose from 53 to
   118 cells while flagged household conflicts fell from 69 to 4.
