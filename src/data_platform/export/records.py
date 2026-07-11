@@ -48,7 +48,6 @@ DISTRICT_COLUMNS = [
     "district_lgd_code",
     "district_name",
     "financial_year",
-    "month",
     "metric",
     "value",
     "unit",
@@ -151,7 +150,8 @@ def district_row(
     district_names: Mapping[tuple[str, str], str],
     resource_map: Mapping[int, str],
 ) -> dict[str, object]:
-    """A flat district drill-down row; ``grain`` is district-annual, or -monthly when dated."""
+    """A flat district drill-down row. The file is single-grain: every fact is ``district-annual``
+    (the additive FY-finals and the FY-final wage rate alike), so there is no ``month`` column."""
     base = _base_row(fact, resource_map)
     state = fact.key.state_code or ""
     district = fact.key.district_code or ""
@@ -161,11 +161,10 @@ def district_row(
         "district_lgd_code": district,
         "district_name": district_names.get((state, district), ""),
         "financial_year": base["financial_year"],
-        "month": fact.key.month,
         "metric": base["metric"],
         "value": base["value"],
         "unit": base["unit"],
-        "grain": "district-monthly" if fact.key.month is not None else "district-annual",
+        "grain": "district-annual",
         "confidence": base["confidence"],
         "sources_seen_count": base["sources_seen_count"],
         "contributing_resource_ids": base["contributing_resource_ids"],

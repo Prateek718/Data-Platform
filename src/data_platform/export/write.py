@@ -32,7 +32,7 @@ _INT_COLUMNS = frozenset({"sources_seen_count"})
 
 _STATE_SORT = ("state_lgd_code", "financial_year", "metric")
 _NATIONAL_SORT = ("financial_year", "metric")
-_DISTRICT_SORT = ("state_lgd_code", "district_lgd_code", "financial_year", "month", "metric")
+_DISTRICT_SORT = ("state_lgd_code", "district_lgd_code", "financial_year", "metric")
 
 
 def parquet_bytes(

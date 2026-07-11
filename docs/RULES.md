@@ -136,6 +136,33 @@ Goal: produce ONE trustworthy canonical value per metric per row, with the rule 
   tolerance, record the discrepancy in lineage. That discrepancy IS a finding worth showing.
 - **R4-DEF-02 (persondays)**: confirm all sources mean the same by "persondays" (one day of
   work by one person). [ASSUMED yes — it's a legally standardized MGNREGA term.]
+- **R4-DEF-03 (avg_wage_rate_per_day — a cumulative-YTD ratio, not a monthly rate)**: the flagship
+  `Average_Wage_rate_per_day_per_person` column is **not** a per-month wage rate. **VERIFIED**
+  (400,430 / 400,430 non-zero-persondays rows, to a relative tolerance of 1e-9) that it is the
+  identity `cumulative-YTD Wages (INR lakh × 100,000) ÷ cumulative-YTD Persondays_..._so_far`. The
+  numerator is the **unskilled `Wages` column only** — NOT `Wages + Material_and_skilled_Wages` (the
+  "+material" variant holds on no row where material spend is non-negligible). Consequences:
+  - The **FY-final month's value IS the true annual average wage rate** for the district-year, but
+    **only for a COMPLETE financial year** — one whose final month, **March**, is present (a
+    cumulative ratio over the *whole* year). The non-final months are **year-to-date ratios**, not
+    monthly rates, and are unfit to publish as rates: early in the FY the numerator carries a full
+    month of wage outflow (including **arrears settled for prior-FY work**) over a near-zero stock of
+    newly-generated persondays, so April can read ₹18,623/day (physically impossible as a daily wage).
+    Across all district-years, 12.8% of April values exceed ₹1,000/day; by March only 0.16% do.
+  - Therefore `avg_wage_rate_per_day` is taken at **district-annual (FY-final)** grain, exactly like
+    the additive cumulative columns — never as one fact per month — and **emitted only for a complete
+    FY** (FY-final month = March). A **partial final year** carries no genuine annual rate, only an
+    arrears-contaminated early-YTD ratio, so it is **suppressed as honestly absent**. This bites on
+    **FY2026-27**, which is **permanently partial**: MGNREGA was **repealed effective 30 June 2026**,
+    so the flagship carries April 2026 only and that FY will never complete — no wage fact is emitted
+    for it (its April-only ratio has median ~₹1,167/day, up to ₹14.8M/day; not a rate). Likewise,
+    where a complete year's FY-final row has **zero cumulative persondays** the rate is undefined
+    (0/0) and the fact is **absent** (null ≠ 0), never a stale earlier month.
+  - It is a **rate**: it is neither summed across districts nor rolled up to a state/national annual;
+    it is single-source at district-annual grain (no cross-publisher wage peer) → R4-REC-04.
+  - Deriving a genuine *discrete-monthly* rate (Δwages ÷ Δpersondays between consecutive months) is a
+    documented, deferred follow-up — see **OQ-OGD-4** (`docs/notes/sources.md`), with the
+    arrears/payment-timing caveat that makes a naive month-difference itself noisy.
 
 ### Cross-source value reconciliation (when sources disagree on the same number)
 - **R4-REC-01 (agreement check)**: for a given canonical (geo, period, metric), compare

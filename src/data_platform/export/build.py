@@ -3,8 +3,9 @@
 This mirrors the archive-gated harmonization fixtures EXACTLY (same public extractors + the same
 ``assemble_series`` engine), so the exported files carry the identical reconciled facts those tests
 prove (4,216 state facts, 148 national facts). It adds one thing the fixtures do not: the flagship
-**district drill-down** — district-annual FY-finals for the 8 additive metrics (which sum to the
-state spine by construction) plus ``avg_wage_rate_per_day`` at its native district-monthly grain.
+**district drill-down**, single-grain district-annual — FY-finals for the 8 additive metrics (which
+sum to the state spine by construction) plus ``avg_wage_rate_per_day`` (a cumulative-YTD ratio, so
+its FY-final value is the annual rate; the raw monthly year-to-date ratios are not exported).
 
 Impure (reads the archive); the flagship is loaded/normalized/resolved ONCE and reused across the
 state rollup, the national rollup, and the district drill-down. The ``resource_map``
@@ -37,7 +38,7 @@ from data_platform.harmonize.extract import (
     FLAGSHIP_CUMULATIVE_COLUMNS,
     FLAGSHIP_EXPENDITURE_COMPONENTS,
     FLAGSHIP_RANK,
-    flagship_district_monthly_avg_wage,
+    flagship_district_annual_avg_wage,
     flagship_state_annual_cumulative,
     flagship_state_annual_persondays,
     flagship_state_annual_total_expenditure,
@@ -343,14 +344,14 @@ def build_export(archive: Path) -> ExportBundle:
         )
     national_facts = assemble_series(national_keyed, flagship_source_id=SRC_FLAGSHIP)
 
-    # --- DISTRICT drill-down: district-annual additive metrics + native district-monthly wage ----
+    # --- DISTRICT drill-down (single-grain district-annual): 8 additive FY-finals + FY-final wage -
     district_keyed = _tag(
         _flagship_district_annual(flagship_resolved, flagship_cells, flagship_as_of),
         FLAGSHIP_RESOURCE_ID,
         resource_map,
     )
     district_keyed += _tag(
-        flagship_district_monthly_avg_wage(
+        flagship_district_annual_avg_wage(
             flagship_resolved, flagship_cells, source_as_of=flagship_as_of
         ),
         FLAGSHIP_RESOURCE_ID,

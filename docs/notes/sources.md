@@ -117,7 +117,7 @@ needed for the starter slice.
 | canonical (starter) | SRC_OGD verbatim field | note |
 |---|---|---|
 | `persondays_generated` | `Persondays_of_Central_Liability_so_far` | ⚠ likely **cumulative YTD**, not monthly — see §4 / OQ-OGD-1 |
-| `avg_wage_rate_per_day` | `Average_Wage_rate_per_day_per_person` | INR; high precision (e.g. `245.41163886348`) |
+| `avg_wage_rate_per_day` | `Average_Wage_rate_per_day_per_person` | INR; high precision (e.g. `245.41163886348`). ⚠ **cumulative-YTD ratio**, not a monthly rate — = cumulative `Wages` (lakh ×100,000) ÷ cumulative persondays (VERIFIED 400,430/400,430 rows; R4-DEF-03 / OQ-OGD-4). Only the FY-final month is the annual rate. |
 | `total_expenditure` | `Total_Exp` | unit assumed INR lakhs (e.g. `3884.10`) — confirm (OQ-OGD-2). Components also present: `Wages`, `Material_and_skilled_Wages`, `Total_Adm_Expenditure` → enables R4-DEF-01 derive-and-compare |
 
 The remaining 6 canonical metrics are also present here (for the later slice):
@@ -138,6 +138,17 @@ The remaining 6 canonical metrics are also present here (for the later slice):
   488,238 < Jan 558,170 < Feb 663,695). To get a discrete month's persondays you'd difference
   consecutive months. This is a genuine harmonization decision (Stage 4), and it also affects
   how the divergence check (T0.3) compares persondays across sources. **Flagging, not resolving.**
+- **⚠ `Average_Wage_rate_per_day_per_person` is a cumulative-YTD ratio, not a monthly rate
+  (VERIFIED; OQ-OGD-4 / R4-DEF-03).** Checked across the whole flagship: on **400,430 / 400,430**
+  rows with non-zero cumulative persondays, the column equals cumulative `Wages` (INR lakh ×100,000)
+  ÷ cumulative `Persondays_..._so_far` to a relative tolerance of **1e-9** — the numerator is the
+  **unskilled `Wages` only** (not +`Material_and_skilled_Wages`). So its FY-final value is the true
+  annual average wage rate; the non-final months are YTD ratios (e.g. April can read ₹18,623/day —
+  arrears on a near-zero persondays base). Canonical `avg_wage_rate_per_day` is therefore taken at
+  the **FY-final (district-annual)** value, **for complete FYs only** (March present) — the
+  permanently-partial FY2026-27 (scheme repealed 30 Jun 2026, April only) carries no rate. A
+  discrete-monthly rate would need Δwages÷Δpersondays (OQ-OGD-4). **Now resolved for v1** (was a
+  silent monthly-rate assumption).
 - **Duplicate/near-duplicate rows.** PUNE 2024-25 "Jan" appears twice with slightly different
   values (558,170 vs 552,427) — likely snapshot revisions returned by the API. Stage 1 will
   need a dedupe/latest-snapshot rule; noting here as a data-quality reality.
@@ -170,3 +181,12 @@ locate the district-monthly report page, record on-page field labels, note rende
 - **OQ-OGD-3 — shortlist size:** is a single OGD dataset (the flagship) an acceptable SRC_OGD
   shortlist for v1, given it already carries all 9 metrics at district+monthly grain? (I
   recommend yes — the other ~129 are one-off parliamentary tables.) **Proposing, not settling.**
+- **OQ-OGD-4 — discrete-monthly wage rate (deferred → v1.1):** `avg_wage_rate_per_day` is a
+  cumulative-YTD ratio, so v1 publishes only the FY-final (district-annual) value (R4-DEF-03). A
+  genuine *monthly* wage rate could be derived as **Δwages ÷ Δpersondays** between consecutive
+  months (both cumulative columns are present). Deferred, not built: the naive month-difference is
+  **itself noisy** — MGNREGA wage payments lag the persondays that earned them (arrears settled in
+  later months, and prior-FY arrears paid in April), so a single-month Δwages can attach to the
+  wrong month's Δpersondays and produce negative or wildly swung monthly rates. A defensible monthly
+  rate needs a payment-timing/smoothing rule first; queued for **v1.1**. A visible annual-only rate
+  is preferable to a fabricated monthly one.

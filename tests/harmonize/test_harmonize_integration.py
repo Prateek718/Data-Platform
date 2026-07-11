@@ -25,7 +25,7 @@ from data_platform.harmonize.config import (
     WAGES_EXPENDITURE,
 )
 from data_platform.harmonize.extract import (
-    flagship_district_monthly_avg_wage,
+    flagship_district_annual_avg_wage,
     flagship_state_annual_cumulative,
     flagship_state_annual_persondays,
     flagship_state_annual_total_expenditure,
@@ -133,7 +133,7 @@ def exp_facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
 @pytest.fixture(scope="module")
 def wage_facts(_pipeline: _Pipeline) -> list[CanonicalFact]:
     fr, fcells, source_as_of, _lgd, _rs = _pipeline
-    keyed = flagship_district_monthly_avg_wage(fr, fcells, source_as_of=source_as_of)
+    keyed = flagship_district_annual_avg_wage(fr, fcells, source_as_of=source_as_of)
     return assemble(keyed)
 
 
@@ -214,16 +214,20 @@ def test_total_expenditure_definition_discrepancies_are_recorded(
         assert disc.derived == f.value  # canonical value is the derived one, not the source total
 
 
-def test_avg_wage_is_district_monthly_single_source_rate(wage_facts: list[CanonicalFact]) -> None:
+def test_avg_wage_is_district_annual_single_source_rate(wage_facts: list[CanonicalFact]) -> None:
+    # avg_wage is a cumulative-YTD ratio, so it is published at district-ANNUAL grain (the FY-final
+    # month's value per district-year), single-source — one fact per district-year, not per month.
     goa = [f for f in wage_facts if f.key.state_code == _GOA and f.key.fin_year == _FY]
-    assert goa, "expected Goa district-monthly avg-wage facts"
+    assert goa, "expected Goa district-annual avg-wage facts"
     for f in goa:
         assert f.key.metric == "avg_wage_rate_per_day"
         assert f.key.geo_level.value == "district"
-        assert f.key.district_code is not None and f.key.month is not None
+        assert f.key.district_code is not None and f.key.month is None  # ANNUAL grain, not monthly
         assert f.unit == "INR"
         assert f.reconciliation.resolution_rule_id == "R4-REC-04"  # single source
         assert f.value is not None and f.value > 0  # a wage rate is positive (magnitude not judged)
+    # one FY-final fact per Goa district (North/South Goa), not one per month
+    assert len(goa) == len({f.key.district_code for f in goa})
 
 
 _REMAINING_METRICS = [

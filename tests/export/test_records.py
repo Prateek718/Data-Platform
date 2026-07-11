@@ -182,60 +182,44 @@ def test_national_row_drops_geography() -> None:
     assert row["contributing_resource_ids"] == "mospi-nat"
 
 
-def test_district_row_carries_grain_from_month() -> None:
-    sv = _sv("SRC_FLAGSHIP", "42", original_unit="INR", authority_rank=0)
+def test_district_row_is_single_grain_district_annual() -> None:
+    # district_flagship is single-grain (district-annual): no `month` column, `grain` is the
+    # constant "district-annual". avg_wage_rate is published at FY-final annual grain like the rest.
+    sv = _sv("SRC_FLAGSHIP", "103.392742752098", original_unit="INR", authority_rank=0)
     rec = Reconciliation(
-        canonical_value=Decimal("42"),
+        canonical_value=Decimal("103.392742752098"),
         source_id="SRC_FLAGSHIP",
         sources_seen=[sv],
         disagreement=None,
         resolution_rule_id="R4-REC-04",
         adjudicated=True,
     )
-    annual_key = CanonicalKey(
+    key = CanonicalKey(
         scheme="MGNREGA",
         geo_level=GeoLevel.DISTRICT,
         state_code="28",
         district_code="500",
-        fin_year="2019-20",
+        fin_year="2018-19",
         month=None,
-        metric="wages_expenditure",
+        metric="avg_wage_rate_per_day",
     )
-    monthly_key = annual_key.model_copy(
-        update={"month": "2019-04", "metric": "avg_wage_rate_per_day"}
-    )
-    names = {"28": "Andhra Pradesh"}
-    districts = {("28", "500"): "Anantapur"}
-    annual = district_row(
+    row = district_row(
         _fact(
-            annual_key,
-            "42",
+            key,
+            "103.392742752098",
             basis=Basis.FLAGSHIP_ROLLUP,
             confidence=Confidence.SINGLE_SOURCE,
             reconciliation=rec,
         ),
-        state_names=names,
-        district_names=districts,
+        state_names={"28": "Andhra Pradesh"},
+        district_names={("28", "500"): "Anantapur"},
         resource_map={id(sv): "flagship"},
     )
-    monthly = district_row(
-        _fact(
-            monthly_key,
-            "42",
-            basis=Basis.FLAGSHIP_ROLLUP,
-            confidence=Confidence.SINGLE_SOURCE,
-            reconciliation=rec,
-        ),
-        state_names=names,
-        district_names=districts,
-        resource_map={id(sv): "flagship"},
-    )
-    assert list(annual) == DISTRICT_COLUMNS
-    assert annual["district_name"] == "Anantapur"
-    assert annual["month"] is None
-    assert annual["grain"] == "district-annual"
-    assert monthly["month"] == "2019-04"
-    assert monthly["grain"] == "district-monthly"
+    assert list(row) == DISTRICT_COLUMNS
+    assert "month" not in row  # the month column is dropped — the file is single-grain
+    assert row["district_name"] == "Anantapur"
+    assert row["grain"] == "district-annual"
+    assert row["value"] == Decimal("103.392742752098")
 
 
 def test_null_value_is_preserved_not_zeroed() -> None:
