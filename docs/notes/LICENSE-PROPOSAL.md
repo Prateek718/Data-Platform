@@ -16,57 +16,29 @@ attribution statement satisfying the upstream GODL-India terms.
 
 ---
 
-## Part 1 — Code license  **[DECIDE: MIT vs Apache-2.0]**
+## Part 1 — Code license
 
-**Recommended: MIT** — shortest, most permissive, ubiquitous for tooling and portfolio work; no
-patent clause to reason about. **Alternative: Apache-2.0** — same permissive posture but adds an
-explicit patent grant and a NOTICE mechanism; slightly heavier. There are no patents at stake here,
-so MIT is the leaner fit; choose Apache-2.0 if you prefer the explicit patent grant.
-
-Draft `LICENSE` (MIT), ready to commit if chosen:
-
-```
-MIT License
-
-Copyright (c) 2026 Prateek
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-(If Apache-2.0 is preferred, use the standard Apache-2.0 text with the same copyright line and add a
-`NOTICE` file.)
+**Code license: MIT** (`LICENSE`) — chosen for its brevity and because it has no patent clause to
+reason about; it is the most permissive, ubiquitous option for tooling and portfolio work.
+Apache-2.0 was considered as the alternative — the same permissive posture but with an explicit
+patent grant and a NOTICE mechanism, slightly heavier. There are no patents at stake here, so the
+leaner MIT was the fit. The full text lives in `LICENSE` at the repository root.
 
 ---
 
-## Part 2 — Dataset license  **[DECIDE: confirm CC BY 4.0 for the derived dataset]**
+## Part 2 — Dataset license
 
-**Recommended: CC BY 4.0** for the derived dataset in `dist/v1.0/`, with the GODL-India attribution
-statement below.
+**Dataset license: CC BY 4.0** (`LICENSE-DATA`) for the derived dataset in `dist/v1.0/`, carrying the
+GODL-India attribution statement below.
 
 **Why this is defensible.** GODL-India grants a *worldwide, royalty-free, non-exclusive* license to
 "use, adapt, publish … translate, add value, and create derivative works … for all lawful commercial
 and non-commercial purposes." It is **attribution + non-endorsement**, with **no share-alike**
 requirement, so it is broadly compatible with releasing a *derived* dataset under CC BY 4.0 provided
-the upstream GODL-India sources remain attributed. This is the maintainer's (or legal counsel's) call
-to confirm — the platform does not assert it as settled law.
+the upstream GODL-India sources remain attributed. This was the maintainer's call — the platform does
+not assert it as settled law.
 
-### Draft attribution statement (satisfies GODL-India §4.a and §4.c)
+### Attribution statement (satisfies GODL-India §4.a and §4.c)
 
 > This dataset is a reconciled derivative of MGNREGA data published on the Open Government Data (OGD)
 > Platform India (https://data.gov.in) by the Ministry of Rural Development (MoRD), the Ministry of
@@ -108,8 +80,7 @@ Sources: [GODL-India (Punjab OGD mirror)](https://punjab.data.gov.in/Godl),
 
 ---
 
-## What I will do once you decide
+## Outcome
 
-1. Commit `LICENSE` with your chosen code license (MIT draft above, or Apache-2.0).
-2. Add `LICENSE-DATA` (CC BY 4.0 full text) + the attribution statement, if you confirm CC BY 4.0.
-3. Update the README "License" section and `CITATION.cff` `license:` field to match.
+`LICENSE` (MIT) and `LICENSE-DATA` (CC BY 4.0 with the attribution statement above) were committed
+per this decision. See those files and the README's License section for the final text.
