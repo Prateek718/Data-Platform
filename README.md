@@ -4,7 +4,7 @@
 [![Code License: MIT](https://img.shields.io/badge/Code%20License-MIT-yellow.svg)](LICENSE)
 [![Data License: CC BY 4.0](https://img.shields.io/badge/Data%20License-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
-<!-- Zenodo DOI badge added on release -->
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21318431.svg)](https://doi.org/10.5281/zenodo.21318431)
 
 A definitive, reconciled, lineage-traced record of **MGNREGA** — the Mahatma Gandhi National Rural
 Employment Guarantee Act scheme, India's rural employment guarantee — assembled from the many
@@ -144,8 +144,10 @@ PYTHONPATH=src uv run python -m data_platform.export   # regenerate dist/v1.0/ f
 
 ## How to cite
 
-Citation metadata is in **[CITATION.cff](CITATION.cff)**. A DOI is minted on release via Zenodo (see
-[REPRODUCIBILITY.md](REPRODUCIBILITY.md)); cite that DOI for a specific version.
+Citation metadata is in **[CITATION.cff](CITATION.cff)**. The v1.0.0 release is archived on Zenodo —
+cite the version DOI [10.5281/zenodo.21318432](https://doi.org/10.5281/zenodo.21318432) for this
+specific release, or the concept DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431),
+which always resolves to the latest version (see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)).
 
 ## License
 
