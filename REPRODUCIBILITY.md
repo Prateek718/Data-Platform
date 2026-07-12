@@ -68,7 +68,7 @@ strongest possible reproducibility claim, and the one that matches this project'
 concluded reference record). ~628 MB is well within Zenodo's per-record limit (50 GB). This is
 permissible under **GODL-India**, which grants the right to *publish (original or adapted) … for all
 lawful commercial and non-commercial purposes*, provided the attribution statement and non-endorsement
-notice are carried (see `LICENSE-PROPOSAL.md`, task 4). The deposit would ship that attribution
+notice are carried (see `docs/notes/LICENSE-PROPOSAL.md`). The deposit would ship that attribution
 statement at its root.
 
 **Option B: deposit code + outputs only, with fetch instructions** to rebuild the archive from

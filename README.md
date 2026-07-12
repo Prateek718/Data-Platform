@@ -1,5 +1,11 @@
 # MGNREGA Canonical Series
 
+[![CI](https://github.com/Prateek718/Data-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Prateek718/Data-Platform/actions/workflows/ci.yml)
+[![Code License: MIT](https://img.shields.io/badge/Code%20License-MIT-yellow.svg)](LICENSE)
+[![Data License: CC BY 4.0](https://img.shields.io/badge/Data%20License-CC%20BY%204.0-lightgrey.svg)](LICENSE-DATA)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
+<!-- Zenodo DOI badge added on release -->
+
 A definitive, reconciled, lineage-traced record of **MGNREGA** — the Mahatma Gandhi National Rural
 Employment Guarantee Act scheme, India's rural employment guarantee — assembled from the many
 separately-published government datasets on [data.gov.in](https://data.gov.in) into one canonical
