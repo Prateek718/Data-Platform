@@ -145,7 +145,7 @@ PYTHONPATH=src uv run python -m data_platform.export   # regenerate dist/v1.0/ f
 ## How to cite
 
 Citation metadata is in **[CITATION.cff](CITATION.cff)**. The v1.0.0 release is archived on Zenodo —
-cite the version DOI [10.5281/zenodo.21318432](https://doi.org/10.5281/zenodo.21318432) for this
+cite the version DOI [10.5281/zenodo.21318927](https://doi.org/10.5281/zenodo.21318927) for this
 specific release, or the concept DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431),
 which always resolves to the latest version (see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)).
 
