@@ -86,7 +86,12 @@ code, with the GODL-India attribution statement (`LICENSE-DATA`) at the deposit 
 The frozen raw archive and the exported deliverables are available from two verified,
 checksum-identical mirrors: (a) the **GitHub Release v1.0.0 assets**
 (https://github.com/Prateek718/Data-Platform/releases/tag/v1.0.0), and (b) the **Zenodo deposit**
-(https://doi.org/10.5281/zenodo.21318432, version DOI). Both carry the same SHA-256 checksums,
+(https://doi.org/10.5281/zenodo.21318927, version DOI). Both carry the same SHA-256 checksums,
 published in the release notes and in `SHA256SUMS.txt` within each mirror. Cite the version DOI
-(`10.5281/zenodo.21318432`) for reproducibility; the concept DOI (`10.5281/zenodo.21318431`) always
+(`10.5281/zenodo.21318927`) for reproducibility; the concept DOI (`10.5281/zenodo.21318431`) always
 resolves to the latest release.
+
+Zenodo internally labels this deposit **"Version v2"** — an artifact of the initial upload being
+code-only and a second version being published with the full frozen archive + `dist/` outputs added.
+That is Zenodo's own record versioning and is unrelated to the dataset's release versioning, which
+remains **v1.0.0**.

@@ -14,7 +14,7 @@ authors:
   - name: "Prateek"
 repository-code: "https://github.com/Prateek718/Data-Platform"
 url: "https://github.com/Prateek718/Data-Platform"
-repository-artifact: "https://doi.org/10.5281/zenodo.21318432"
+repository-artifact: "https://doi.org/10.5281/zenodo.21318927"
 keywords:
   - MGNREGA
   - NREGA
@@ -25,10 +25,10 @@ keywords:
   - data lineage
   - GODL-India
 license: CC-BY-4.0  # the dataset (this citable artifact); the code is MIT — see LICENSE / LICENSE-DATA
-doi: 10.5281/zenodo.21318432  # version DOI — this specific v1.0.0 release (immutable)
+doi: 10.5281/zenodo.21318927  # version DOI — this specific v1.0.0 release (immutable)
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.21318432
+    value: 10.5281/zenodo.21318927
     description: "Version DOI — this specific v1.0.0 release (immutable)"
   - type: doi
     value: 10.5281/zenodo.21318431
