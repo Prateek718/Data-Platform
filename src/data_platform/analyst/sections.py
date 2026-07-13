@@ -2,18 +2,226 @@
 
 A section is only here if the claim inventory (``docs/notes/STAGE8-CLAIM-INVENTORY.md``) verified
 it against the served surface. Retrieval is a pure function of the tools: it fetches figures,
-computes the section's declared derivations, and captures the refusals the section exhibits.
+counts cohorts, computes the section's declared derivations, and captures the refusals it exhibits.
+
+Two candidate sections from the inventory are deliberately ABSENT: the Goa "6.31x" cumulative-YTD
+example and the "Rs 18,623/day" wage artifact. Both are figures about MONTHLY data, and the sealed
+record is annual-only at every grain — they live in the archive the pipeline consumed, not in the
+dataset it published, so no query can back them and the verifier would (rightly) block them.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from data_platform.analyst import derive, retrieve
+from data_platform.analyst import cohort, derive, retrieve
 from data_platform.analyst.models import QuerySpec, RetrievedSection, SectionPlan
 from data_platform.analyst.tools import AnalystTools
 
 Retriever = Callable[[AnalystTools], RetrievedSection]
+
+_GOA = "Goa"
+_STATE = "state_annual_series"
+_NATIONAL = "national_annual_series"
+_DISTRICT = "district_flagship"
+_PERSONDAYS = "persondays_generated"
+_WAGE_RATE = "avg_wage_rate_per_day"
+
+
+# --- C1: the twenty-year national series --------------------------------------------------------
+
+NATIONAL_SERIES = SectionPlan(
+    key="national_series",
+    title="The twenty-year record, 2006-07 to 2026-27",
+    brief=(
+        "State the scale and shape of MGNREGA's national record across its whole life. Give the "
+        "first year's person-days, the peak year's person-days, the last COMPLETE financial year's "
+        "person-days, and the peak year's total expenditure and households employed. Say how many "
+        "times larger the peak was than the first year (the derived figure gives it). Explain that "
+        "the series is stitched from two eras of sourcing — the counts of historical facts and of "
+        "flagship-rollup facts are given — where pre-2018 years come from archived publishers "
+        "(MoSPI, Rajya Sabha answers) and FY 2018-19 onward from the flagship district MIS. "
+        "Finally: FY 2026-27 is a stub, not a year — the scheme was repealed effective 30 June "
+        "2026 and the record carries April 2026 only, so its person-days figure is not comparable "
+        "to a full year. The last complete financial year of MGNREGA is 2025-26."
+    ),
+)
+
+
+def retrieve_national_series(tools: AnalystTools) -> RetrievedSection:
+    first = retrieve.fetch_figure(
+        tools,
+        id="persondays_2006_07",
+        label="national person-days generated, FY 2006-07 (the first year)",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, _PERSONDAYS, "2006-07"),
+    )
+    peak = retrieve.fetch_figure(
+        tools,
+        id="persondays_2020_21",
+        label="national person-days generated, FY 2020-21 (the peak year)",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, _PERSONDAYS, "2020-21"),
+    )
+    last_complete = retrieve.fetch_figure(
+        tools,
+        id="persondays_2025_26",
+        label="national person-days generated, FY 2025-26 (the last complete year)",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, _PERSONDAYS, "2025-26"),
+    )
+    stub = retrieve.fetch_figure(
+        tools,
+        id="persondays_2026_27",
+        label="national person-days generated, FY 2026-27 (April 2026 only — a repeal stub)",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, _PERSONDAYS, "2026-27"),
+    )
+    peak_spend = retrieve.fetch_figure(
+        tools,
+        id="expenditure_2020_21",
+        label="national total expenditure, FY 2020-21",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, "total_expenditure", "2020-21"),
+    )
+    peak_households = retrieve.fetch_figure(
+        tools,
+        id="households_2020_21",
+        label="national households employed, FY 2020-21",
+        geography="India",
+        spec=QuerySpec(_NATIONAL, "households_employed", "2020-21"),
+    )
+
+    growth = retrieve.derived(
+        id="peak_over_first",
+        label="peak-year person-days divided by first-year person-days",
+        operation=derive.RATIO,
+        inputs=[peak, first],
+        unit="times",
+    )
+
+    historical = retrieve.fetch_cohort(
+        tools,
+        id="historical_facts",
+        label="national facts sourced from the pre-2018 archive (historical era)",
+        table=_NATIONAL,
+        filter=cohort.HISTORICAL_ERA,
+    )
+    flagship = retrieve.fetch_cohort(
+        tools,
+        id="flagship_facts",
+        label="national facts sourced from the flagship district MIS (FY 2018-19 onward)",
+        table=_NATIONAL,
+        filter=cohort.FLAGSHIP_ERA,
+    )
+
+    sealed = retrieve.refusal(
+        tools,
+        id="after_the_repeal",
+        label="asking for data after the repeal",
+        call='query(table="national_annual_series", fy_from="2027-28")',
+        table=_NATIONAL,
+        fy_from="2027-28",
+    )
+
+    return RetrievedSection(
+        plan=NATIONAL_SERIES,
+        figures=(first, peak, last_complete, stub, peak_spend, peak_households),
+        derivations=(growth,),
+        cohorts=(historical, flagship),
+        refusals=(sealed,),
+    )
+
+
+# --- C2: where the publishers disagree ----------------------------------------------------------
+
+DISAGREEMENTS = SectionPlan(
+    key="disagreements",
+    title="Where the publishers disagree, and what the record does about it",
+    brief=(
+        "The record carries two DISTINCT and separately-counted phenomena. Never merge them into "
+        "one homogeneous count.\n\n"
+        "(a) PRE-2018: state-year cells where two archived publishers of the same statistic — "
+        "MoSPI and Rajya Sabha parliamentary answers — materially disagree. Here reconciliation "
+        "ADJUDICATED a canonical value between corroborating sources of comparable standing, under "
+        "the cross-source reconciliation rule family (R4-REC): the winner is recorded, the "
+        "rejected value and its publisher are kept in lineage, and the disagreement stays visible "
+        "rather than being smoothed away.\n\n"
+        "(b) FLAGSHIP-ERA: state-year cells where the primary district MIS disagrees with figures "
+        "tabled in Parliament. Here the authority rule crowns the primary MIS — the production "
+        "authority for the period it covers — so the divergence is RECORDED as a flagged note, "
+        "NOT adjudicated between peers. The Parliament-tabled figure is retained in lineage, not "
+        "discarded.\n\n"
+        "Say explicitly which of the two each count refers to, and that both sets passed the same "
+        "two-part materiality floor (a disagreement counts only if it clears both an absolute and "
+        "a relative threshold). Give the largest case in each set, using the figures provided. "
+        "This is a governance finding, not a scandal: the point is that the record shows its "
+        "disagreements instead of hiding them."
+    ),
+)
+
+
+def retrieve_disagreements(tools: AnalystTools) -> RetrievedSection:
+    pre_2018 = retrieve.fetch_cohort(
+        tools,
+        id="pre_2018_disagreements",
+        label=(
+            "pre-2018 cross-publisher material disagreements, ADJUDICATED between MoSPI and "
+            "Rajya Sabha (state series)"
+        ),
+        table=_STATE,
+        filter=cohort.FLAGGED_DISAGREEMENT,
+        fy_to="2017-18",
+    )
+    flagship_era = retrieve.fetch_cohort(
+        tools,
+        id="flagship_era_divergences",
+        label=(
+            "flagship-era divergences between the primary district MIS and figures tabled in "
+            "Parliament, RECORDED as flagged notes (state series, FY 2018-19 onward)"
+        ),
+        table=_STATE,
+        filter=cohort.FLAGGED_DISAGREEMENT,
+        fy_from="2018-19",
+    )
+    total = retrieve.derived(
+        id="all_flagged",
+        label="flagged cells in the record (the two sets added together)",
+        operation=derive.SUM,
+        inputs=[pre_2018, flagship_era],
+        unit="cells",
+    )
+
+    telangana = retrieve.fetch_figure(
+        tools,
+        id="telangana_expenditure_2016_17",
+        label=(
+            "Telangana total expenditure, FY 2016-17 — the largest pre-2018 disagreement; the "
+            "record takes the Rajya Sabha value and keeps MoSPI's rejected value in lineage"
+        ),
+        geography="Telangana",
+        spec=QuerySpec(_STATE, "total_expenditure", "2016-17", "Telangana"),
+    )
+    lakshadweep = retrieve.fetch_figure(
+        tools,
+        id="lakshadweep_persondays_2023_24",
+        label=(
+            "Lakshadweep person-days, FY 2023-24 — the largest flagship-era divergence; the "
+            "record takes the MIS value and records the Parliament-tabled figure in lineage"
+        ),
+        geography="Lakshadweep",
+        spec=QuerySpec(_STATE, _PERSONDAYS, "2023-24", "Lakshadweep"),
+    )
+
+    return RetrievedSection(
+        plan=DISAGREEMENTS,
+        figures=(telangana, lakshadweep),
+        derivations=(total,),
+        cohorts=(pre_2018, flagship_era),
+    )
+
+
+# --- C3': the pilot — Goa's spine ---------------------------------------------------------------
 
 GOA_SPINE = SectionPlan(
     key="goa_spine",
@@ -29,7 +237,6 @@ GOA_SPINE = SectionPlan(
     ),
 )
 
-_GOA = "Goa"
 _FY = "2022-23"
 
 
@@ -40,35 +247,35 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
         id="north_goa_persondays",
         label="North Goa person-days generated, FY 2022-23",
         geography="North Goa, Goa",
-        spec=QuerySpec("district_flagship", "persondays_generated", _FY, _GOA, "North Goa"),
+        spec=QuerySpec(_DISTRICT, _PERSONDAYS, _FY, _GOA, "North Goa"),
     )
     south = retrieve.fetch_figure(
         tools,
         id="south_goa_persondays",
         label="South Goa person-days generated, FY 2022-23",
         geography="South Goa, Goa",
-        spec=QuerySpec("district_flagship", "persondays_generated", _FY, _GOA, "South Goa"),
+        spec=QuerySpec(_DISTRICT, _PERSONDAYS, _FY, _GOA, "South Goa"),
     )
     state = retrieve.fetch_figure(
         tools,
         id="goa_persondays",
         label="Goa state person-days generated, FY 2022-23",
         geography="Goa",
-        spec=QuerySpec("state_annual_series", "persondays_generated", _FY, _GOA),
+        spec=QuerySpec(_STATE, _PERSONDAYS, _FY, _GOA),
     )
     north_rate = retrieve.fetch_figure(
         tools,
         id="north_goa_wage_rate",
         label="North Goa average wage rate per day, FY 2022-23",
         geography="North Goa, Goa",
-        spec=QuerySpec("district_flagship", "avg_wage_rate_per_day", _FY, _GOA, "North Goa"),
+        spec=QuerySpec(_DISTRICT, _WAGE_RATE, _FY, _GOA, "North Goa"),
     )
     south_rate = retrieve.fetch_figure(
         tools,
         id="south_goa_wage_rate",
         label="South Goa average wage rate per day, FY 2022-23",
         geography="South Goa, Goa",
-        spec=QuerySpec("district_flagship", "avg_wage_rate_per_day", _FY, _GOA, "South Goa"),
+        spec=QuerySpec(_DISTRICT, _WAGE_RATE, _FY, _GOA, "South Goa"),
     )
 
     district_sum = retrieve.derived(
@@ -79,8 +286,7 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
         unit="person-days",
     )
     # The residual is the claim: the drill-down reconciles to the spine EXACTLY, and the report says
-    # so with a number rather than an adjective. It is a difference of the state fact against the
-    # district sum's own inputs, so the verifier recomputes it from served facts alone.
+    # so with a number rather than an adjective.
     residual = retrieve.derived(
         id="spine_residual",
         label="state person-days minus the district sum",
@@ -96,8 +302,8 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
         call=(
             'query(table="state_annual_series", metrics=["avg_wage_rate_per_day"], states=["Goa"])'
         ),
-        table="state_annual_series",
-        metrics=["avg_wage_rate_per_day"],
+        table=_STATE,
+        metrics=[_WAGE_RATE],
         states=[_GOA],
     )
     monthly_refusal = retrieve.refusal(
@@ -105,7 +311,7 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
         id="monthly_figure",
         label="asking for a monthly figure",
         call='query(table="district_flagship", states=["Goa"], month="2022-04")',
-        table="district_flagship",
+        table=_DISTRICT,
         states=[_GOA],
         month="2022-04",
     )
@@ -118,6 +324,358 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
     )
 
 
+# --- C4': the wage rate the record will not price -----------------------------------------------
+
+WAGE_RATE = SectionPlan(
+    key="wage_rate",
+    title="The wage rate the record will not price by the month",
+    brief=(
+        "The record serves an average wage rate per day only at district-annual grain, only for a "
+        "COMPLETE financial year, and never by the month. Give the count of wage-rate facts it "
+        "serves. Then state the two absences and what they mean:\n\n"
+        "(1) ZERO wage-rate facts exist for FY 2026-27. That year never completed — the scheme was "
+        "repealed effective 30 June 2026 — and an incomplete year has no annual rate, so the "
+        "record withholds it rather than publishing a part-year ratio as if it were a wage.\n\n"
+        "(2) Monthly wage figures are REFUSED outright. Quote the server's reason: the published "
+        "monthly values are cumulative year-to-date ratios, not monthly rates.\n\n"
+        "Then the caveat, and state it plainly and prominently: a small number of financial-year-"
+        "final rates are still implausibly high — the count is given, and the highest is a West "
+        "Bengal district. These are NOT observed wages. A plausible MGNREGA daily wage is an order "
+        "of magnitude lower than these figures. They are data-quality artifacts of the source "
+        "series, carried faithfully into the record with their lineage rather than quietly "
+        "deleted, and a reader must not read them as what anyone was paid."
+    ),
+)
+
+
+def retrieve_wage_rate(tools: AnalystTools) -> RetrievedSection:
+    served = retrieve.fetch_cohort(
+        tools,
+        id="wage_facts_served",
+        label="district-annual wage-rate facts the record serves (FY 2018-19 to 2025-26)",
+        table=_DISTRICT,
+        metrics=[_WAGE_RATE],
+        filter=cohort.ALL,
+    )
+    terminal_year = retrieve.fetch_cohort(
+        tools,
+        id="wage_facts_2026_27",
+        label="wage-rate facts for FY 2026-27, the repeal-truncated year",
+        table=_DISTRICT,
+        metrics=[_WAGE_RATE],
+        fy_from="2026-27",
+        fy_to="2026-27",
+        filter=cohort.ALL,
+    )
+    implausible = retrieve.fetch_cohort(
+        tools,
+        id="implausible_rates",
+        label=(
+            "financial-year-final wage rates above Rs 1,000/day — source data-quality artifacts, "
+            "not observed wages"
+        ),
+        table=_DISTRICT,
+        metrics=[_WAGE_RATE],
+        filter=cohort.WAGE_ABOVE_IMPLAUSIBILITY_FLOOR,
+    )
+    highest = retrieve.fetch_figure(
+        tools,
+        id="hooghly_wage_rate",
+        label=(
+            "the highest financial-year-final wage rate in the record: Hooghly, West Bengal, "
+            "FY 2023-24 — an artifact, not a wage anyone was paid"
+        ),
+        geography="Hooghly, West Bengal",
+        spec=QuerySpec(_DISTRICT, _WAGE_RATE, "2023-24", "West Bengal", "Hooghly"),
+    )
+
+    monthly_refusal = retrieve.refusal(
+        tools,
+        id="monthly_wage",
+        label="asking for a monthly wage rate",
+        call='query(table="district_flagship", metrics=["avg_wage_rate_per_day"], month="2022-04")',
+        table=_DISTRICT,
+        metrics=[_WAGE_RATE],
+        month="2022-04",
+    )
+    state_grain_refusal = retrieve.refusal(
+        tools,
+        id="wage_at_state_grain",
+        label="asking for the wage rate at state grain",
+        call='query(table="state_annual_series", metrics=["avg_wage_rate_per_day"])',
+        table=_STATE,
+        metrics=[_WAGE_RATE],
+    )
+
+    return RetrievedSection(
+        plan=WAGE_RATE,
+        figures=(highest,),
+        derivations=(),
+        cohorts=(served, terminal_year, implausible),
+        refusals=(monthly_refusal, state_grain_refusal),
+    )
+
+
+# --- C5 + C9: coverage honesty ------------------------------------------------------------------
+
+COVERAGE = SectionPlan(
+    key="coverage",
+    title="What the record does not contain",
+    brief=(
+        "A null cell in this record is data, not a gap in the plumbing: it carries a reason, and "
+        "it is never coerced to zero. Give the counts of null cells: the state series' "
+        "partial-period-only nulls (the only reading was an edition's mid-year partial, withheld "
+        "rather than published as if it were an annual figure), the state series' unadjudicated "
+        "nulls (a structurally-incomplete aggregate materially disagrees with a whole-geography "
+        "peer, so no value is asserted), and the national series' single-publisher-divergence "
+        "nulls (one publisher's own vintages disagree with no defensible order between them). The "
+        "derived total is given.\n\n"
+        "Then the shape of the hole, which is the real finding: almost all of the "
+        "partial-period-only nulls fall in ONE year, FY 2017-18 — the count is given — the seam "
+        "between the two sourcing eras, just before the flagship MIS begins. The record's weakest "
+        "year is exactly where its two eras meet, and it says so.\n\n"
+        "Finally, a metric that is absent rather than null: active workers exists only from FY "
+        "2018-19 onward (the count of such facts in that first year is given). Anyone comparing "
+        "'workers' across the full twenty years would be comparing a metric against its own "
+        "absence."
+    ),
+)
+
+
+def retrieve_coverage(tools: AnalystTools) -> RetrievedSection:
+    partial = retrieve.fetch_cohort(
+        tools,
+        id="partial_period_nulls",
+        label="state-series null cells withheld as partial-period-only",
+        table=_STATE,
+        filter=cohort.PARTIAL_PERIOD_ONLY,
+    )
+    unadjudicated = retrieve.fetch_cohort(
+        tools,
+        id="unadjudicated_nulls",
+        label="state-series null cells withheld as unadjudicated",
+        table=_STATE,
+        filter=cohort.UNADJUDICATED,
+    )
+    national_nulls = retrieve.fetch_cohort(
+        tools,
+        id="national_divergence_nulls",
+        label="national-series null cells withheld as single-publisher divergence",
+        table=_NATIONAL,
+        filter=cohort.SINGLE_PUBLISHER_DIVERGENCE,
+    )
+    total = retrieve.derived(
+        id="all_nulls",
+        label="null cells in the record, all reasons together",
+        operation=derive.SUM,
+        inputs=[partial, unadjudicated, national_nulls],
+        unit="cells",
+    )
+
+    seam = retrieve.fetch_cohort(
+        tools,
+        id="nulls_2017_18",
+        label="state-series null cells in FY 2017-18 alone, the seam between the two eras",
+        table=_STATE,
+        fy_from="2017-18",
+        fy_to="2017-18",
+        filter=cohort.VALUE_IS_NULL,
+    )
+    active_workers_first_year = retrieve.fetch_cohort(
+        tools,
+        id="active_workers_2018_19",
+        label="active-workers facts at state grain in FY 2018-19, the metric's first year",
+        table=_STATE,
+        metrics=["active_workers"],
+        fy_from="2018-19",
+        fy_to="2018-19",
+        filter=cohort.ALL,
+    )
+
+    floor_refusal = retrieve.refusal(
+        tools,
+        id="state_series_floor",
+        label="asking the state series for a year before it starts",
+        call='query(table="state_annual_series", fy_to="2008-09")',
+        table=_STATE,
+        fy_to="2008-09",
+    )
+
+    return RetrievedSection(
+        plan=COVERAGE,
+        figures=(),
+        derivations=(total,),
+        cohorts=(partial, unadjudicated, national_nulls, seam, active_workers_first_year),
+        refusals=(floor_refusal,),
+    )
+
+
+# --- C6: the refusal surface --------------------------------------------------------------------
+
+REFUSALS = SectionPlan(
+    key="refusals",
+    title="What this record refuses to answer",
+    brief=(
+        "A governed record is defined as much by what it declines to say as by what it says. Walk "
+        "through the refusals below — each one an object the server actually returned — and "
+        "explain what each protects. Quote the reasons.\n\n"
+        "The shape of the argument: asking for data after the repeal is refused because the series "
+        "is sealed; asking for a monthly figure is refused because the record is annual-only; "
+        "asking for the wage rate at state grain is refused because it is a rate and does not sum; "
+        "asking for district data before the flagship era is refused because the drill-down does "
+        "not exist there; a malformed financial-year label is refused rather than compared, "
+        "because such a label is compared as a string and a malformed one would silently produce a "
+        "wrong answer instead of an error; an unknown geography is refused rather than guessed; "
+        "and asking for the lineage table through the query verb is refused with a pointer to the "
+        "verb that serves it.\n\n"
+        "Each refusal names what is wrong AND where to go instead. That is the point: the record "
+        "does not fail silently, and it does not answer a question it cannot honestly answer. "
+        "Write no numbers of your own in this section."
+    ),
+)
+
+
+def retrieve_refusals(tools: AnalystTools) -> RetrievedSection:
+    exhibits = (
+        retrieve.refusal(
+            tools,
+            id="post_repeal",
+            label="data after the repeal",
+            call='query(table="national_annual_series", fy_from="2027-28")',
+            table=_NATIONAL,
+            fy_from="2027-28",
+        ),
+        retrieve.refusal(
+            tools,
+            id="monthly",
+            label="a monthly figure",
+            call='query(table="district_flagship", month="2022-04")',
+            table=_DISTRICT,
+            month="2022-04",
+        ),
+        retrieve.refusal(
+            tools,
+            id="rate_at_state_grain",
+            label="the wage rate at state grain",
+            call='query(table="state_annual_series", metrics=["avg_wage_rate_per_day"])',
+            table=_STATE,
+            metrics=[_WAGE_RATE],
+        ),
+        retrieve.refusal(
+            tools,
+            id="district_before_the_flagship",
+            label="district data before the flagship era",
+            call='query(table="district_flagship", fy_to="2015-16")',
+            table=_DISTRICT,
+            fy_to="2015-16",
+        ),
+        retrieve.refusal(
+            tools,
+            id="malformed_year",
+            label="a malformed financial-year label",
+            call='query(table="state_annual_series", fy_from="2019")',
+            table=_STATE,
+            fy_from="2019",
+        ),
+        retrieve.refusal(
+            tools,
+            id="unknown_geography",
+            label="a geography that does not exist",
+            call='query(table="state_annual_series", states=["Atlantis"])',
+            table=_STATE,
+            states=["Atlantis"],
+        ),
+        retrieve.refusal(
+            tools,
+            id="lineage_through_query",
+            label="the lineage table through the query verb",
+            call='query(table="lineage")',
+            table="lineage",
+        ),
+    )
+    return RetrievedSection(plan=REFUSALS, figures=(), derivations=(), refusals=exhibits)
+
+
+# --- C7: the district set -----------------------------------------------------------------------
+
+DISTRICTS = SectionPlan(
+    key="districts",
+    title="The district set is not a constant",
+    brief=(
+        "Districts split over the life of the scheme, so the number of districts reporting is not "
+        "fixed. Using the counts of district person-days facts (one such fact per district per "
+        "year), give the number of districts reporting in the flagship's first year, FY 2018-19, "
+        "and in FY 2023-24, and the derived difference between them. Explain what the record does "
+        "about this: each fact stays filed under the geography that existed at its OWN period, and "
+        "is never forward-mapped across a split — redistributing an old district's value across "
+        "its successors would require an allocation the source never published, which would be "
+        "inventing data. The growth in the count is districts splitting, not new territory."
+    ),
+)
+
+
+def retrieve_districts(tools: AnalystTools) -> RetrievedSection:
+    first_year = retrieve.fetch_cohort(
+        tools,
+        id="districts_2018_19",
+        label="districts reporting person-days in FY 2018-19 (the flagship's first year)",
+        table=_DISTRICT,
+        metrics=[_PERSONDAYS],
+        fy_from="2018-19",
+        fy_to="2018-19",
+        filter=cohort.ALL,
+    )
+    later = retrieve.fetch_cohort(
+        tools,
+        id="districts_2023_24",
+        label="districts reporting person-days in FY 2023-24",
+        table=_DISTRICT,
+        metrics=[_PERSONDAYS],
+        fy_from="2023-24",
+        fy_to="2023-24",
+        filter=cohort.ALL,
+    )
+    growth = retrieve.derived(
+        id="districts_added",
+        label="districts added between FY 2018-19 and FY 2023-24",
+        operation=derive.DIFFERENCE,
+        inputs=[later, first_year],
+        unit="districts",
+    )
+    floor_refusal = retrieve.refusal(
+        tools,
+        id="district_floor",
+        label="asking for district data before the flagship era",
+        call='query(table="district_flagship", fy_to="2015-16")',
+        table=_DISTRICT,
+        fy_to="2015-16",
+    )
+    return RetrievedSection(
+        plan=DISTRICTS,
+        figures=(),
+        derivations=(growth,),
+        cohorts=(first_year, later),
+        refusals=(floor_refusal,),
+    )
+
+
 SECTIONS: dict[str, tuple[SectionPlan, Retriever]] = {
+    NATIONAL_SERIES.key: (NATIONAL_SERIES, retrieve_national_series),
+    DISAGREEMENTS.key: (DISAGREEMENTS, retrieve_disagreements),
     GOA_SPINE.key: (GOA_SPINE, retrieve_goa_spine),
+    WAGE_RATE.key: (WAGE_RATE, retrieve_wage_rate),
+    COVERAGE.key: (COVERAGE, retrieve_coverage),
+    DISTRICTS.key: (DISTRICTS, retrieve_districts),
+    REFUSALS.key: (REFUSALS, retrieve_refusals),
 }
+
+# The report's reading order.
+REPORT_ORDER: tuple[str, ...] = (
+    NATIONAL_SERIES.key,
+    DISAGREEMENTS.key,
+    GOA_SPINE.key,
+    WAGE_RATE.key,
+    COVERAGE.key,
+    DISTRICTS.key,
+    REFUSALS.key,
+)

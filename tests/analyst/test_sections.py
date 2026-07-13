@@ -64,3 +64,25 @@ def test_the_section_exhibits_the_rate_and_monthly_refusals(
 ) -> None:
     codes = {r.payload["code"] for r in section.refusals}
     assert codes == {"unknown_metric", "monthly_wage_unavailable"}
+
+
+@pytest.mark.parametrize("key", sorted(sections.SECTIONS))
+def test_every_section_retrieves_and_proves_itself(key: str) -> None:
+    """Each section's evidence must come back whole from the real dist, before a word is drafted."""
+    tools = DirectTools(loader.load_dataset())
+    _, retriever = sections.SECTIONS[key]
+    section = retriever(tools)
+
+    for figure in section.figures:
+        assert figure.fact_id and figure.sources, f"{key}/{figure.id} has no provenance"
+    for coh in section.cohorts:
+        assert len(coh.member_fact_ids) == int(coh.value), f"{key}/{coh.id} miscounts its members"
+        if coh.member_fact_ids:
+            assert coh.sources, f"{key}/{coh.id} has members but no sources"
+    for exhibit in section.refusals:
+        assert exhibit.payload["refused"] is True
+    assert section.figures or section.cohorts or section.refusals
+
+
+def test_the_report_order_covers_every_registered_section() -> None:
+    assert set(sections.REPORT_ORDER) == set(sections.SECTIONS)
