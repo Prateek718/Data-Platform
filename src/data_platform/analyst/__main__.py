@@ -41,9 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--sections",
         nargs="+",
-        default=sorted(sections.SECTIONS),
+        default=list(sections.REPORT_ORDER),
         choices=sorted(sections.SECTIONS),
-        help="which sections to generate (default: all registered sections)",
+        help="which sections to generate (default: every section, in reading order)",
     )
     parser.add_argument(
         "--backend",

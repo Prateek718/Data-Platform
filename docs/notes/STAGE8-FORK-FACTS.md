@@ -4,9 +4,36 @@
 > serve that trace, and the choice shapes `report.json`, the Stage 9 viewer, and what a reader can
 > do with the repo offline.
 >
-> **This document contains facts and options only — no recommendation.** The presentation shape is
-> the human's decision at the Stage 8 checkpoint. Every number below was measured on this machine
-> against the real `dist/v1.0` (`scripts/stage8_fork_facts.py`, plus the pilot run itself).
+> The body of this document is **facts and options only** — it was written before the decision, to
+> inform it. Every number was measured on this machine against the real `dist/v1.0`
+> (`scripts/stage8_fork_facts.py`, plus the pilot run itself). **The decision taken at the
+> checkpoint is recorded at the top, with its rationale.**
+
+---
+
+## DECISION (Stage 8 checkpoint) — embedded traces are the contract
+
+`report.json` carries, for **every figure**, the full lineage payload as captured at generation time
+from the checksum-verified `dist/v1.0`. Each figure also keeps its `fact_id`. A **cohort** (a count
+over many facts, e.g. "193 null cells") carries every member `fact_id` plus the distinct
+`(source_id, resource_id, as-of)` triples behind those members — the members' individual payloads are
+not embedded, because 193 payloads for one sentence would bloat the artifact without adding anything
+a reader cannot fetch.
+
+The report's front matter states that **any trace can be independently re-derived** by running this
+repo's MCP server and calling `get_lineage(fact_id)`. The live path therefore exists — **through the
+protocol, not through viewer machinery.**
+
+**Rationale.** The record is **sealed**: MGNREGA was repealed 30 June 2026, the dataset is
+DOI-frozen, and the server starts only after checksum-verifying the released bytes. A live lookup
+therefore **cannot return anything different** from the embedded copy — it can only return the same
+payload, more slowly, and only when something is running to answer it. Re-verification of this
+report is served by **checksums and reproduction** (re-run the generator against the same sealed
+artifacts and get the same figures), not by re-querying at read time. Paying a runtime dependency to
+re-fetch an answer that cannot have changed buys nothing; embedding it costs ~35% of a small JSON
+file and makes the report readable, citable, and archivable on its own.
+
+---
 
 ---
 
