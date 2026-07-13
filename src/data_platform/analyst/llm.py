@@ -78,8 +78,11 @@ def render_evidence(section: RetrievedSection) -> str:
     """The evidence block: every figure, derivation and refusal the drafter may narrate."""
     lines = ["FIGURES (each is a value the dataset served, with the fact it came from):"]
     for figure in section.figures:
+        # "count" is a unit-class, not a word to put in a sentence: "75,500,579 count" reads badly
+        # and the drafter copies what it is shown.
+        unit = "" if figure.unit == "count" else f" {figure.unit}"
         lines.append(
-            f"- {figure.label}: {canonical(figure.value)} {figure.unit} "
+            f"- {figure.label}: {canonical(figure.value)}{unit} "
             f"[metric={figure.metric}, geography={figure.geography}, period={figure.period}, "
             f"fact_id={figure.fact_id}]"
         )

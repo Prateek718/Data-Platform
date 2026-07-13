@@ -42,3 +42,12 @@ def test_ratio_rejects_a_zero_denominator() -> None:
 def test_binary_operations_reject_wrong_arity(operation: str) -> None:
     with pytest.raises(ValueError, match="exactly 2 inputs"):
         derive.compute(operation, [Decimal("1"), Decimal("2"), Decimal("3")])
+
+
+def test_ratio_2dp_rounds_in_the_operation_not_in_the_prose() -> None:
+    """A 28-digit ratio is precision the claim does not have; rounding is a DECLARED step here."""
+    exact = derive.compute(derive.RATIO, [Decimal("3881318918"), Decimal("905054000")])
+    assert str(exact).startswith("4.28849429757782408563466931")
+    assert derive.compute(derive.RATIO_2DP, [Decimal("3881318918"), Decimal("905054000")]) == (
+        Decimal("4.29")
+    )

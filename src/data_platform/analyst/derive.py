@@ -12,12 +12,19 @@ because of binary floating-point drift would be indistinguishable from one the d
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 SUM: Final = "sum"
 DIFFERENCE: Final = "difference"
 RATIO: Final = "ratio"
+RATIO_2DP: Final = "ratio_2dp"
+
+# A ratio of two exact decimals runs to 28 significant digits ("4.288494297577824085634669313
+# times"), which is precision the claim does not have and no reader wants. Rounding it HERE, as a
+# named operation the verifier recomputes, keeps the drafter out of the arithmetic: the drafter
+# still may not round anything — the report's rounding is a declared, reproducible step.
+_RATIO_QUANTUM: Final = Decimal("0.01")
 
 
 def _sum(values: Sequence[Decimal]) -> Decimal:
@@ -40,10 +47,15 @@ def _ratio(values: Sequence[Decimal]) -> Decimal:
     return values[0] / values[1]
 
 
+def _ratio_2dp(values: Sequence[Decimal]) -> Decimal:
+    return _ratio(values).quantize(_RATIO_QUANTUM, rounding=ROUND_HALF_UP)
+
+
 OPERATIONS: Final[dict[str, Callable[[Sequence[Decimal]], Decimal]]] = {
     SUM: _sum,
     DIFFERENCE: _difference,
     RATIO: _ratio,
+    RATIO_2DP: _ratio_2dp,
 }
 
 

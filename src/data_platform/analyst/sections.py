@@ -94,8 +94,8 @@ def retrieve_national_series(tools: AnalystTools) -> RetrievedSection:
 
     growth = retrieve.derived(
         id="peak_over_first",
-        label="peak-year person-days divided by first-year person-days",
-        operation=derive.RATIO,
+        label="peak-year person-days divided by first-year person-days (2 decimal places)",
+        operation=derive.RATIO_2DP,
         inputs=[peak, first],
         unit="times",
     )

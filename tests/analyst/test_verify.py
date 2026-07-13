@@ -158,3 +158,54 @@ def test_number_tokens_ignores_financial_years() -> None:
 
 def test_renderings_accept_grouped_and_raw() -> None:
     assert {"1000000", "1,000,000"} <= verify.renderings(Decimal("1000000"))
+
+
+def test_a_figure_followed_by_a_comma_is_still_that_figure(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """Caught on the full live run: '300,000, and' tokenized as '300,000,' and was rejected.
+
+    A trailing separator is punctuation, not a digit. The drafter reworded around it, which is the
+    verifier corrupting the report rather than protecting it.
+    """
+    prose = "Anantnag contributed 300,000, and the state generated 1,000,000 person-days."
+    assert verify.verify(section, prose, tools).ok
+
+
+def test_the_servers_own_refusal_numbers_may_be_narrated(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """A number inside a refusal the server returned is served content, quoted or paraphrased.
+
+    Caught on the full live run: the model deleted the dates out of the server's own quoted reason
+    ("MGNREGA was repealed effective, so the canonical series ends at FY") to satisfy the verifier.
+    """
+    reason = section.refusals[0].payload["reason"]
+    assert isinstance(reason, str)
+    prose = f"The record refuses monthly figures. It says: {reason[:40]}"
+    assert verify.verify(section, prose, tools).ok
+
+
+def test_numbers_the_section_brief_supplies_may_be_narrated(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """The brief is authored spec text in this repo, reviewed like code — not model output.
+
+    The repeal date (30 June 2026) and the era boundary (FY 2018-19) are framing the brief gives the
+    drafter. They are not data claims, and a drafter that cannot state them writes a worse report.
+    """
+    briefed = replace(
+        section.plan, brief="Note that MGNREGA was repealed effective 30 June 2026, in FY 2026-27."
+    )
+    briefed_section = replace(section, plan=briefed)
+    prose = "MGNREGA was repealed effective 30 June 2026 (FY 2026-27). It made 1,000,000."
+    assert verify.verify(briefed_section, prose, tools).ok
+
+
+def test_an_invented_number_still_blocks_even_with_a_brief_and_refusals(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """The three allowances are exhaustive: anything else is still an invention."""
+    report = verify.verify(section, "The state generated 1,400,000 person-days.", tools)
+    assert not report.ok
+    assert "1,400,000" in report.render()

@@ -37,8 +37,9 @@ from data_platform.analyst.tools import AnalystTools, Payload
 # A financial-year label: stripped from the prose before numbers are read, and validated separately.
 FY_LABEL: Final = re.compile(r"\b[0-9]{4}-[0-9]{2}\b")
 
-# A numeric token as prose renders one: 94,004 · 3,881,318,918 · 0.16 · 22.09
-NUMBER: Final = re.compile(r"(?<![\w.])[0-9][0-9,]*(?:\.[0-9]+)?")
+# A numeric token as prose renders one: 94,004 · 3,881,318,918 · 0.16 · 22.09. A trailing comma or
+# period is PUNCTUATION, not part of the number — "300,000, and" must read as the figure 300,000.
+NUMBER: Final = re.compile(r"(?<![\w.])[0-9](?:[0-9,]*[0-9])?(?:\.[0-9]+)?")
 
 
 def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> VerificationReport:
@@ -67,9 +68,7 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
     # quoted a refusal whose month argument, "2022-04", read as a financial-year claim.)
     claims = _strip_quoted_exhibits(prose, section)
 
-    periods = {figure.period for figure in section.figures}
-    for cohort in section.cohorts:  # a cohort scoped to a year makes that year a retrieved period
-        periods |= {fy for fy in (cohort.query.fy_from, cohort.query.fy_to) if fy is not None}
+    periods = _allowed_periods(section)
     for label in FY_LABEL.findall(claims):
         if label not in periods:
             problems.append(
@@ -81,8 +80,9 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
     for token in number_tokens(claims):
         if token not in allowed:
             problems.append(
-                f"the number {token} in the prose is not a figure or a declared derivation in "
-                "this section — every number must come from the served data"
+                f"the number {token} in the prose is not a figure, a declared derivation, or a "
+                "number the served data or this section's brief supplies — every number must come "
+                "from the record"
             )
 
     return VerificationReport(problems=tuple(problems))
@@ -249,6 +249,19 @@ def _strip_quoted_exhibits(prose: str, section: RetrievedSection) -> str:
 
 
 def _allowed_renderings(section: RetrievedSection) -> set[str]:
+    """Every number the prose may legitimately contain, and there are exactly three sources.
+
+    1. The section's evidence — figures, derivations, cohorts — spelled exactly as served.
+    2. Numbers the SERVER itself returned inside a refusal (the call, the reason). Narrating a
+       refusal is the point of several sections, and the model must be able to say what the server
+       said. (Without this, the first full run deleted the dates out of the server's own quoted
+       reason — "MGNREGA was repealed effective, so the canonical series ends at FY" — to comply.)
+    3. Numbers the SECTION BRIEF supplies: the repeal date, the era boundary, the Rs 1,000/day
+       implausibility floor. The brief is authored spec text in this repo, reviewed like code — not
+       model output — so restating it is not a claim about the data.
+
+    Anything else is a number the model produced from nowhere, and it blocks the section.
+    """
     allowed: set[str] = set()
     for figure in section.figures:
         allowed |= renderings(figure.value)
@@ -256,7 +269,28 @@ def _allowed_renderings(section: RetrievedSection) -> set[str]:
         allowed |= renderings(derivation.value)
     for cohort in section.cohorts:
         allowed |= renderings(cohort.value)
+    for text in _served_and_briefed_text(section):
+        allowed |= set(number_tokens(text))
     return allowed
+
+
+def _allowed_periods(section: RetrievedSection) -> set[str]:
+    """The financial years the prose may name: retrieved, or named by the server or the brief."""
+    periods = {figure.period for figure in section.figures}
+    for cohort in section.cohorts:  # a cohort scoped to a year makes that year a retrieved period
+        periods |= {fy for fy in (cohort.query.fy_from, cohort.query.fy_to) if fy is not None}
+    for text in _served_and_briefed_text(section):
+        periods |= set(FY_LABEL.findall(text))
+    return periods
+
+
+def _served_and_briefed_text(section: RetrievedSection) -> list[str]:
+    """Text that is not the model's invention: the server's refusals, and the section brief."""
+    texts = [section.plan.brief]
+    for exhibit in section.refusals:
+        texts.append(exhibit.call)
+        texts.extend(v for v in exhibit.payload.values() if isinstance(v, str))
+    return texts
 
 
 def _rows(payload: Payload) -> list[Payload]:
