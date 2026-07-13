@@ -79,6 +79,48 @@ class Derivation:
 
 
 @dataclass(frozen=True)
+class CohortSpec:
+    """The query a cohort counts over — replayed verbatim by the verifier."""
+
+    table: str
+    metrics: tuple[str, ...] | None = None
+    states: tuple[str, ...] | None = None
+    fy_from: str | None = None
+    fy_to: str | None = None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "table": self.table,
+            "metrics": None if self.metrics is None else list(self.metrics),
+            "states": None if self.states is None else list(self.states),
+            "fy_from": self.fy_from,
+            "fy_to": self.fy_to,
+        }
+
+
+@dataclass(frozen=True)
+class Cohort:
+    """A count over many facts: the query, the named filter, every member, and their sources.
+
+    A single fact proves itself with one ``fact_id`` and one lineage payload. A count cannot — so it
+    carries the query and the named deterministic filter that selected its members (both replayable
+    by the verifier), the ``fact_id`` of EVERY member (each one's full trace is a ``get_lineage``
+    call away), and the distinct sources behind those members. An empty cohort — zero facts, which
+    is itself a finding — has no members and therefore no sources.
+    """
+
+    id: str
+    label: str
+    operation: str
+    query: CohortSpec
+    filter: str
+    value: Decimal
+    unit: str
+    member_fact_ids: tuple[str, ...]
+    sources: tuple[Payload, ...]
+
+
+@dataclass(frozen=True)
 class RefusalExhibit:
     """A refusal the report shows as evidence: the call, and the object the server returned."""
 
@@ -105,6 +147,7 @@ class RetrievedSection:
     figures: tuple[Figure, ...]
     derivations: tuple[Derivation, ...]
     refusals: tuple[RefusalExhibit, ...] = ()
+    cohorts: tuple[Cohort, ...] = ()
 
     def figure(self, figure_id: str) -> Figure:
         for fig in self.figures:
@@ -118,16 +161,25 @@ class RetrievedSection:
                 return der
         raise KeyError(f"no derivation {derivation_id!r} in section {self.plan.key!r}")
 
-    def fact_ids(self, node_id: str) -> list[str]:
-        """The served facts a figure or derivation ultimately rests on, in input order.
+    def cohort(self, cohort_id: str) -> Cohort:
+        for coh in self.cohorts:
+            if coh.id == cohort_id:
+                return coh
+        raise KeyError(f"no cohort {cohort_id!r} in section {self.plan.key!r}")
 
-        A derivation may take another derivation as an input (the spine residual is a difference
-        against a sum), so the facts behind it are the transitive closure — and every one of them
-        carries its own lineage.
+    def fact_ids(self, node_id: str) -> list[str]:
+        """The served facts a figure, cohort or derivation ultimately rests on, in input order.
+
+        A derivation may take another derivation or a cohort as an input (the spine residual is a
+        difference against a sum; the record's null count is a sum of two cohorts), so the facts
+        behind it are the transitive closure — and every one of them carries its own lineage.
         """
         for fig in self.figures:
             if fig.id == node_id:
                 return [fig.fact_id]
+        for coh in self.cohorts:
+            if coh.id == node_id:
+                return list(coh.member_fact_ids)
         facts: list[str] = []
         for input_id in self.derivation(node_id).inputs:
             facts.extend(self.fact_ids(input_id))

@@ -84,6 +84,14 @@ def render_evidence(section: RetrievedSection) -> str:
             f"fact_id={figure.fact_id}]"
         )
 
+    if section.cohorts:
+        lines += ["", "COUNTS (each counted by code over the dataset — use the number as given):"]
+        for cohort in section.cohorts:
+            lines.append(
+                f"- {cohort.label}: {canonical(cohort.value)} "
+                f"[counted over {cohort.query.table} where {cohort.filter}]"
+            )
+
     if section.derivations:
         lines += ["", "DERIVED FIGURES (computed by code from the figures above — use as given):"]
         for derivation in section.derivations:

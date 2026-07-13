@@ -19,6 +19,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from data_platform.analyst.models import (
+    Cohort,
     Derivation,
     Figure,
     RefusalExhibit,
@@ -49,6 +50,14 @@ def build_report(sections: Sequence[VerifiedSection], *, generated_at: str) -> d
             ),
             "figure_count": sum(len(s.retrieved.figures) for s in sections),
             "derivation_count": sum(len(s.retrieved.derivations) for s in sections),
+            "cohort_count": sum(len(s.retrieved.cohorts) for s in sections),
+            "traces": (
+                "Every figure embeds the full lineage payload captured at generation time from the "
+                "checksum-verified dist/v1.0. A cohort (a count) embeds every member fact_id and "
+                "the distinct sources behind them. Any trace can be independently re-derived by "
+                "running this repo's MCP server and calling get_lineage(fact_id): the record is "
+                "sealed, so a live lookup cannot return anything different from the embedded copy."
+            ),
         },
         "sections": [_section(s) for s in sections],
     }
@@ -62,6 +71,7 @@ def _section(section: VerifiedSection) -> dict[str, object]:
         "prose": section.prose,
         "attempts": section.attempts,
         "figures": [_figure(f) for f in retrieved.figures],
+        "cohorts": [_cohort(c) for c in retrieved.cohorts],
         "derivations": [_derivation(d, retrieved) for d in retrieved.derivations],
         "refusals": [_refusal(r) for r in retrieved.refusals],
     }
@@ -79,6 +89,20 @@ def _figure(figure: Figure) -> dict[str, object]:
         "fact_id": figure.fact_id,
         "query": figure.query.to_dict(),
         "lineage": figure.lineage,
+    }
+
+
+def _cohort(cohort: Cohort) -> dict[str, object]:
+    return {
+        "id": cohort.id,
+        "label": cohort.label,
+        "value": canonical(cohort.value),
+        "unit": cohort.unit,
+        "operation": cohort.operation,
+        "query": cohort.query.to_dict(),
+        "filter": cohort.filter,
+        "member_fact_ids": list(cohort.member_fact_ids),
+        "sources": [dict(s) for s in cohort.sources],
     }
 
 
@@ -138,6 +162,24 @@ def render_markdown(report: dict[str, object]) -> str:
                 lines.append(
                     f"| {figure['label']} | {figure['value']} | {figure['unit']} | "
                     f"{figure['period']} | `{figure['fact_id']}` | {sources} |"
+                )
+            lines.append("")
+
+        cohorts = section["cohorts"]
+        assert isinstance(cohorts, list)
+        if cohorts:
+            lines += [
+                "| count | value | counted over | filter | members |",
+                "|---|---|---|---|---|",
+            ]
+            for cohort in cohorts:
+                query = cohort["query"]
+                assert isinstance(query, dict)
+                members = cohort["member_fact_ids"]
+                assert isinstance(members, list)
+                lines.append(
+                    f"| {cohort['label']} | {cohort['value']} | {query['table']} | "
+                    f"`{cohort['filter']}` | {len(members)} fact ids in report.json |"
                 )
             lines.append("")
 

@@ -23,8 +23,9 @@ from collections.abc import Mapping
 from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from data_platform.analyst import derive
+from data_platform.analyst import derive, retrieve
 from data_platform.analyst.models import (
+    Cohort,
     Derivation,
     Figure,
     RetrievedSection,
@@ -48,7 +49,11 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
         problems.extend(lineage_problems(figure))
         problems.extend(replay_problems(figure, tools))
 
+    for cohort in section.cohorts:
+        problems.extend(cohort_problems(cohort, tools))
+
     known = {figure.id: figure.value for figure in section.figures}
+    known.update({cohort.id: cohort.value for cohort in section.cohorts})
     for derivation in section.derivations:
         found = derivation_problems(section, derivation, known)
         problems.extend(found)
@@ -63,6 +68,8 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
     claims = _strip_quoted_exhibits(prose, section)
 
     periods = {figure.period for figure in section.figures}
+    for cohort in section.cohorts:  # a cohort scoped to a year makes that year a retrieved period
+        periods |= {fy for fy in (cohort.query.fy_from, cohort.query.fy_to) if fy is not None}
     for label in FY_LABEL.findall(claims):
         if label not in periods:
             problems.append(
@@ -152,6 +159,47 @@ def derivation_problems(
     return []
 
 
+def cohort_problems(cohort: Cohort, tools: AnalystTools) -> list[str]:
+    """Re-execute a cohort's query, re-apply its named filter, and recount from the served data.
+
+    Both the count AND the member set are checked: a count can be right while the facts behind it
+    are wrong, and the member ids are what let a reader pull each trace for themselves.
+    """
+    spec = cohort.query
+    try:
+        recomputed = retrieve.fetch_cohort(
+            tools,
+            id=cohort.id,
+            label=cohort.label,
+            table=spec.table,
+            filter=cohort.filter,
+            metrics=None if spec.metrics is None else list(spec.metrics),
+            states=None if spec.states is None else list(spec.states),
+            fy_from=spec.fy_from,
+            fy_to=spec.fy_to,
+        )
+    except (retrieve.RetrievalError, ValueError) as exc:
+        return [f"{cohort.id}: cannot be recomputed from the served data ({exc})"]
+
+    problems: list[str] = []
+    if recomputed.value != cohort.value:
+        problems.append(
+            f"{cohort.id}: claims {canonical(cohort.value)} facts, but re-running its query with "
+            f"the filter {cohort.filter!r} counts {canonical(recomputed.value)}"
+        )
+    if set(recomputed.member_fact_ids) != set(cohort.member_fact_ids):
+        problems.append(
+            f"{cohort.id}: its members are not the facts the served data selects "
+            f"({len(cohort.member_fact_ids)} declared, {len(recomputed.member_fact_ids)} served)"
+        )
+    if cohort.member_fact_ids and not cohort.sources:
+        problems.append(f"{cohort.id}: no lineage sources behind its members")
+    for source in cohort.sources:
+        if not source.get("resource_id"):
+            problems.append(f"{cohort.id}: a lineage source names no resource_id")
+    return problems
+
+
 def replay_problems(figure: Figure, tools: AnalystTools) -> list[str]:
     """Re-execute a figure's backing query; complain if the served data no longer agrees."""
     spec = figure.query
@@ -206,6 +254,8 @@ def _allowed_renderings(section: RetrievedSection) -> set[str]:
         allowed |= renderings(figure.value)
     for derivation in section.derivations:
         allowed |= renderings(derivation.value)
+    for cohort in section.cohorts:
+        allowed |= renderings(cohort.value)
     return allowed
 
 
