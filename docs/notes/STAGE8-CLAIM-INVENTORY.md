@@ -5,8 +5,18 @@
 > never from the pipeline docs. A claim that the served data cannot back is recorded as **FAIL**
 > and stays out of the report unless the decision at the Stage 8 checkpoint says otherwise.
 >
-> Status: **INPUT TO THE CHECKPOINT.** No prose has been written. The human decides which claims
-> the report includes.
+> Status: **RESOLVED AT THE CHECKPOINT.** The decision: the report includes C1, C2, C3′, C4′ and
+> C5–C9 — everything that verified. C3 and C4 (the "6.31×" and "₹18,623/day" monthly figures) stay
+> recorded here as **verification-FAILED**, and appear nowhere in the report.
+>
+> Two framing constraints were imposed and are enforced in the section briefs (`analyst/sections.py`):
+> **C2** must present its two phenomena separately — never "34 disagreements" as one homogeneous
+> count — naming the rule family behind each and stating that both cleared the two-part materiality
+> floor. **C4′** must present the nine surviving >₹1,000/day rates as source data-quality artifacts
+> carried faithfully into the record with lineage, explicitly NOT as observed wages, and say that a
+> plausible MGNREGA daily wage is an order of magnitude lower.
+>
+> The shipped report is `report/report.md` (+ `report.json`); all seven sections passed verification.
 
 ## Classification key
 
