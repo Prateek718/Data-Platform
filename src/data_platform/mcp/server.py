@@ -15,13 +15,9 @@ from mcp.server.fastmcp import FastMCP
 from data_platform.mcp import catalog, lineage, refresh
 from data_platform.mcp import query as query_mod
 from data_platform.mcp.loader import Dataset
-from data_platform.mcp.refusals import Refusal
+from data_platform.mcp.refusals import as_payload
 
 SERVER_NAME = "mgnrega-canonical-series"
-
-
-def _as_dict(result: dict[str, object] | Refusal) -> dict[str, object]:
-    return result.to_dict() if isinstance(result, Refusal) else result
 
 
 def build_server(ds: Dataset) -> FastMCP:
@@ -44,7 +40,7 @@ def build_server(ds: Dataset) -> FastMCP:
         )
     )
     def get_schema(table: str) -> dict[str, Any]:
-        return _as_dict(catalog.get_schema(table))
+        return as_payload(catalog.get_schema(table))
 
     @server.tool(
         description=(
@@ -63,7 +59,7 @@ def build_server(ds: Dataset) -> FastMCP:
         fy_to: str | None = None,
         month: str | None = None,
     ) -> dict[str, Any]:
-        return _as_dict(
+        return as_payload(
             query_mod.query(
                 ds,
                 table,
