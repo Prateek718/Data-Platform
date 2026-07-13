@@ -256,9 +256,10 @@ def _allowed_renderings(section: RetrievedSection) -> set[str]:
        refusal is the point of several sections, and the model must be able to say what the server
        said. (Without this, the first full run deleted the dates out of the server's own quoted
        reason — "MGNREGA was repealed effective, so the canonical series ends at FY" — to comply.)
-    3. Numbers the SECTION BRIEF supplies: the repeal date, the era boundary, the Rs 1,000/day
-       implausibility floor. The brief is authored spec text in this repo, reviewed like code — not
-       model output — so restating it is not a claim about the data.
+    3. Numbers the SECTION BRIEF or an evidence LABEL supplies: the repeal date, the era boundary,
+       the Rs 1,000/day implausibility floor, the FY range a cohort covers. Both are authored text
+       in this repo, reviewed like code and handed to the drafter as evidence — not model output —
+       so restating them is not a claim about the data.
 
     Anything else is a number the model produced from nowhere, and it blocks the section.
     """
@@ -285,10 +286,19 @@ def _allowed_periods(section: RetrievedSection) -> set[str]:
 
 
 def _served_and_briefed_text(section: RetrievedSection) -> list[str]:
-    """Text that is not the model's invention: the server's refusals, and the section brief."""
+    """Text that is not the model's invention: the server's refusals, the brief, and the labels.
+
+    The labels are authored here, in code, and shown to the drafter as part of the evidence ("wage
+    rates above Rs 1,000/day", "facts the record serves (FY 2018-19 to 2025-26)"). A drafter that
+    may read a label but not repeat what it says is being set up to fail.
+    """
     texts = [section.plan.brief]
+    texts.extend(figure.label for figure in section.figures)
+    texts.extend(derivation.label for derivation in section.derivations)
+    texts.extend(cohort.label for cohort in section.cohorts)
     for exhibit in section.refusals:
         texts.append(exhibit.call)
+        texts.append(exhibit.label)
         texts.extend(v for v in exhibit.payload.values() if isinstance(v, str))
     return texts
 

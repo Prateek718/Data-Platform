@@ -127,3 +127,17 @@ def test_an_unknown_filter_is_an_error_not_a_guess(tools: DirectTools) -> None:
             table="state_annual_series",
             filter="value_is_suspicious",
         )
+
+
+def test_a_cohorts_own_label_may_be_quoted(tools: DirectTools) -> None:
+    """Labels are authored evidence handed to the drafter; a number in one is not an invention.
+
+    Caught on the second full run: the wage section's label says "above Rs 1,000/day", the drafter
+    repeated the threshold, and the verifier called 1,000 an invented number.
+    """
+    labelled = replace(
+        _nulls(tools), label="null cells withheld (the 2 of them) above the Rs 1,000/day floor"
+    )
+    section = replace(build_section(tools), cohorts=(labelled,))
+    prose = "The floor is Rs 1,000/day. The series carries 2 null cells."
+    assert verify.verify(section, prose, tools).ok
