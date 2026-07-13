@@ -49,8 +49,9 @@ def build_server(ds: Dataset) -> FastMCP:
     @server.tool(
         description=(
             "Query a data table with structured filters: metrics, states/districts (by LGD code or "
-            "current LGD name), and a financial-year range. Returns rows carrying fact_id in a "
-            "result envelope, or a structured refusal. No raw SQL is accepted."
+            "current LGD name), and a financial-year range (fy_from/fy_to as 'YYYY-YY', e.g. "
+            "'2018-19'). Returns rows carrying fact_id in a result envelope, or a structured "
+            "refusal. No raw SQL is accepted."
         )
     )
     def query(

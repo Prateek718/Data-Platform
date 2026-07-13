@@ -74,6 +74,14 @@ def test_list_datasets_metric_counts(synthetic_dist: SyntheticDist) -> None:
     assert "avg_wage_rate_per_day" not in by["state_annual_series"]["metrics"]
 
 
+def test_lineage_advertises_no_metrics(synthetic_dist: SyntheticDist) -> None:
+    # lineage is per-fact provenance, not a metric table: it must advertise an empty metric list
+    # in both catalog surfaces rather than borrowing the district metric set.
+    assert schema.TABLES["lineage"].metrics == ()
+    assert _catalog(synthetic_dist)["lineage"]["metrics"] == []
+    assert _schema("lineage")["metrics"] == []
+
+
 def test_get_schema_state_columns_and_grain() -> None:
     result = _schema("state_annual_series")
     assert result["grain"] == "state-annual"
