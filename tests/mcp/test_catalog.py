@@ -14,7 +14,7 @@ from data_platform.export.records import (
 from data_platform.export.write import _FLOAT_COLUMNS, _INT_COLUMNS
 from data_platform.harmonize import config as hconfig
 from data_platform.mcp import catalog, loader, refusals, schema
-from tests.mcp.conftest import SyntheticDist
+from tests.conftest import SyntheticDist
 
 
 def _load(sd: SyntheticDist) -> loader.Dataset:
