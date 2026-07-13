@@ -3,6 +3,22 @@
 Notable changes to the MGNREGA Canonical Series. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); the version tracks the **dataset** release.
 
+## [Unreleased]
+
+### Added
+- **MCP server (code only).** A read-only [MCP](https://modelcontextprotocol.io) serving layer over
+  the sealed v1.0.0 release artifacts (`src/data_platform/mcp/`), started with
+  `PYTHONPATH=src uv run python -m data_platform.mcp`. At startup it verifies every `dist/v1.0/` file
+  against a committed SHA-256 manifest — derived from the published release zip, giving an auditable
+  chain to the GitHub Release / Zenodo deposit — and **refuses to start** on any mismatch or missing
+  file. It loads the artifacts into an in-memory DuckDB (no network, no persistent DB) and exposes
+  five read-only tools: `list_datasets`, `get_schema`, `query` (a constrained filter API — no raw
+  SQL; geography by LGD code or current LGD name), `get_lineage`, and `request_refresh`. Requests the
+  sealed record cannot honestly answer return structured refusals, distinct from null data cells.
+
+The **dataset is unchanged**: no file under `dist/v1.0/` is modified and the DOI / `CITATION.cff`
+are frozen. This entry is code only.
+
 ## [1.0.0] — 2026-07-06
 
 First public release: the complete, reconciled MGNREGA canonical series and its public-facing

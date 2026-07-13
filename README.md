@@ -93,8 +93,55 @@ Principles enforced throughout: **deterministic only** (no ML/LLM inside the tra
 **quarantine over discard** (no row and no dataset dropped without a recorded reason — see
 [docs/quarantine-report.md](docs/quarantine-report.md)); **null ≠ 0** (a missing value is never
 coerced to zero); and **every fact carries its lineage**. MGNREGA is the reference implementation;
-the platform is architected scheme-agnostic, and is designed to be served over MCP for AI agents to
-query (that serving layer is roadmap, not part of this v1 data release).
+the platform is architected scheme-agnostic, and is served over MCP for AI agents to query — see
+[Querying the dataset (MCP)](#querying-the-dataset-mcp) below (a read-only serving layer over this
+release; the dataset itself is unchanged).
+
+## Querying the dataset (MCP)
+
+A read-only [MCP](https://modelcontextprotocol.io) server exposes this release to AI agents as a
+governed query surface. It serves the **checksum-verified v1.0.0 release artifacts** only: at
+startup it verifies every file in `dist/v1.0/` against a committed SHA-256 manifest (itself derived
+from the published release zip) and **refuses to start** on any mismatch or missing file. It loads
+them into an in-memory DuckDB, opens no network connection, and exposes no mutation verb — the
+record is sealed (MGNREGA was repealed 30 June 2026).
+
+Run it over stdio from the repo root:
+
+```bash
+PYTHONPATH=src uv run python -m data_platform.mcp
+```
+
+Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mgnrega-canonical-series": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "data_platform.mcp"],
+      "cwd": "/path/to/Data-Platform",
+      "env": { "PYTHONPATH": "src" }
+    }
+  }
+}
+```
+
+**Tools:**
+
+| Tool | What it does |
+|---|---|
+| `list_datasets` | The three data tables + lineage, each with row count, financial-year coverage window, grain, and metric list. |
+| `get_schema(table)` | Columns and types, per-metric unit and unit-class, grain, join key (`fact_id`), and null semantics. |
+| `query(table, metrics?, states?, districts?, fy_from?, fy_to?)` | Constrained filter (no raw SQL; parameters only). Geography by LGD code or current LGD name. Returns rows carrying `fact_id` in a result envelope, or a structured refusal. |
+| `get_lineage(fact_id \| [fact_id])` | Full provenance per fact: each source with resource id and as-of date, reconciliation status, rejected value, materiality, and null reason. |
+| `request_refresh` | Reports that the record is sealed and cannot be refreshed, with the citation pointer. |
+
+Requests the sealed record cannot honestly answer — a period after FY 2026-27, a monthly wage rate
+(published only as the FY-final annual value), a coverage-floor miss, or an unknown metric or
+geography — return a **structured refusal** (`{refused, code, reason}`), never an empty result. That
+is distinct from a **null data cell**, which is returned as data with its reason (queryable via
+`get_lineage`).
 
 ## Honest limitations
 
