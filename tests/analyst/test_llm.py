@@ -98,6 +98,33 @@ def test_an_unusable_response_is_an_error_not_empty_prose(section: RetrievedSect
         drafter.draft(DraftRequest(section=section), client=client)
 
 
+def test_a_reasoning_model_that_spends_its_whole_budget_thinking_says_so(
+    section: RetrievedSection,
+) -> None:
+    """A reasoning model's private reasoning is charged against max_tokens.
+
+    When the budget runs out mid-thought the endpoint returns finish_reason "length" and NO
+    content — which must not surface as a vague "empty message", or the fix (raise the budget) is
+    unguessable.
+    """
+    truncated = {
+        "choices": [{"finish_reason": "length", "message": {"content": None}}],
+        "usage": {"completion_tokens_details": {"reasoning_tokens": 1200}},
+    }
+    client = httpx.Client(
+        transport=httpx.MockTransport(lambda _r: httpx.Response(200, json=truncated))
+    )
+    drafter = OpenRouterDrafter(api_key="test-key", max_tokens=1200)
+    with pytest.raises(llm.DraftingError, match="OPENROUTER_MAX_TOKENS") as excinfo:
+        drafter.draft(DraftRequest(section=section), client=client)
+    assert "1200 reasoning tokens" in str(excinfo.value)
+
+
+def test_the_token_budget_is_env_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENROUTER_MAX_TOKENS", "8000")
+    assert OpenRouterDrafter(api_key="k").max_tokens == 8000
+
+
 def test_an_http_error_is_reported(section: RetrievedSection) -> None:
     client = httpx.Client(
         transport=httpx.MockTransport(lambda _r: httpx.Response(429, text="rate limited"))

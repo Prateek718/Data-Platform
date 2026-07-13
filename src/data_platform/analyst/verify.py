@@ -55,8 +55,15 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
         if not found:  # only a derivation that checked out may feed a later one
             known[derivation.id] = derivation.value
 
+    # Text the server itself returned — a refusal's call and its reason — is served content. Quoting
+    # it VERBATIM is verified by string equality with the payload, so it is not a numeric claim and
+    # is removed before the prose is read for claims. Alter one digit and the quote stops matching,
+    # so the altered number reappears as an invented one. (Found by the first live run: the drafter
+    # quoted a refusal whose month argument, "2022-04", read as a financial-year claim.)
+    claims = _strip_quoted_exhibits(prose, section)
+
     periods = {figure.period for figure in section.figures}
-    for label in FY_LABEL.findall(prose):
+    for label in FY_LABEL.findall(claims):
         if label not in periods:
             problems.append(
                 f"the prose cites financial year {label}, which this section never retrieved "
@@ -64,7 +71,7 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
             )
 
     allowed = _allowed_renderings(section)
-    for token in number_tokens(prose):
+    for token in number_tokens(claims):
         if token not in allowed:
             problems.append(
                 f"the number {token} in the prose is not a figure or a declared derivation in "
@@ -171,6 +178,26 @@ def replay_problems(figure: Figure, tools: AnalystTools) -> list[str]:
             f"{canonical(figure.value)}"
         ]
     return []
+
+
+def _strip_quoted_exhibits(prose: str, section: RetrievedSection) -> str:
+    """Remove verbatim quotations of the section's refusal exhibits, longest first.
+
+    Only exact matches are removed: the exhibit text is what the server returned, so an exact quote
+    of it is already verified. A paraphrase, or a quote with a digit changed, does not match and
+    stays in the prose to be checked as an ordinary claim.
+    """
+    quotable: list[str] = []
+    for exhibit in section.refusals:
+        quotable.append(exhibit.call)
+        reason = exhibit.payload.get("reason")
+        if isinstance(reason, str):
+            quotable.append(reason)
+
+    stripped = prose
+    for text in sorted(quotable, key=len, reverse=True):
+        stripped = stripped.replace(text, " ")
+    return stripped
 
 
 def _allowed_renderings(section: RetrievedSection) -> set[str]:

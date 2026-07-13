@@ -30,7 +30,13 @@ from data_platform.analyst.models import RetrievedSection, canonical
 DEFAULT_BASE_URL: Final = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL: Final = "meta-llama/llama-3.3-70b-instruct:free"
 DEFAULT_TIMEOUT_S: Final = 180.0
-DEFAULT_MAX_TOKENS: Final = 1200
+
+# A section's prose is ~400 tokens, but this budget is not just for prose: on a REASONING model the
+# private reasoning is charged against the same completion budget, and a model that thinks past the
+# limit returns finish_reason "length" with no content at all. Measured: tencent/hy3 spends ~1,900
+# reasoning tokens on one section before writing a word. Config-carried (OPENROUTER_MAX_TOKENS), so
+# a model that thinks harder is a setting, not a code change.
+DEFAULT_MAX_TOKENS: Final = 4000
 
 SYSTEM_PROMPT: Final = """\
 You write one section of a public, researcher-grade report on India's MGNREGA rural employment \
@@ -146,14 +152,16 @@ class OpenRouterDrafter:
         base_url: str | None = None,
         model: str | None = None,
         timeout_s: float = DEFAULT_TIMEOUT_S,
-        max_tokens: int = DEFAULT_MAX_TOKENS,
+        max_tokens: int | None = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
         base = base_url or os.environ.get("OPENROUTER_BASE_URL", DEFAULT_BASE_URL)
         self.base_url = base.rstrip("/")
         self.model = model or os.environ.get("OPENROUTER_MODEL", DEFAULT_MODEL)
         self.timeout_s = timeout_s
-        self.max_tokens = max_tokens
+        self.max_tokens = max_tokens or int(
+            os.environ.get("OPENROUTER_MAX_TOKENS", DEFAULT_MAX_TOKENS)
+        )
 
     def __repr__(self) -> str:  # never let the key reach a log line or a traceback
         return f"OpenRouterDrafter(base_url={self.base_url!r}, model={self.model!r})"
@@ -188,19 +196,35 @@ class OpenRouterDrafter:
                 f"the chat-completions endpoint returned {response.status_code}: "
                 f"{response.text[:300]}"
             )
-        return _content(response.json())
+        return self._content(response.json())
 
+    def _content(self, payload: object) -> str:
+        """Pull the assistant message out of an OpenAI-compatible response, or fail loudly."""
+        if not isinstance(payload, dict):
+            raise DraftingError("the endpoint returned a non-object response")
+        choices = payload.get("choices")
+        if not isinstance(choices, list) or not choices:
+            raise DraftingError("the endpoint returned no choices")
 
-def _content(payload: object) -> str:
-    """Pull the assistant message out of an OpenAI-compatible response, or fail loudly."""
-    if not isinstance(payload, dict):
-        raise DraftingError("the endpoint returned a non-object response")
-    choices = payload.get("choices")
-    if not isinstance(choices, list) or not choices:
-        raise DraftingError("the endpoint returned no choices")
-    first = choices[0]
-    message = first.get("message") if isinstance(first, dict) else None
-    content = message.get("content") if isinstance(message, dict) else None
-    if not isinstance(content, str) or not content.strip():
+        first: dict[str, object] = choices[0] if isinstance(choices[0], dict) else {}
+        raw_message = first.get("message")
+        message: dict[str, object] = raw_message if isinstance(raw_message, dict) else {}
+        content = message.get("content")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+
+        if first.get("finish_reason") == "length":
+            raise DraftingError(
+                f"the model hit its {self.max_tokens}-token completion budget before writing any "
+                f"prose ({_reasoning_tokens(payload)} reasoning tokens spent). On a reasoning "
+                "model the private reasoning is charged against the same budget — raise "
+                "OPENROUTER_MAX_TOKENS, or use a non-reasoning model."
+            )
         raise DraftingError("the endpoint returned an empty message")
-    return content.strip()
+
+
+def _reasoning_tokens(payload: dict[str, object]) -> int:
+    usage = payload.get("usage")
+    details = usage.get("completion_tokens_details") if isinstance(usage, dict) else None
+    tokens = details.get("reasoning_tokens") if isinstance(details, dict) else None
+    return tokens if isinstance(tokens, int) else 0

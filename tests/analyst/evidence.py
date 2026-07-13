@@ -58,9 +58,9 @@ def build_section(tools: AnalystTools) -> RetrievedSection:
         tools,
         id="monthly_refusal",
         label="asking for a monthly figure",
-        call='query(table="district_flagship", month="April")',
+        call='query(table="district_flagship", month="2022-04")',
         table="district_flagship",
-        month="April",
+        month="2022-04",
     )
     return RetrievedSection(
         plan=PLAN, figures=(state, district), derivations=(share,), refusals=(monthly,)

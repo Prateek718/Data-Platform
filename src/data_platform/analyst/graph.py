@@ -11,7 +11,7 @@ Only the drafter node calls an LLM. Planner, retriever, verifier and assembler a
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Final, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -50,14 +50,28 @@ def run(
     drafter: Drafter,
     section_keys: Sequence[str],
     generated_at: str,
+    on_rejection: Callable[[str, Sequence[str]], None] | None = None,
 ) -> dict[str, object]:
-    """Run the graph over the given sections and return the assembled report artifact."""
-    graph = build_graph(tools=tools, drafter=drafter, generated_at=generated_at)
+    """Run the graph over the given sections and return the assembled report artifact.
+
+    ``on_rejection`` is called with (section key, the verifier's complaints) each time a draft is
+    rejected — so a run that *recovers* on a later attempt still shows what was caught, instead of
+    silently succeeding and hiding the one thing worth seeing.
+    """
+    graph = build_graph(
+        tools=tools, drafter=drafter, generated_at=generated_at, on_rejection=on_rejection
+    )
     final: AnalystState = graph.invoke({"section_keys": list(section_keys)})  # type: ignore[attr-defined]
     return final["report"]
 
 
-def build_graph(*, tools: AnalystTools, drafter: Drafter, generated_at: str) -> object:
+def build_graph(
+    *,
+    tools: AnalystTools,
+    drafter: Drafter,
+    generated_at: str,
+    on_rejection: Callable[[str, Sequence[str]], None] | None = None,
+) -> object:
     """Wire the five nodes. The conditional edge out of the verifier is the whole design."""
 
     def planner(state: AnalystState) -> AnalystState:
@@ -82,6 +96,8 @@ def build_graph(*, tools: AnalystTools, drafter: Drafter, generated_at: str) -> 
         section = state["current"]
         report = verify_mod.verify(section, state["prose"], tools)
         if not report.ok:
+            if on_rejection is not None:
+                on_rejection(section.plan.key, report.problems)
             return {"problems": list(report.problems)}
 
         verified = [

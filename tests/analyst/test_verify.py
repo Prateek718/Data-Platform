@@ -128,6 +128,30 @@ def test_a_figure_that_no_longer_matches_the_served_data_blocks(
     assert "state_persondays" in report.render()
 
 
+def test_a_refusal_may_be_quoted_verbatim(section: RetrievedSection, tools: DirectTools) -> None:
+    """A refusal object is served content: quoting it exactly is verifiable by string equality.
+
+    Caught on the first live run — the drafter quoted the refusal call, whose month argument
+    ("2022-04") the verifier read as a financial-year claim and blocked. The section's whole point
+    is to show what the server says, so the exhibit's own text must be quotable.
+    """
+    quoted = section.refusals[0].call
+    reason = section.refusals[0].payload["reason"]
+    prose = (
+        f'Asked for a monthly figure — {quoted} — the record refuses: "{reason}" '
+        "The state generated 1,000,000 person-days."
+    )
+    assert verify.verify(section, prose, tools).ok
+
+
+def test_a_doctored_quote_still_blocks(section: RetrievedSection, tools: DirectTools) -> None:
+    """Only a VERBATIM quote is served content. Alter a digit and it is an invented number again."""
+    doctored = section.refusals[0].call.replace("2022-04", "1,400,000")
+    report = verify.verify(section, f"The record refuses: {doctored}", tools)
+    assert not report.ok
+    assert "1,400,000" in report.render()
+
+
 def test_number_tokens_ignores_financial_years() -> None:
     assert verify.number_tokens("In 2018-19 it was 1,000,000.") == ["1,000,000"]
 

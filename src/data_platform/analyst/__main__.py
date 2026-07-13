@@ -26,6 +26,7 @@ import argparse
 import json
 import sys
 import time
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -97,7 +98,15 @@ def _run(tools: AnalystTools, drafter: OpenRouterDrafter, keys: list[str]) -> di
         drafter=drafter,
         section_keys=keys,
         generated_at=datetime.now(UTC).isoformat(timespec="seconds"),
+        on_rejection=_report_rejection,
     )
+
+
+def _report_rejection(section_key: str, problems: Sequence[str]) -> None:
+    """A rejected draft is the interesting event: show it even when a later attempt recovers."""
+    print(f"\n  [verifier] rejected a draft of {section_key!r}:")
+    for problem in problems:
+        print(f"    - {problem}")
 
 
 if __name__ == "__main__":
