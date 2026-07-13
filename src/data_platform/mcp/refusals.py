@@ -13,8 +13,10 @@ from typing import Final
 
 # Refusal codes (stable identifiers a caller can branch on).
 UNKNOWN_TABLE: Final = "unknown_table"
+TABLE_NOT_QUERYABLE: Final = "table_not_queryable"
 UNKNOWN_METRIC: Final = "unknown_metric"
 UNKNOWN_GEOGRAPHY: Final = "unknown_geography"
+INVALID_PERIOD: Final = "invalid_period"
 RECORD_SEALED: Final = "record_sealed"
 MONTHLY_WAGE_UNAVAILABLE: Final = "monthly_wage_unavailable"
 STATE_SERIES_FLOOR: Final = "state_series_floor"
@@ -54,14 +56,26 @@ def unknown_table(table: str, valid_tables: tuple[str, ...]) -> Refusal:
 
 
 def lineage_not_queryable(data_tables: tuple[str, ...]) -> Refusal:
+    """The table is known, the verb is wrong — a distinct code from an unknown table name."""
     return Refusal(
-        code=UNKNOWN_TABLE,
+        code=TABLE_NOT_QUERYABLE,
         reason=(
             "The lineage table is not queryable via query(); it is per-fact provenance. "
             "Use get_lineage(fact_id) instead."
         ),
         options=data_tables,
         pointer="get_lineage",
+    )
+
+
+def invalid_period(value: str) -> Refusal:
+    return Refusal(
+        code=INVALID_PERIOD,
+        reason=(
+            f"Malformed financial year {value!r}. Expected exactly 'YYYY-YY', where the two-digit "
+            "suffix is the start year plus one — e.g. '2018-19' for the year running April 2018 to "
+            "March 2019."
+        ),
     )
 
 

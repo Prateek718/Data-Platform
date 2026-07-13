@@ -133,6 +133,19 @@ def test_golden_pre2018_flagged_disagreements() -> None:
 
 
 @pytest.mark.golden
+def test_golden_lineage_fact_ids_are_unique() -> None:
+    # get_lineage assumes one provenance record per fact: it returns a single record per fact_id
+    # and callers read rec["sources"] as that fact's complete source set. A duplicate fact_id would
+    # silently split a fact's provenance across records, so the sealed dist must carry none.
+    ds = loader.load_dataset()
+    row = ds.con.execute("SELECT count(*), count(DISTINCT fact_id) FROM lineage").fetchone()
+    assert row is not None
+    total, distinct = row
+    assert total == distinct, f"lineage has {total - distinct} duplicate fact_id record(s)"
+    assert total > 0
+
+
+@pytest.mark.golden
 def test_golden_174_null_cells_split_by_reason() -> None:
     ds = loader.load_dataset()
     fact_ids = [

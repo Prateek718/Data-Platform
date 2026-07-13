@@ -132,7 +132,9 @@ def test_query_row_cap_refuses(synthetic_dist: SyntheticDist) -> None:
 def test_query_lineage_table_points_to_get_lineage(synthetic_dist: SyntheticDist) -> None:
     ds = _load(synthetic_dist)
     ref = _refusal(run_query(ds, "lineage"))
-    assert ref.code == refusals.UNKNOWN_TABLE
+    # The table is known but the verb is wrong: a distinct code from an unknown table name.
+    assert ref.code == refusals.TABLE_NOT_QUERYABLE
+    assert ref.code != refusals.UNKNOWN_TABLE
     assert ref.pointer == "get_lineage"
 
 
@@ -157,6 +159,38 @@ def test_query_national_pre_start_refuses(synthetic_dist: SyntheticDist) -> None
     ds = _load(synthetic_dist)
     ref = _refusal(run_query(ds, "national_annual_series", fy_to="2005-06"))
     assert ref.code == refusals.NATIONAL_SERIES_FLOOR
+
+
+@pytest.mark.parametrize("bad_fy", ["2019", "FY2018-19", "2018-2019", "2018-25", "", "2018-19 "])
+def test_query_malformed_fy_from_refuses(synthetic_dist: SyntheticDist, bad_fy: str) -> None:
+    ds = _load(synthetic_dist)
+    ref = _refusal(run_query(ds, "state_annual_series", fy_from=bad_fy))
+    assert ref.code == refusals.INVALID_PERIOD
+    assert "YYYY-YY" in ref.reason  # the reason states the expected format
+
+
+@pytest.mark.parametrize("bad_fy", ["2019", "FY2018-19", "2018-2019", "2018-25"])
+def test_query_malformed_fy_to_refuses(synthetic_dist: SyntheticDist, bad_fy: str) -> None:
+    ds = _load(synthetic_dist)
+    ref = _refusal(run_query(ds, "state_annual_series", fy_to=bad_fy))
+    assert ref.code == refusals.INVALID_PERIOD
+
+
+def test_query_malformed_fy_refuses_before_coverage_comparison(
+    synthetic_dist: SyntheticDist,
+) -> None:
+    # Format is checked first: a malformed value never reaches the lexicographic floor/ceiling
+    # comparison, which is only chronological for well-formed values.
+    ds = _load(synthetic_dist)
+    ref = _refusal(run_query(ds, "state_annual_series", fy_from="9999", fy_to="1999"))
+    assert ref.code == refusals.INVALID_PERIOD
+
+
+def test_query_well_formed_fy_passes_validation(synthetic_dist: SyntheticDist) -> None:
+    ds = _load(synthetic_dist)
+    env = _ok(run_query(ds, "state_annual_series", fy_from="2015-16", fy_to="2018-19"))
+    assert env["filters"]["fy_from"] == "2015-16"
+    assert env["row_count"] > 0
 
 
 def test_query_coverage_floor_boundary_years_succeed(synthetic_dist: SyntheticDist) -> None:

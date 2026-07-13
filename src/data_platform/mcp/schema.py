@@ -196,9 +196,8 @@ TABLES: Final[dict[str, TableDef]] = {
     "district_flagship": TableDef(
         "district_flagship", "district-annual", tuple(DISTRICT_COLUMNS), _DISTRICT_METRICS, True
     ),
-    "lineage": TableDef(
-        "lineage", "per-fact provenance", ("fact_id", "record"), _DISTRICT_METRICS, False
-    ),
+    # lineage is per-fact provenance, not a metric table: it advertises no metrics.
+    "lineage": TableDef("lineage", "per-fact provenance", ("fact_id", "record"), (), False),
 }
 
 DATA_TABLES: Final[tuple[str, ...]] = (

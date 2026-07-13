@@ -10,6 +10,7 @@ structured :class:`~data_platform.mcp.refusals.Refusal`, never an empty result o
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from typing import Final
 
@@ -90,13 +91,34 @@ _FLOOR_REFUSAL = {
 }
 
 
-def _check_period(table: str, fy_from: str | None, fy_to: str | None) -> Refusal | None:
-    """Refuse a window wholly outside coverage: after the ceiling, or below the table's floor.
+_FY_FORMAT: Final = re.compile(r"\d{4}-\d{2}")
 
-    A coverage floor is a structural boundary of the record, so a window entirely below it refuses;
-    the boundary year itself (fy_to == floor) is in scope and succeeds. A straddling window returns
-    the in-coverage rows. An empty result is reserved for valid-scope filters matching zero rows.
+
+def _is_financial_year(value: str) -> bool:
+    """A well-formed financial year: exactly 'YYYY-YY', suffix == start year + 1 (e.g. 2018-19)."""
+    if _FY_FORMAT.fullmatch(value) is None:
+        return False
+    start = int(value[:4])
+    return value[5:] == f"{start + 1:04d}"[-2:]
+
+
+def _check_period(table: str, fy_from: str | None, fy_to: str | None) -> Refusal | None:
+    """Validate the financial-year bounds, then refuse a window wholly outside coverage.
+
+    Format is checked FIRST, before any comparison: the floor/ceiling logic below compares financial
+    years lexicographically, which is chronological only for well-formed values — a malformed bound
+    ("2019", "2018-2019") would compare as an ordinary string and silently pass a nonsense window
+    through to the WHERE clause, where it matches nothing. That would surface as an empty envelope,
+    and an empty envelope is reserved for valid-scope filters that genuinely match zero rows. So a
+    malformed bound is a refusal (INVALID_PERIOD), not an empty result.
+
+    Coverage: a window entirely after the ceiling, or entirely below the table's floor, refuses — a
+    coverage floor is a structural boundary of the record. The boundary year itself (fy_to == floor)
+    is in scope and succeeds, and a straddling window returns the in-coverage rows.
     """
+    for bound in (fy_from, fy_to):
+        if bound is not None and not _is_financial_year(bound):
+            return refusals.invalid_period(bound)
     if fy_from is not None and fy_from > schema.FISCAL_CEILING:
         return refusals.record_sealed(fy_from)
     floor = schema.FISCAL_FLOOR[table]
