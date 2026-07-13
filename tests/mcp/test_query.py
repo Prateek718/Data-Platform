@@ -161,7 +161,10 @@ def test_query_national_pre_start_refuses(synthetic_dist: SyntheticDist) -> None
     assert ref.code == refusals.NATIONAL_SERIES_FLOOR
 
 
-@pytest.mark.parametrize("bad_fy", ["2019", "FY2018-19", "2018-2019", "2018-25", "", "2018-19 "])
+@pytest.mark.parametrize(
+    "bad_fy",
+    ["2019", "FY2018-19", "2018-2019", "2018-25", "", "2018-19 ", "２０１８-19"],
+)
 def test_query_malformed_fy_from_refuses(synthetic_dist: SyntheticDist, bad_fy: str) -> None:
     ds = _load(synthetic_dist)
     ref = _refusal(run_query(ds, "state_annual_series", fy_from=bad_fy))

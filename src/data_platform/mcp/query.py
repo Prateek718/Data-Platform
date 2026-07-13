@@ -91,7 +91,10 @@ _FLOOR_REFUSAL = {
 }
 
 
-_FY_FORMAT: Final = re.compile(r"\d{4}-\d{2}")
+# ASCII digits only: \d also matches Unicode decimal digits, and int() parses them, so a fullwidth
+# year ("２０１８-19") would validate as well-formed and then compare as garbage against the
+# lexicographic floor/ceiling below.
+_FY_FORMAT: Final = re.compile(r"[0-9]{4}-[0-9]{2}")
 
 
 def _is_financial_year(value: str) -> bool:
