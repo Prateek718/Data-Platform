@@ -113,12 +113,19 @@ with what was tabled in Parliament". Whether the report tells one or both is a c
 **Claim as scoped in the kickoff:** a naive sum of the twelve monthly values inflates Goa's
 FY2022-23 person-days by 6.31×, because the monthly column is cumulative year-to-date.
 
-**This cannot be verified against the served data, and the report must not state it.**
-The served record has **no monthly grain at any table** (`get_schema` — no month column) and the
-server **refuses** every monthly request. The 6.31× is a property of the *source* flagship data in
-`data/archive/`, which the pipeline corrected; the correction's *input* was never published in
-`dist/v1.0`. A figure derived from data the record does not serve is exactly what the verifier is
-built to block.
+**VERIFICATION FAILED — recorded, not dropped.** The claim cannot be backed by any query against
+the served data, so it cannot appear in the report as a verified, lineage-carrying figure.
+
+*Reason:* the record is **annual-only at every grain** (`get_schema` — no month column on any
+table; `query(month=…)` refuses). Monthly rows were deliberately excluded at v1.0 **because** the
+published monthly columns are cumulative year-to-date, not monthly — the very defect the 6.31×
+illustrates. The figure is a property of the *source* flagship data in `data/archive/`, which the
+pipeline corrected; the correction's input was never published in `dist/v1.0`. A figure derived
+from data the record does not serve is exactly what the verifier is built to block.
+
+*Open at the checkpoint (not mine to decide):* whether the cumulative-YTD story appears in the
+report as a **methodology narrative** — explaining *why* the record is annual-only, carrying no
+lineage-backed monthly figures — rather than as a claim with numbers.
 
 What IS served for the same geography and year, and passes:
 
@@ -146,7 +153,9 @@ the state person-days fact is `cross-publisher`-corroborated (flagship 94,004 vs
 
 **FAIL — not servable:** the "₹18,623/day" April artifact. It is a *monthly* figure; the record
 serves no monthly data and refuses the request. It is documented in `docs/RULES.md` (R4-DEF-03)
-from the archive, not from `dist/v1.0`. The report cannot state it as a verified figure.
+from the archive, not from `dist/v1.0`. It **cannot appear as a verified claim** — recorded here
+as failed, not dropped. The server's monthly-wage **refusal object is itself a verifiable
+artifact** and remains available as section material (below).
 
 **PASS — servable, and it makes the same point:**
 
