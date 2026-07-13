@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.7",
     "httpx>=0.27",  # live-fetch transport only; ingestion parsing has no network dependency
+    "duckdb>=1.5.4",  # in-memory query engine for the MCP server over the sealed v1.0 dist/ artifacts
 ]
 
 [dependency-groups]
@@ -48,3 +49,6 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 addopts = "-ra"
 pythonpath = ["src"]
+markers = [
+    "golden: MCP tests against the real dist/v1.0 release artifacts; auto-skipped when absent.",
+]

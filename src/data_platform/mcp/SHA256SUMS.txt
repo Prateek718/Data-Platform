@@ -1,0 +1,22 @@
+# SHA-256 manifest for the v1.0.0 release artifacts served by the MCP server.
+#
+# Provenance (auditable end to end):
+#   These digests were derived from the contents of the published release zip
+#     mgnrega-canonical-series-v1.0.0.zip
+#   (v1.0.0 GitHub release, Prateek718/Data-Platform), whose own SHA-256 is
+#     b57ead8eaed72396372933ae5269b5528e986bdd6ae4b1bbd0d60fc76be00d4b
+#   as listed in the release-/Zenodo-published SHA256SUMS.txt. The zip was
+#   verified against that digest, its dist/v1.0/ files extracted, and each file
+#   hashed to produce the lines below. Chain: this manifest -> published zip
+#   digest -> GitHub Release / Zenodo deposit (DOI 10.5281/zenodo.21318927).
+#
+# The MCP server verifies the local dist/v1.0/ files against these digests at
+# startup and refuses to start on any mismatch or missing file. Lines are
+# "<sha256>  <filename>"; blank lines and lines beginning with '#' are ignored.
+c9f98b59b3791c3d6ee0184830b943726e2ef322549e46439f9b778518627e59  state_annual_series.csv
+fa7db81ad9593fae947038c11a08402ec1d22ceabd8135e70fe4bcd221fdd909  state_annual_series.parquet
+6f079cceeff3ae01a8547ca1821e156219e139c1807f737fa2bdc49d18df2817  national_annual_series.csv
+ab07ac7b15f9fac4ad7a2f898ac994b9c366a3dfa210f5bf7ff94de369976f1c  national_annual_series.parquet
+4ca190c3d8345bc78cd5e0a6e764118898256caf8a8777804f41122bd5211901  district_flagship.csv
+07a19be69d2982f06fcb05fe3beef1c90b5bd8d61bf4f43ac478c804d3a1bf22  district_flagship.parquet
+60e3b2deee77d68bcaa313c13d530afe3b93d423e35d88d256dd45f21fbd4e27  lineage.jsonl
