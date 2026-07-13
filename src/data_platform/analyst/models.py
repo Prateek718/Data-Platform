@@ -15,6 +15,15 @@ from decimal import Decimal
 from data_platform.analyst.tools import Payload
 
 
+def canonical(value: Decimal) -> str:
+    """The one plain spelling of a value: no exponent, no trailing zeros. 1000000.0 -> "1000000".
+
+    Shared by the verifier (which decides what the prose may say) and the assembler (which writes
+    report.json), so a figure is spelled identically wherever it appears.
+    """
+    return format(value.normalize(), "f")
+
+
 @dataclass(frozen=True)
 class QuerySpec:
     """The exact ``query`` call that produced a figure — replayed verbatim by the verifier."""
@@ -102,6 +111,27 @@ class RetrievedSection:
             if fig.id == figure_id:
                 return fig
         raise KeyError(f"no figure {figure_id!r} in section {self.plan.key!r}")
+
+    def derivation(self, derivation_id: str) -> Derivation:
+        for der in self.derivations:
+            if der.id == derivation_id:
+                return der
+        raise KeyError(f"no derivation {derivation_id!r} in section {self.plan.key!r}")
+
+    def fact_ids(self, node_id: str) -> list[str]:
+        """The served facts a figure or derivation ultimately rests on, in input order.
+
+        A derivation may take another derivation as an input (the spine residual is a difference
+        against a sum), so the facts behind it are the transitive closure — and every one of them
+        carries its own lineage.
+        """
+        for fig in self.figures:
+            if fig.id == node_id:
+                return [fig.fact_id]
+        facts: list[str] = []
+        for input_id in self.derivation(node_id).inputs:
+            facts.extend(self.fact_ids(input_id))
+        return facts
 
 
 @dataclass(frozen=True)
