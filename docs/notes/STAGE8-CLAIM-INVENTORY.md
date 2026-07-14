@@ -16,7 +16,15 @@
 > carried faithfully into the record with lineage, explicitly NOT as observed wages, and say that a
 > plausible MGNREGA daily wage is an order of magnitude lower.
 >
-> The shipped report is `report/report.md` (+ `report.json`); all seven sections passed verification.
+> The shipped report is `report/report.md` (+ `report.json` and `report/charts/`). It carries
+> **eleven** sections: the seven findings above, plus an abstract, an introduction, a methodology
+> and a limitations section added by a later amendment so the document reads cover to cover for a
+> stranger. The two FAILED claims (C3, C4) get their honest home in **Limitations** — as prose
+> explaining why no monthly data exists and why figures derived from the source's cumulative
+> monthly columns cannot be reproduced or checked here, carrying no lineage-backed monthly figures
+> and repeating none of the numbers that circulate elsewhere.
+>
+> All eleven sections passed verification on the first drafting attempt.
 
 ## Classification key
 

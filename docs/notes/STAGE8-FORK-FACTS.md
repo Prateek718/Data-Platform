@@ -24,6 +24,11 @@ The report's front matter states that **any trace can be independently re-derive
 repo's MCP server and calling `get_lineage(fact_id)`. The live path therefore exists — **through the
 protocol, not through viewer machinery.**
 
+*(Measured on the shipped report: 18 figures, 15 derivations, 21 cohorts across eleven sections —
+`report.json` is 759 KB, of which the embedded lineage is a small fraction; most of the bytes are
+the cohort member `fact_id`s, which are what let a reader check WHICH facts a count covers rather
+than taking the number on faith.)*
+
 **Rationale.** The record is **sealed**: MGNREGA was repealed 30 June 2026, the dataset is
 DOI-frozen, and the server starts only after checksum-verifying the released bytes. A live lookup
 therefore **cannot return anything different** from the embedded copy — it can only return the same
