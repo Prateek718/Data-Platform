@@ -148,6 +148,11 @@ class RetrievedSection:
     derivations: tuple[Derivation, ...]
     refusals: tuple[RefusalExhibit, ...] = ()
     cohorts: tuple[Cohort, ...] = ()
+    # Chart data: whole annual series, verified exactly like the figures above (lineage attached,
+    # backing query re-executed) but NOT shown to the drafter. The charts are drawn by code from
+    # report.json; the model neither sees these values nor may cite them.
+    series: tuple[Figure, ...] = ()
+    series_cohorts: tuple[Cohort, ...] = ()
 
     def figure(self, figure_id: str) -> Figure:
         for fig in self.figures:

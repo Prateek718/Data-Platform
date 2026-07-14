@@ -73,3 +73,48 @@ def test_markdown_renders_the_prose_under_the_section_title(report: dict[str, ob
     assert assemble.REPORT_TITLE in markdown
     assert "Jammu and Kashmir, FY 2018-19" in markdown
     assert PROSE in markdown
+
+
+def test_a_derivation_over_many_facts_does_not_dump_them_inline() -> None:
+    """Readability: a 193-fact input list is noise, not evidence. It lives in report.json."""
+    report: dict[str, object] = {
+        "title": "t",
+        "generated_at": "now",
+        "dataset": {"name": "d", "version": "v1.0.0", "doi": "10.5281/zenodo.21318431"},
+        "sections": [
+            {
+                "key": "coverage",
+                "title": "Coverage",
+                "prose": "The record withholds cells.",
+                "attempts": 1,
+                "figures": [],
+                "cohorts": [],
+                "refusals": [],
+                "derivations": [
+                    {
+                        "id": "all_nulls",
+                        "label": "null cells in the record",
+                        "operation": "sum",
+                        "kind": "analytical",
+                        "value": "193",
+                        "unit": "cells",
+                        "input_figure_ids": ["partial_period_nulls", "unadjudicated_nulls"],
+                        "input_fact_ids": [f"fact{i}" for i in range(193)],
+                    }
+                ],
+            }
+        ],
+    }
+    markdown = assemble.render_markdown(report)
+    assert "fact42" not in markdown
+    assert "`partial_period_nulls`" in markdown
+    assert "193 facts; enumerated in report.json" in markdown
+
+
+def test_presentation_derivations_are_marked_as_such(report: dict[str, object]) -> None:
+    """A reader must be able to tell 'the same fact, another unit' from 'a new claim'."""
+    sections = report["sections"]
+    assert isinstance(sections, list)
+    derived = sections[0]["derivations"]
+    assert isinstance(derived, list)
+    assert derived[0]["kind"] == "analytical"

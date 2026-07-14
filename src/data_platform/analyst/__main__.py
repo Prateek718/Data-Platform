@@ -30,7 +30,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from data_platform.analyst import assemble, graph, sections
+from data_platform.analyst import assemble, chart_specs, graph, sections
 from data_platform.analyst.llm import OpenRouterDrafter
 from data_platform.analyst.tools import AnalystTools, DirectTools, McpStdioTools
 from data_platform.mcp import loader
@@ -76,6 +76,16 @@ def main(argv: list[str] | None = None) -> int:
             report = _run(tools, drafter, args.sections)
     elapsed = time.perf_counter() - started
 
+    # Charts are drawn by code from the report the verifier just blessed — never from the dataset
+    # directly, so a chart cannot plot a number the report did not verify.
+    built = chart_specs.build_charts(report)
+    if built:
+        chart_dir = args.out / "charts"
+        chart_dir.mkdir(parents=True, exist_ok=True)
+        for chart in built:
+            (chart_dir / chart.filename).write_text(chart.svg, encoding="utf-8")
+        report["charts"] = [chart.manifest_entry() for chart in built]
+
     args.out.mkdir(parents=True, exist_ok=True)
     json_path = args.out / "report.json"
     md_path = args.out / "report.md"
@@ -85,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
     written = report["sections"]
     assert isinstance(written, list)
     print(f"\nVERIFIED {len(written)} section(s) in {elapsed:.1f}s — every number checked.")
+    for chart in built:
+        print(f"  chart {chart.id}: {len(chart.source_ids)} verified figures plotted")
     for section in written:
         print(f"  {section['key']}: {section['attempts']} drafting attempt(s)")
     print(f"\nwrote {json_path} ({json_path.stat().st_size:,} bytes)")

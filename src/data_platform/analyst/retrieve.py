@@ -86,6 +86,59 @@ def fetch_figure(
     )
 
 
+def fetch_series(
+    tools: AnalystTools,
+    *,
+    id_prefix: str,
+    label: str,
+    geography: str,
+    table: str,
+    metric: str,
+    fy_from: str,
+    fy_to: str,
+) -> tuple[Figure, ...]:
+    """Fetch a whole annual series as verified figures — one per year the record actually has.
+
+    A year the record withholds (a null cell) yields NO figure: it is an absence, and a chart drawn
+    from these points shows a gap rather than a zero. Lineage for every point is pulled in one
+    batched call.
+    """
+    payload = tools.query(table, metrics=[metric], fy_from=fy_from, fy_to=fy_to)
+    if payload.get("refused"):
+        raise RetrievalError(
+            f"{id_prefix}: the record refused the series query — {payload.get('reason')}"
+        )
+
+    rows = [row for row in _rows(payload) if row.get("value") is not None]
+    fact_ids = [str(row["fact_id"]) for row in rows]
+    records = tools.get_lineage(fact_ids).get("records")
+    if not isinstance(records, list) or len(records) != len(rows):
+        raise RetrievalError(
+            f"{id_prefix}: lineage did not come back for every point in the series"
+        )
+
+    figures: list[Figure] = []
+    for row, lineage in zip(rows, records, strict=True):
+        if not isinstance(lineage, dict):
+            raise RetrievalError(f"{id_prefix}: malformed lineage record in the series")
+        fy = str(row["financial_year"])
+        figures.append(
+            Figure(
+                id=f"{id_prefix}_{fy.replace('-', '_')}",
+                label=f"{label}, FY {fy}",
+                metric=metric,
+                geography=geography,
+                period=fy,
+                value=_decimal(row["value"]),
+                unit=str(row.get("unit")),
+                fact_id=str(row["fact_id"]),
+                query=QuerySpec(table, metric, fy),
+                lineage=lineage,
+            )
+        )
+    return tuple(figures)
+
+
 def fetch_cohort(
     tools: AnalystTools,
     *,

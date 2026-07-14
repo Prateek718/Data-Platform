@@ -17,7 +17,9 @@ it without re-running the graph.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Final
 
+from data_platform.analyst import derive
 from data_platform.analyst.models import (
     Cohort,
     Derivation,
@@ -74,6 +76,10 @@ def _section(section: VerifiedSection) -> dict[str, object]:
         "cohorts": [_cohort(c) for c in retrieved.cohorts],
         "derivations": [_derivation(d, retrieved) for d in retrieved.derivations],
         "refusals": [_refusal(r) for r in retrieved.refusals],
+        # Verified exactly like the figures above, but never shown to the drafter: the charts are
+        # drawn from these by code.
+        "series": [_figure(f) for f in retrieved.series],
+        "series_cohorts": [_cohort(c) for c in retrieved.series_cohorts],
     }
 
 
@@ -111,6 +117,14 @@ def _derivation(derivation: Derivation, section: RetrievedSection) -> dict[str, 
         "id": derivation.id,
         "label": derivation.label,
         "operation": derivation.operation,
+        # A presentation operation restates a served value in a readable unit ("3.88 billion");
+        # an analytical one asserts a relationship (a sum, a ratio). A reader should be able to
+        # tell them apart without knowing the operation names.
+        "kind": (
+            "presentation"
+            if derivation.operation in derive.PRESENTATION_OPERATIONS
+            else "analytical"
+        ),
         "value": canonical(derivation.value),
         "unit": derivation.unit,
         "input_figure_ids": list(derivation.inputs),
@@ -127,25 +141,56 @@ def _refusal(refusal: RefusalExhibit) -> dict[str, object]:
     }
 
 
+# The narrative sections, in reading order, that frame the findings rather than report them. The
+# findings sections come between them (in the order the graph generated them).
+FRONT_MATTER_KEYS: Final[tuple[str, ...]] = ("abstract", "introduction", "methodology")
+BACK_MATTER_KEYS: Final[tuple[str, ...]] = ("limitations",)
+
+
 def render_markdown(report: dict[str, object]) -> str:
-    """The human read of the same report."""
+    """The human read: a document a third party can read cover to cover."""
     sections = report["sections"]
     assert isinstance(sections, list)
+    by_key = {str(s["key"]): s for s in sections}
 
     lines = [
         f"# {report['title']}",
         "",
         f"*Generated {report['generated_at']} from the MGNREGA canonical series v1.0.0 "
-        f"(DOI 10.5281/zenodo.21318431), served read-only over MCP.*",
+        f"(DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431)), served "
+        "read-only over MCP.*",
         "",
-        "Every number below is a value the dataset served, or a figure derived from those values "
-        "by deterministic code. Each was machine-checked against the served data after it was "
-        "written; a number that failed to check blocked its section from the report.",
+        "> **Every number in this document was machine-verified against the served dataset.** The "
+        "prose was written by a language model that could see the record only through the query "
+        "server, and that never chose a number: each figure it was given was re-checked against "
+        "the data after drafting, each derived figure was recomputed from its inputs, and a "
+        "section whose numbers failed to check was blocked from the report. The tables beneath "
+        "each section are the evidence — every figure with its `fact_id` and its sources.",
         "",
     ]
 
-    for section in sections:
+    ordered = [by_key[k] for k in FRONT_MATTER_KEYS if k in by_key]
+    ordered += [s for s in sections if str(s["key"]) not in (*FRONT_MATTER_KEYS, *BACK_MATTER_KEYS)]
+    ordered += [by_key[k] for k in BACK_MATTER_KEYS if k in by_key]
+
+    charts = report.get("charts")
+    charts_by_section: dict[str, list[dict[str, object]]] = {}
+    if isinstance(charts, list):
+        for chart in charts:
+            if isinstance(chart, dict):
+                charts_by_section.setdefault(str(chart.get("section")), []).append(chart)
+
+    for section in ordered:
         lines += [f"## {section['title']}", "", str(section["prose"]).strip(), ""]
+
+        for chart in charts_by_section.get(str(section["key"]), []):
+            lines += [
+                f"![{chart['title']}]({chart['file']})",
+                "",
+                f"*{chart['caption']} Plotted from {len(_plots(chart))} verified figures; the "
+                f"figure ids are listed in `report.json` under `charts`.*",
+                "",
+            ]
 
         figures = section["figures"]
         assert isinstance(figures, list)
@@ -188,10 +233,9 @@ def render_markdown(report: dict[str, object]) -> str:
         if derivations:
             lines += ["| derived figure | operation | inputs | value |", "|---|---|---|---|"]
             for derivation in derivations:
-                inputs = ", ".join(f"`{f}`" for f in derivation["input_fact_ids"])
                 lines.append(
-                    f"| {derivation['label']} | {derivation['operation']} | {inputs} | "
-                    f"{derivation['value']} |"
+                    f"| {derivation['label']} | {derivation['operation']} | "
+                    f"{_inputs(derivation)} | {derivation['value']} |"
                 )
             lines.append("")
 
@@ -206,7 +250,64 @@ def render_markdown(report: dict[str, object]) -> str:
                 "",
             ]
 
+    lines += _how_to_cite(report)
     return "\n".join(lines)
+
+
+def _how_to_cite(report: dict[str, object]) -> list[str]:
+    """Back matter, written by code: citation, reproduction, and how to re-derive any trace."""
+    dataset = report.get("dataset")
+    dataset = dataset if isinstance(dataset, dict) else {}
+    return [
+        "## How to cite, and how to check this",
+        "",
+        "The dataset this report reads is a sealed, DOI-versioned release: "
+        f"**{dataset.get('name')} {dataset.get('version')}**, "
+        f"DOI [{dataset.get('doi')}](https://doi.org/{dataset.get('doi')}). MGNREGA was repealed "
+        "effective 30 June 2026, so the record is closed — it will not change, and neither will "
+        "the figures below.",
+        "",
+        "**To reproduce this report**, from a checkout of the repository with the release "
+        "artifacts in `dist/v1.0/` (the server checksum-verifies them at startup and refuses to "
+        "run if a byte differs):",
+        "",
+        "```bash",
+        "OPENROUTER_API_KEY=...  PYTHONPATH=src uv run python -m data_platform.analyst",
+        "```",
+        "",
+        "Any OpenAI-compatible endpoint works; the model writes the prose and nothing else.",
+        "",
+        "**To check any single number**, take its `fact_id` from the table beneath the section, "
+        "start the query server (`PYTHONPATH=src uv run python -m data_platform.mcp`) and call "
+        "`get_lineage(fact_id)`. You will get back every source that carried the fact, its "
+        "resource id on the open-data portal, its as-of date, the value it reported, and — where "
+        "publishers disagreed — the value that was rejected and the rule that decided it. The "
+        "full payload is also embedded in `report.json`, so the answer is already in your hands; "
+        "the record is sealed, so the live lookup cannot return anything different.",
+        "",
+    ]
+
+
+# Above this many input facts, an inline list is noise, not evidence: the derivation names the
+# aggregate it was computed from, and report.json carries the full enumeration.
+_MAX_INLINE_INPUTS: Final = 10
+
+
+def _inputs(derivation: dict[str, object]) -> str:
+    """A derivation's inputs, readable: fact ids when few, the aggregate's id when many."""
+    facts = derivation.get("input_fact_ids")
+    facts = facts if isinstance(facts, list) else []
+    if len(facts) <= _MAX_INLINE_INPUTS:
+        return ", ".join(f"`{f}`" for f in facts)
+    ids = derivation.get("input_figure_ids")
+    ids = ids if isinstance(ids, list) else []
+    named = ", ".join(f"`{i}`" for i in ids)
+    return f"{named} ({len(facts)} facts; enumerated in report.json)"
+
+
+def _plots(chart: dict[str, object]) -> list[object]:
+    plots = chart.get("plots")
+    return plots if isinstance(plots, list) else []
 
 
 def _sources(figure: dict[str, object]) -> list[dict[str, object]]:

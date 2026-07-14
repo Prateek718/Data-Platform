@@ -51,3 +51,40 @@ def test_ratio_2dp_rounds_in_the_operation_not_in_the_prose() -> None:
     assert derive.compute(derive.RATIO_2DP, [Decimal("3881318918"), Decimal("905054000")]) == (
         Decimal("4.29")
     )
+
+
+def test_to_billions_is_a_declared_operation_not_prose_rounding() -> None:
+    """A presentation form is a DERIVATION the verifier recomputes, not the drafter rounding."""
+    assert derive.compute(derive.TO_BILLIONS, [Decimal("3881318918")]) == Decimal("3.88")
+
+
+def test_to_millions() -> None:
+    assert derive.compute(derive.TO_MILLIONS, [Decimal("75500579")]) == Decimal("75.50")
+
+
+def test_lakh_to_crore() -> None:
+    """Indian money units: 1 crore = 100 lakh."""
+    assert derive.compute(derive.LAKH_TO_CRORE, [Decimal("10999798.601773694")]) == Decimal(
+        "109997.99"
+    )
+
+
+def test_lakh_to_lakh_crore() -> None:
+    """1 lakh crore = 10,000,000 lakh. The peak year's spend reads as Rs 1.10 lakh crore."""
+    assert derive.compute(derive.LAKH_TO_LAKH_CRORE, [Decimal("10999798.601773694")]) == Decimal(
+        "1.10"
+    )
+
+
+def test_round_sigfig_3() -> None:
+    assert derive.compute(derive.ROUND_SIGFIG_3, [Decimal("905054000")]) == Decimal("905000000")
+    assert derive.compute(derive.ROUND_SIGFIG_3, [Decimal("3.14159")]) == Decimal("3.14")
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [derive.TO_MILLIONS, derive.TO_BILLIONS, derive.LAKH_TO_CRORE, derive.ROUND_SIGFIG_3],
+)
+def test_presentation_operations_are_unary(operation: str) -> None:
+    with pytest.raises(ValueError, match="exactly 1 input"):
+        derive.compute(operation, [Decimal("1"), Decimal("2")])

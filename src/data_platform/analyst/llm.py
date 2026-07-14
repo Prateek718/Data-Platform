@@ -52,10 +52,22 @@ EXACTLY as provided (keep the digits; comma grouping is fine). Do not round, res
 units, or compute anything new. A number that is not in the evidence blocks the section.
 2. Do not invent facts, causes, or context that the evidence does not state. No outside knowledge.
 3. Financial-year labels (e.g. 2022-23) may be used as written.
-4. Write plain, precise prose for a researcher: 2-4 short paragraphs, no headings, no bullet \
-lists, no markdown tables. Name the figures in words; do not print the figure ids.
+4. PREFER the presentation forms where they are given ("3.88 billion person-days", "Rs 1.10 lakh \
+crore") over the raw served value: they are the same fact, restated by code in a unit a reader can \
+hold. The exact value appears in the table beneath your prose, so you do not need to print it.
 5. State what the record shows, including where it refuses to answer or has no data. Do not \
 editorialize or speculate about causes.
+
+REGISTER. This is a chapter of a research report that a stranger will read cover to cover.
+- Measured academic prose. Full sentences, 3-5 paragraphs, no headings, no bullet lists, no tables.
+- Never narrate the machinery. Do not write "indicating that", "the record shows that the count \
+is", "the derived figure is", "a structured refusal was returned with code X". Say what is true \
+about MGNREGA, and where the record declines to answer, say so in plain words and quote the \
+server's reason once.
+- Never state the same figure twice in a paragraph, and do not restate a number you have already \
+given in the section.
+- Do not print figure ids, fact ids, table names, or column names.
+- No throat-clearing ("This section will..."), no summarising your own instructions.
 """
 
 

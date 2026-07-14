@@ -46,11 +46,13 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
     """Check every numeric claim in ``prose`` against the section's evidence and the served data."""
     problems: list[str] = []
 
-    for figure in section.figures:
+    # Chart series are verified exactly like prose figures — a chart is a claim too, and it is
+    # drawn from these values. They are simply not offered to the drafter to quote.
+    for figure in (*section.figures, *section.series):
         problems.extend(lineage_problems(figure))
         problems.extend(replay_problems(figure, tools))
 
-    for cohort in section.cohorts:
+    for cohort in (*section.cohorts, *section.series_cohorts):
         problems.extend(cohort_problems(cohort, tools))
 
     known = {figure.id: figure.value for figure in section.figures}
