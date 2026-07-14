@@ -8,10 +8,21 @@ report did not verify, because it has no way to obtain one.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any
+from typing import Any, Final
 
 from data_platform.analyst import charts
 from data_platform.analyst.charts import Annotation, Chart, Point
+
+# MGNREGA was repealed effective 30 June 2026, so FY 2026-27 holds April 2026 alone. It is a real
+# fact and it is reported in the prose and the figure tables — but it is NOT a yearly datapoint, and
+# plotting one month beside twenty full years would draw a collapse that never happened. It is
+# excluded from every chart and stated as a note beneath each one instead.
+INCOMPLETE_YEAR: Final = "2026-27"
+_STUB_NOTE: Final = (
+    "FY 2026-27 is omitted: the scheme was repealed effective 30 June 2026, so that year holds "
+    "April 2026 alone and a single month cannot be plotted against full years. Its figures are "
+    "reported in the text and the tables."
+)
 
 
 def build_charts(report: dict[str, object]) -> list[Chart]:
@@ -37,33 +48,29 @@ def _national_charts(section: dict[str, Any]) -> list[Chart]:
         out.append(
             charts.line_chart(
                 id="national-persondays",
-                title="Person-days of employment generated, all-India, FY 2006-07 to 2026-27",
+                title="Person-days of employment generated, all-India, FY 2006-07 to 2025-26",
                 caption=(
                     "Every point is a verified fact in the canonical series; a year the record "
-                    "withholds is drawn as no point, never as zero. FY 2026-27 carries April 2026 "
-                    "alone — the scheme was repealed effective 30 June 2026 — so the final "
-                    "point is a stub, not a year."
+                    "withholds is drawn as no point, never as zero, and the line breaks there. "
+                    + _STUB_NOTE
                 ),
                 section_key="national_series",
                 points=persondays,
                 y_label="billion person-days",
                 y_scale=Decimal(1_000_000_000),
                 boundary_after="2017-18",
-                annotations=(
-                    Annotation("2020-21", "COVID-year peak"),
-                    Annotation("2026-27", "repeal stub"),
-                ),
+                annotations=(Annotation("2020-21", "COVID-year peak"),),
             )
         )
     if expenditure:
         out.append(
             charts.line_chart(
                 id="national-expenditure",
-                title="Total expenditure, all-India, FY 2008-09 to 2026-27",
+                title="Total expenditure, all-India, FY 2008-09 to 2025-26",
                 caption=(
                     "Expenditure in lakh crore rupees, reconciled across publishers. The pre-2018 "
                     "points come from archived MoSPI and Rajya Sabha sources; from FY 2018-19 the "
-                    "flagship district MIS is the production authority."
+                    "flagship district MIS is the production authority. " + _STUB_NOTE
                 ),
                 section_key="national_series",
                 points=expenditure,
@@ -87,7 +94,8 @@ def _coverage_charts(section: dict[str, Any]) -> list[Chart]:
             caption=(
                 "A null cell is data carrying a reason, never a zero. Almost all of them fall in "
                 "FY 2017-18 — the seam between the two sourcing eras, the year before the flagship "
-                "MIS begins. The record's weakest year is exactly where its two eras meet."
+                "MIS begins. The record's weakest year is exactly where its two eras meet. "
+                + _STUB_NOTE
             ),
             section_key="coverage",
             points=points,
@@ -108,7 +116,7 @@ def _district_charts(section: dict[str, Any]) -> list[Chart]:
             caption=(
                 "Districts split over the life of the scheme. Each fact stays filed under the "
                 "geography that existed at its own period and is never forward-mapped across a "
-                "split, so the rise is districts dividing, not territory being added."
+                "split, so the rise is districts dividing, not territory being added. " + _STUB_NOTE
             ),
             section_key="districts",
             points=points,
@@ -130,7 +138,7 @@ def _series_points(section: dict[str, Any], metric: str) -> list[Point]:
     points = [
         Point(period=str(f["period"]), value=Decimal(str(f["value"])), source_id=str(f["id"]))
         for f in series
-        if isinstance(f, dict) and f.get("metric") == metric
+        if isinstance(f, dict) and f.get("metric") == metric and f.get("period") != INCOMPLETE_YEAR
     ]
     return sorted(points, key=lambda p: p.period)
 
@@ -146,7 +154,7 @@ def _cohort_points(section: dict[str, Any], *, prefix: str) -> list[Point]:
             continue
         query = c.get("query")
         period = query.get("fy_from") if isinstance(query, dict) else None
-        if period is None:
+        if period is None or period == INCOMPLETE_YEAR:
             continue
         points.append(
             Point(period=str(period), value=Decimal(str(c["value"])), source_id=str(c["id"]))

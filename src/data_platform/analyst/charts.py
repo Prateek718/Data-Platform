@@ -230,8 +230,14 @@ def _render(
         f'<line class="axis" x1="{_MARGIN_LEFT}" y1="{axis_y}" '
         f'x2="{_WIDTH - _MARGIN_RIGHT}" y2="{axis_y}"/>'
     )
+    # Label every other year, and always the last one — dropping its neighbour rather than letting
+    # the two collide.
+    labelled = set(range(0, len(rows), 2))
+    if len(rows) - 1 not in labelled:
+        labelled.discard(len(rows) - 2)
+        labelled.add(len(rows) - 1)
     for index, (period, _) in enumerate(rows):
-        if index % 2 == 0 or index == len(rows) - 1:
+        if index in labelled:
             parts.append(
                 f'<text class="tick" x="{x_of(index):.1f}" y="{axis_y + 18}" '
                 f'text-anchor="middle">{_esc(period)}</text>'

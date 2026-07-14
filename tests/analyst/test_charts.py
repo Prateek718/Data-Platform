@@ -118,3 +118,32 @@ def test_the_line_breaks_where_the_record_withholds_a_year() -> None:
     assert path.count("M") == 2  # two runs of data, not one line across the hole
     assert "2013-14" in chart.svg  # the withheld years still occupy the axis
     assert "no line where the record withholds a year" in chart.svg
+
+
+def test_the_repeal_stub_year_is_never_plotted() -> None:
+    """FY 2026-27 holds April 2026 alone: one month cannot be a point among full years.
+
+    Plotting it would draw a collapse that never happened. It is a real fact, reported in the prose
+    and the figure tables — but it is stated as a note beneath the chart, not drawn as a datapoint.
+    """
+    report = _report(
+        series=[
+            {
+                "id": "series_persondays_2025_26",
+                "period": "2025-26",
+                "value": "2209959751",
+                "metric": "persondays_generated",
+            },
+            {
+                "id": "series_persondays_2026_27",
+                "period": "2026-27",
+                "value": "12914539",
+                "metric": "persondays_generated",
+            },
+        ],
+        cohorts=[],
+    )
+    chart = chart_specs.build_charts(report)[0]
+    assert chart.source_ids == ("series_persondays_2025_26",)
+    assert "2026-27" not in chart.svg
+    assert "FY 2026-27 is omitted" in chart.caption
