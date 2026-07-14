@@ -1,0 +1,45 @@
+# `docker compose run --rm -T mcp` — the MCP server over stdio, against a volume-held dataset.
+#
+# There is no port and no service to "bring up in the background": an MCP stdio server is spawned by
+# its client and talks over the client's pipes. Compose is here for the dataset volume and the
+# wiring, so the documented commands are one line and the dataset is fetched once, not per run.
+#
+# First run downloads the sealed v1.0.0 release into the `dataset` volume and verifies it twice.
+# Later runs find it already there, re-verify it against the server's checksum manifest, and start.
+
+services:
+  mcp:
+    build:
+      context: .
+    image: data-platform:local
+    # stdin_open + tty:false — the client writes JSON-RPC to stdin and reads it from stdout. A TTY
+    # would inject control characters into that stream.
+    stdin_open: true
+    tty: false
+    volumes:
+      - dataset:/data
+    environment:
+      DIST_ROOT: /app/dist
+
+  # The analyst is a one-shot job, not a service: it generates the report and exits. It needs an
+  # OpenAI-compatible endpoint, so the key comes from the environment — never from the image.
+  #   OPENROUTER_API_KEY=... docker compose run --rm analyst
+  analyst:
+    build:
+      context: .
+    image: data-platform:local
+    profiles: ["analyst"]
+    volumes:
+      - dataset:/data
+      - ./report:/app/report
+    environment:
+      DIST_ROOT: /app/dist
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY to run the analyst}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-}
+      OPENROUTER_MAX_TOKENS: ${OPENROUTER_MAX_TOKENS:-}
+      OPENROUTER_TIMEOUT_S: ${OPENROUTER_TIMEOUT_S:-}
+    command: ["data-platform-analyst"]
+
+volumes:
+  dataset:

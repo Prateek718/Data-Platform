@@ -36,15 +36,20 @@ JSONL are unconditionally byte-identical.
 git clone <repo> && cd Data-Platform
 uv sync                                             # install exact pinned versions (incl. pyarrow)
 uv run ruff check . && uv run mypy src tests && uv run pytest   # gate: lint, types, full suite
-PYTHONPATH=src uv run python -m data_platform.export   # data/archive/ → dist/v1.0/
-# or: PYTHONPATH=src uv run python -m data_platform.export <archive_dir> <out_dir>
+data-platform-export                                # data/archive/ → dist/v1.0/
+# or: data-platform-export <archive_dir> <out_dir>
 ```
 
-`PYTHONPATH=src` is required because the repo is currently configured as an application, not an
-installable library (`[tool.uv] package = false`), so `uv sync` does not put `data_platform` on the
-import path; without it the export fails with `ModuleNotFoundError`. (`uv run pytest` is unaffected —
-pytest adds `src` itself via `pythonpath` in `pyproject.toml`.) Proper package installation, which
-removes the need for the prefix, is queued for **v1.1**.
+`uv sync` installs the project itself (src layout, hatchling), so `data_platform` is on the import
+path and the console commands — `data-platform-export`, `data-platform-mcp`, `data-platform-analyst`
+and `data-platform-bootstrap` — are on `PATH`. Nothing needs a `PYTHONPATH=src` prefix any more; the
+"proper package installation" chore that was queued for v1.1 is done.
+
+**To SERVE the released dataset you do not need the raw archive at all.** `data-platform-bootstrap`
+downloads the sealed v1.0.0 release (~5 MB), verifies the zip against the SHA-256 the release
+published, verifies the seven extracted files against the manifest the server enforces at startup,
+and installs them atomically to `dist/v1.0`. Rebuilding the dataset *from source* is the fork below,
+and that does need the archive.
 
 The archive-gated tests (and the export itself) **skip / cannot run** without the raw archive at
 `data/archive/` — which is the fork below. The hermetic tests run everywhere.
