@@ -125,7 +125,10 @@ def test_the_token_budget_is_env_configurable(monkeypatch: pytest.MonkeyPatch) -
     assert OpenRouterDrafter(api_key="k").max_tokens == 8000
 
 
-def test_an_http_error_is_reported(section: RetrievedSection) -> None:
+def test_an_http_error_is_reported(
+    section: RetrievedSection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("data_platform.analyst.llm.time.sleep", lambda _s: None)
     client = httpx.Client(
         transport=httpx.MockTransport(lambda _r: httpx.Response(429, text="rate limited"))
     )
@@ -143,3 +146,55 @@ def test_the_timeout_is_env_configurable(monkeypatch: pytest.MonkeyPatch) -> Non
     """A free reasoning model can take minutes per section; the wait is a setting, not a rewrite."""
     monkeypatch.setenv("OPENROUTER_TIMEOUT_S", "900")
     assert OpenRouterDrafter(api_key="k").timeout_s == 900.0
+
+
+def test_a_transient_rate_limit_is_retried(
+    section: RetrievedSection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A free endpoint throttling mid-run must not cost a whole report.
+
+    429 and 5xx are the endpoint saying "not now", not "never" — they are retried with backoff. A
+    4xx that means the request itself is wrong is NOT retried: repeating it would just fail again.
+    """
+    monkeypatch.setattr("data_platform.analyst.llm.time.sleep", lambda _s: None)
+    attempts: list[int] = []
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        attempts.append(1)
+        if len(attempts) < 3:
+            return httpx.Response(429, text="rate-limited upstream")
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": "It made 1,000,000."}}]}
+        )
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    prose = OpenRouterDrafter(api_key="k").draft(DraftRequest(section=section), client=client)
+    assert prose == "It made 1,000,000."
+    assert len(attempts) == 3
+
+
+def test_a_bad_request_is_not_retried(
+    section: RetrievedSection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("data_platform.analyst.llm.time.sleep", lambda _s: None)
+    attempts: list[int] = []
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        attempts.append(1)
+        return httpx.Response(400, text="malformed model id")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    with pytest.raises(llm.DraftingError, match="400"):
+        OpenRouterDrafter(api_key="k").draft(DraftRequest(section=section), client=client)
+    assert len(attempts) == 1
+
+
+def test_the_retries_give_up_and_say_so(
+    section: RetrievedSection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("data_platform.analyst.llm.time.sleep", lambda _s: None)
+    client = httpx.Client(
+        transport=httpx.MockTransport(lambda _r: httpx.Response(429, text="still limited"))
+    )
+    with pytest.raises(llm.DraftingError, match="429"):
+        OpenRouterDrafter(api_key="k").draft(DraftRequest(section=section), client=client)

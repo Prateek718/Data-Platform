@@ -22,6 +22,7 @@ verifier enforces it.
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass, field
 from typing import Final, Protocol
 
@@ -42,6 +43,13 @@ DEFAULT_TIMEOUT_S: Final = 600.0
 # reasoning tokens on one section before writing a word. Config-carried (OPENROUTER_MAX_TOKENS), so
 # a model that thinks harder is a setting, not a code change.
 DEFAULT_MAX_TOKENS: Final = 4000
+
+# A free endpoint throttles: mid-run it answers 429 ("not now"), and one throttled section would
+# otherwise cost the whole report. Transient statuses are retried with a linear backoff; a 4xx that
+# means the REQUEST is wrong is not retried, because repeating it would only fail again.
+RETRY_STATUSES: Final = frozenset({408, 409, 429, 500, 502, 503, 504})
+MAX_ATTEMPTS: Final = 4
+RETRY_BACKOFF_S: Final = 20.0
 
 SYSTEM_PROMPT: Final = """\
 You write one section of a public, researcher-grade report on India's MGNREGA rural employment \
@@ -225,19 +233,36 @@ class OpenRouterDrafter:
 
         http = client or httpx.Client(timeout=self.timeout_s)
         try:
-            response = http.post(f"{self.base_url}/chat/completions", json=body, headers=headers)
-        except httpx.HTTPError as exc:
-            raise DraftingError(f"the chat-completions endpoint failed: {exc}") from exc
+            return self._post_with_retries(http, body, headers)
         finally:
             if client is None:
                 http.close()
 
-        if response.status_code != httpx.codes.OK:
-            raise DraftingError(
-                f"the chat-completions endpoint returned {response.status_code}: "
-                f"{response.text[:300]}"
-            )
-        return self._content(response.json())
+    def _post_with_retries(
+        self, http: httpx.Client, body: dict[str, object], headers: dict[str, str]
+    ) -> str:
+        last: str = ""
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                response = http.post(
+                    f"{self.base_url}/chat/completions", json=body, headers=headers
+                )
+            except httpx.HTTPError as exc:
+                last = f"the chat-completions endpoint failed: {exc}"
+            else:
+                if response.status_code == httpx.codes.OK:
+                    return self._content(response.json())
+                last = (
+                    f"the chat-completions endpoint returned {response.status_code}: "
+                    f"{response.text[:300]}"
+                )
+                if response.status_code not in RETRY_STATUSES:
+                    raise DraftingError(last)  # the request is wrong; retrying changes nothing
+
+            if attempt < MAX_ATTEMPTS:
+                time.sleep(RETRY_BACKOFF_S * attempt)
+
+        raise DraftingError(f"{last} (gave up after {MAX_ATTEMPTS} attempts)")
 
     def _content(self, payload: object) -> str:
         """Pull the assistant message out of an OpenAI-compatible response, or fail loudly."""
