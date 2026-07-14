@@ -93,3 +93,28 @@ def test_the_svg_is_self_contained_and_theme_aware() -> None:
 def test_a_chart_needs_a_point() -> None:
     with pytest.raises(ValueError, match="at least one point"):
         charts.bar_chart(id="t", title="t", caption="c", section_key="s", points=[], y_label="n")
+
+
+def test_the_line_breaks_where_the_record_withholds_a_year() -> None:
+    """A null year must be drawn as a gap, never bridged.
+
+    The national series has no person-days for FY 2012-13 to 2014-15. Spacing the points evenly and
+    joining them would draw a straight line across a three-year hole — the visual equivalent of
+    coercing a null to a value. The axis is the real span of years; the path lifts and restarts.
+    """
+    chart = charts.line_chart(
+        id="t",
+        title="t",
+        caption="c",
+        section_key="national_series",
+        points=[
+            Point("2011-12", Decimal("2187636000"), "a"),
+            Point("2015-16", Decimal("2352090000"), "b"),
+        ],
+        y_label="billion person-days",
+        y_scale=Decimal(1_000_000_000),
+    )
+    path = chart.svg.split('class="series" d="')[1].split('"')[0]
+    assert path.count("M") == 2  # two runs of data, not one line across the hole
+    assert "2013-14" in chart.svg  # the withheld years still occupy the axis
+    assert "no line where the record withholds a year" in chart.svg

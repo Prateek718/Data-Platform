@@ -73,6 +73,8 @@ server's reason once.
 given in the section.
 - Do not print figure ids, fact ids, table names, or column names.
 - No throat-clearing ("This section will..."), no summarising your own instructions.
+- Every sentence must carry a fact. Delete any sentence that only restates what the previous ones \
+already said ("This joint foundation supports the counts that make up the scheme's lifespan").
 """
 
 

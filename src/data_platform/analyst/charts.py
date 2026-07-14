@@ -109,8 +109,15 @@ def line_chart(
     annotations: tuple[Annotation, ...] = (),
     boundary_after: str | None = None,
 ) -> Chart:
-    """A line over financial years. ``y_scale`` divides the axis into readable units."""
-    scaled = [(p.period, p.value / y_scale) for p in points]
+    """A line over financial years. ``y_scale`` divides the axis into readable units.
+
+    The x axis is the REAL span of years, not the list of points: a year the record withholds gets
+    its own slot on the axis and no marker, and the line BREAKS there. Spacing the points evenly
+    would draw a straight line across a three-year hole and silently assert a continuity the record
+    does not have — the visual equivalent of coercing a null to a value.
+    """
+    by_period = {p.period: p.value / y_scale for p in points}
+    scaled = [(period, by_period.get(period)) for period in _span(list(by_period))]
     svg = _render(
         title=title,
         y_label=y_label,
@@ -141,10 +148,12 @@ def bar_chart(
     annotations: tuple[Annotation, ...] = (),
 ) -> Chart:
     """Bars over financial years — for counts (null cells, districts reporting)."""
+    by_period = {p.period: p.value for p in points}
+    rows = [(period, by_period.get(period)) for period in _span(list(by_period))]
     svg = _render(
         title=title,
         y_label=y_label,
-        rows=[(p.period, p.value) for p in points],
+        rows=rows,
         annotations=annotations,
         boundary_after=None,
         as_bars=True,
@@ -160,21 +169,30 @@ def bar_chart(
     )
 
 
+def _span(periods: list[str]) -> list[str]:
+    """Every financial year from the earliest point to the latest — gaps included."""
+    if not periods:
+        raise ValueError("a chart needs at least one point")
+    years = sorted(int(p[:4]) for p in periods)
+    return [f"{y}-{str(y + 1)[2:]}" for y in range(years[0], years[-1] + 1)]
+
+
 def _render(
     *,
     title: str,
     y_label: str,
-    rows: list[tuple[str, Decimal]],
+    rows: list[tuple[str, Decimal | None]],
     annotations: tuple[Annotation, ...],
     boundary_after: str | None,
     as_bars: bool,
 ) -> str:
-    if not rows:
+    present = [value for _, value in rows if value is not None]
+    if not present:
         raise ValueError("a chart needs at least one point")
 
     plot_w = _WIDTH - _MARGIN_LEFT - _MARGIN_RIGHT
     plot_h = _HEIGHT - _MARGIN_TOP - _MARGIN_BOTTOM
-    top = _axis_top(max(value for _, value in rows))
+    top = _axis_top(max(present))
     step = plot_w / len(rows)
 
     def x_of(index: int) -> float:
@@ -194,15 +212,15 @@ def _render(
 
     # Horizontal gridlines + y ticks.
     for fraction in (0, 0.25, 0.5, 0.75, 1.0):
-        value = top * Decimal(str(fraction))
-        y = y_of(value)
+        tick_value = top * Decimal(str(fraction))
+        y = y_of(tick_value)
         parts.append(
             f'<line class="grid" x1="{_MARGIN_LEFT}" y1="{y:.1f}" '
             f'x2="{_WIDTH - _MARGIN_RIGHT}" y2="{y:.1f}"/>'
         )
         parts.append(
             f'<text class="tick" x="{_MARGIN_LEFT - 8}" y="{y + 4:.1f}" '
-            f'text-anchor="end">{_tick(value)}</text>'
+            f'text-anchor="end">{_tick(tick_value)}</text>'
         )
     parts.append(f'<text class="muted" x="{_MARGIN_LEFT}" y="{_HEIGHT - 8}">{_esc(y_label)}</text>')
 
@@ -235,20 +253,40 @@ def _render(
     if as_bars:
         width = step * 0.62
         for index, (_, value) in enumerate(rows):
+            if value is None:
+                continue
             y = y_of(value)
             parts.append(
                 f'<rect class="bar" x="{x_of(index) - width / 2:.1f}" y="{y:.1f}" '
                 f'width="{width:.1f}" height="{axis_y - y:.1f}" rx="2"/>'
             )
     else:
-        path = " ".join(
-            f"{'M' if i == 0 else 'L'}{x_of(i):.1f},{y_of(v):.1f}" for i, (_, v) in enumerate(rows)
-        )
-        parts.append(f'<path class="series" d="{path}"/>')
+        # The path BREAKS at a withheld year: a new "M" starts the next run of data, so a gap is
+        # drawn as a gap. Nothing is interpolated across a year the record does not have.
+        commands: list[str] = []
+        pen_down = False
         for index, (_, value) in enumerate(rows):
+            if value is None:
+                pen_down = False
+                continue
+            commands.append(f"{'L' if pen_down else 'M'}{x_of(index):.1f},{y_of(value):.1f}")
+            pen_down = True
+        parts.append(f'<path class="series" d="{" ".join(commands)}"/>')
+        for index, (_, value) in enumerate(rows):
+            if value is None:
+                continue
             parts.append(
                 f'<circle class="point" cx="{x_of(index):.1f}" cy="{y_of(value):.1f}" r="3"/>'
             )
+
+    # Name the hole, so a reader sees an absence rather than wondering about a kink in the line.
+    withheld = [period for period, value in rows if value is None]
+    if withheld and not as_bars:
+        parts.append(
+            f'<text class="muted" x="{_WIDTH - _MARGIN_RIGHT}" y="{_HEIGHT - 8}" '
+            'text-anchor="end">no line where the record withholds a year: '
+            f"{', '.join(withheld)}</text>"
+        )
 
     index_of = {period: i for i, (period, _) in enumerate(rows)}
     for note in annotations:
@@ -256,6 +294,8 @@ def _render(
             continue
         index = index_of[note.period]
         _, value = rows[index]
+        if value is None:
+            continue
         x, y = x_of(index), y_of(value)
         anchor = "end" if index > len(rows) * 0.7 else "start"
         dx = -8 if anchor == "end" else 8

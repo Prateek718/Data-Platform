@@ -138,7 +138,7 @@ def retrieve_national_series(tools: AnalystTools) -> RetrievedSection:
         label="peak-year total expenditure, in lakh crore rupees",
         operation=derive.LAKH_TO_LAKH_CRORE,
         inputs=[peak_spend],
-        unit="Rs lakh crore",
+        unit="lakh crore rupees",
     )
     peak_households_millions = retrieve.derived(
         id="households_2020_21_millions",
