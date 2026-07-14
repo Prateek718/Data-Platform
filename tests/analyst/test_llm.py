@@ -137,3 +137,9 @@ def test_an_http_error_is_reported(section: RetrievedSection) -> None:
 def test_the_api_key_is_never_in_the_repr() -> None:
     drafter = OpenRouterDrafter(api_key="super-secret")
     assert "super-secret" not in repr(drafter)
+
+
+def test_the_timeout_is_env_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A free reasoning model can take minutes per section; the wait is a setting, not a rewrite."""
+    monkeypatch.setenv("OPENROUTER_TIMEOUT_S", "900")
+    assert OpenRouterDrafter(api_key="k").timeout_s == 900.0

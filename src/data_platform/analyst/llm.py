@@ -11,6 +11,8 @@ Configuration is environment-only, never committed and never logged:
 * ``OPENROUTER_BASE_URL`` — default ``https://openrouter.ai/api/v1``.
 * ``OPENROUTER_MODEL``  — default :data:`DEFAULT_MODEL`. Free-tier model availability churns, so
   the id is config, not code: override it without touching this file.
+* ``OPENROUTER_MAX_TOKENS`` / ``OPENROUTER_TIMEOUT_S`` — headroom for a slow reasoning model, whose
+  private reasoning is charged against the same completion budget and can take minutes per section.
 
 The drafter is given the figures and nothing else. It cannot query, it cannot compute, and every
 number it writes is checked by the verifier afterwards — the prompt asks for discipline, the
@@ -29,7 +31,10 @@ from data_platform.analyst.models import RetrievedSection, canonical
 
 DEFAULT_BASE_URL: Final = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL: Final = "meta-llama/llama-3.3-70b-instruct:free"
-DEFAULT_TIMEOUT_S: Final = 180.0
+# A free-tier reasoning model can spend minutes on one section before the first byte of the answer
+# arrives (measured: the national-series prompt read-timed out at 180s). Config-carried
+# (OPENROUTER_TIMEOUT_S) — a slower endpoint is a setting, not a code change.
+DEFAULT_TIMEOUT_S: Final = 600.0
 
 # A section's prose is ~400 tokens, but this budget is not just for prose: on a REASONING model the
 # private reasoning is charged against the same completion budget, and a model that thinks past the
@@ -174,14 +179,16 @@ class OpenRouterDrafter:
         api_key: str | None = None,
         base_url: str | None = None,
         model: str | None = None,
-        timeout_s: float = DEFAULT_TIMEOUT_S,
+        timeout_s: float | None = None,
         max_tokens: int | None = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
         base = base_url or os.environ.get("OPENROUTER_BASE_URL", DEFAULT_BASE_URL)
         self.base_url = base.rstrip("/")
         self.model = model or os.environ.get("OPENROUTER_MODEL", DEFAULT_MODEL)
-        self.timeout_s = timeout_s
+        self.timeout_s = timeout_s or float(
+            os.environ.get("OPENROUTER_TIMEOUT_S", DEFAULT_TIMEOUT_S)
+        )
         self.max_tokens = max_tokens or int(
             os.environ.get("OPENROUTER_MAX_TOKENS", DEFAULT_MAX_TOKENS)
         )
