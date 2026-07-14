@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" width="880" height="380" role="img" aria-label="Districts reporting person-days, by financial year" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<style>
+  .surface { fill: #fcfcfb; }
+  .grid { stroke: #e6e5e1; stroke-width: 1; }
+  .axis { stroke: #b5b3ad; stroke-width: 1; }
+  .tick { fill: #52514e; font-size: 11px; }
+  .label { fill: #0b0b0b; font-size: 12px; }
+  .muted { fill: #6f6e6a; font-size: 11px; }
+  .series { stroke: #2a78d6; fill: none; stroke-width: 2; }
+  .point { fill: #2a78d6; }
+  .bar { fill: #2a78d6; }
+  .marker { stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; }
+  @media (prefers-color-scheme: dark) {
+    .surface { fill: #1a1a19; }
+    .grid { stroke: #35342f; }
+    .axis { stroke: #56554f; }
+    .tick { fill: #c3c2b7; }
+    .label { fill: #ffffff; }
+    .muted { fill: #9c9b93; }
+    .series { stroke: #3987e5; }
+    .point { fill: #3987e5; }
+    .bar { fill: #3987e5; }
+    .marker { stroke: #56554f; }
+  }
+</style>
+<rect class="surface" width="880" height="380"/>
+<text class="label" x="78" y="18">Districts reporting person-days, by financial year</text>
+<line class="grid" x1="78" y1="324.0" x2="856" y2="324.0"/>
+<text class="tick" x="70" y="328.0" text-anchor="end">0</text>
+<line class="grid" x1="78" y1="250.0" x2="856" y2="250.0"/>
+<text class="tick" x="70" y="254.0" text-anchor="end">250</text>
+<line class="grid" x1="78" y1="176.0" x2="856" y2="176.0"/>
+<text class="tick" x="70" y="180.0" text-anchor="end">500</text>
+<line class="grid" x1="78" y1="102.0" x2="856" y2="102.0"/>
+<text class="tick" x="70" y="106.0" text-anchor="end">750</text>
+<line class="grid" x1="78" y1="28.0" x2="856" y2="28.0"/>
+<text class="tick" x="70" y="32.0" text-anchor="end">1,000</text>
+<text class="muted" x="78" y="372">districts reporting</text>
+<line class="axis" x1="78" y1="324" x2="856" y2="324"/>
+<text class="tick" x="126.6" y="342" text-anchor="middle">2018-19</text>
+<text class="tick" x="321.1" y="342" text-anchor="middle">2020-21</text>
+<text class="tick" x="515.6" y="342" text-anchor="middle">2022-23</text>
+<text class="tick" x="807.4" y="342" text-anchor="middle">2025-26</text>
+<rect class="bar" x="96.5" y="126.9" width="60.3" height="197.1" rx="2"/>
+<rect class="bar" x="193.7" y="126.0" width="60.3" height="198.0" rx="2"/>
+<rect class="bar" x="291.0" y="113.8" width="60.3" height="210.2" rx="2"/>
+<rect class="bar" x="388.2" y="112.7" width="60.3" height="211.3" rx="2"/>
+<rect class="bar" x="485.5" y="107.3" width="60.3" height="216.7" rx="2"/>
+<rect class="bar" x="582.7" y="105.6" width="60.3" height="218.4" rx="2"/>
+<rect class="bar" x="680.0" y="105.6" width="60.3" height="218.4" rx="2"/>
+<rect class="bar" x="777.2" y="105.6" width="60.3" height="218.4" rx="2"/>
+</svg>
