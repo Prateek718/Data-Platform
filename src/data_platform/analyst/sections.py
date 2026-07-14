@@ -28,6 +28,16 @@ _PERSONDAYS = "persondays_generated"
 _WAGE_RATE = "avg_wage_rate_per_day"
 
 # The financial years each grain covers (the served coverage windows).
+_SPINE_METRICS: tuple[str, ...] = (
+    "households_employed",
+    "households_completed_100_days",
+    "active_workers",
+    "persondays_generated",
+    "wages_expenditure",
+    "material_skilled_expenditure",
+    "admin_expenditure",
+    "total_expenditure",
+)
 _STATE_YEARS: tuple[str, ...] = tuple(f"{y}-{str(y + 1)[2:]}" for y in range(2010, 2027))
 _FLAGSHIP_YEARS: tuple[str, ...] = tuple(f"{y}-{str(y + 1)[2:]}" for y in range(2018, 2027))
 
@@ -245,7 +255,14 @@ DISAGREEMENTS = SectionPlan(
         "discarded.\n\n"
         "Say explicitly which of the two each count refers to, and that both sets passed the same "
         "two-part materiality floor (a disagreement counts only if it clears both an absolute and "
-        "a relative threshold). Give the largest case in each set, using the figures provided. "
+        "a relative threshold).\n\n"
+        "Give ONE example from each set, using the figures provided. Two cautions, both strict:\n"
+        "- Do NOT call either example the largest, the biggest or the worst. Nothing here ranks "
+        "them, and a ranking nobody computed is a claim you cannot support. Write 'one such case "
+        "is'.\n"
+        "- The figure attached to each example is the CANONICAL VALUE the record settled on — the "
+        "value it publishes for that cell. It is NOT the size of the gap between the publishers. "
+        "Say so explicitly, so no reader mistakes one for the other.\n\n"
         "This is a governance finding, not a scandal: the point is that the record shows its "
         "disagreements instead of hiding them."
     ),
@@ -287,8 +304,9 @@ def retrieve_disagreements(tools: AnalystTools) -> RetrievedSection:
         tools,
         id="telangana_expenditure_2016_17",
         label=(
-            "Telangana total expenditure, FY 2016-17 — the largest pre-2018 disagreement; the "
-            "record takes the Rajya Sabha value and keeps MoSPI's rejected value in lineage"
+            "Telangana total expenditure, FY 2016-17 — one pre-2018 case: this is the CANONICAL "
+            "VALUE the record publishes (the Rajya Sabha figure), not the size of the gap; MoSPI's "
+            "rejected value is kept in lineage"
         ),
         geography="Telangana",
         spec=QuerySpec(_STATE, "total_expenditure", "2016-17", "Telangana"),
@@ -297,17 +315,26 @@ def retrieve_disagreements(tools: AnalystTools) -> RetrievedSection:
         tools,
         id="lakshadweep_persondays_2023_24",
         label=(
-            "Lakshadweep person-days, FY 2023-24 — the largest flagship-era divergence; the "
-            "record takes the MIS value and records the Parliament-tabled figure in lineage"
+            "Lakshadweep person-days, FY 2023-24 — one flagship-era case: this is the CANONICAL "
+            "VALUE the record publishes (the district MIS figure), not the size of the gap; the "
+            "Parliament-tabled figure is kept in lineage"
         ),
         geography="Lakshadweep",
         spec=QuerySpec(_STATE, _PERSONDAYS, "2023-24", "Lakshadweep"),
     )
 
+    telangana_crore = retrieve.derived(
+        id="telangana_expenditure_crore",
+        label="Telangana's canonical FY 2016-17 total expenditure, in crore rupees",
+        operation=derive.LAKH_TO_CRORE,
+        inputs=[telangana],
+        unit="crore rupees",
+    )
+
     return RetrievedSection(
         plan=DISAGREEMENTS,
         figures=(telangana, lakshadweep),
-        derivations=(total,),
+        derivations=(total, telangana_crore),
         cohorts=(pre_2018, flagship_era),
     )
 
@@ -407,10 +434,25 @@ def retrieve_goa_spine(tools: AnalystTools) -> RetrievedSection:
         month="2022-04",
     )
 
+    north_rate_2dp = retrieve.derived(
+        id="north_goa_wage_rate_2dp",
+        label="North Goa's average wage rate per day, to the paisa",
+        operation=derive.ROUND_2DP,
+        inputs=[north_rate],
+        unit="rupees per day",
+    )
+    south_rate_2dp = retrieve.derived(
+        id="south_goa_wage_rate_2dp",
+        label="South Goa's average wage rate per day, to the paisa",
+        operation=derive.ROUND_2DP,
+        inputs=[south_rate],
+        unit="rupees per day",
+    )
+
     return RetrievedSection(
         plan=GOA_SPINE,
         figures=(north, south, state, north_rate, south_rate),
-        derivations=(district_sum, residual),
+        derivations=(district_sum, residual, north_rate_2dp, south_rate_2dp),
         refusals=(rate_refusal, monthly_refusal),
     )
 
@@ -514,17 +556,28 @@ COVERAGE = SectionPlan(
     title="What the record does not contain",
     brief=(
         "A null cell in this record is data, not a gap in the plumbing: it carries a reason, and "
-        "it is never coerced to zero. Give the counts of null cells: the state series' "
-        "partial-period-only nulls (the only reading was an edition's mid-year partial, withheld "
-        "rather than published as if it were an annual figure), the state series' unadjudicated "
-        "nulls (a structurally-incomplete aggregate materially disagrees with a whole-geography "
-        "peer, so no value is asserted), and the national series' single-publisher-divergence "
-        "nulls (one publisher's own vintages disagree with no defensible order between them). The "
-        "derived total is given.\n\n"
-        "Then the shape of the hole, which is the real finding: almost all of the "
-        "partial-period-only nulls fall in ONE year, FY 2017-18 — the count is given — the seam "
-        "between the two sourcing eras, just before the flagship MIS begins. The record's weakest "
-        "year is exactly where its two eras meet, and it says so.\n\n"
+        "it is never coerced to zero. Give the counts of null cells at state grain — the "
+        "partial-period-only ones (the only reading was an edition's mid-year partial, withheld "
+        "rather than published as if it were an annual figure) and the unadjudicated ones (a "
+        "structurally-incomplete aggregate materially disagrees with a whole-geography peer, so no "
+        "value is asserted) — and at national grain the single-publisher-divergence ones (one "
+        "publisher's own vintages disagree with no defensible order between them). The derived "
+        "total is given.\n\n"
+        "THE SEAM. Cite the count of state cells that are BOTH in FY 2017-18 AND withheld as "
+        "partial-period-only — that exact count is given, and it is the one to use. FY 2017-18 is "
+        "the year before the district system begins, and the record's weakest year is exactly "
+        "where its two sourcing eras meet.\n\n"
+        "THE NATIONAL HOLE, decomposed. Do not leave the national nulls as a bare total: say which "
+        "years they fall in (counts for FY 2012-13, 2013-14, 2014-15 and 2015-16 are given, and "
+        "they account for all of them — there are no national nulls in any other year) and say "
+        "that they are spread across seven of the eight metrics rather than concentrated in one "
+        "(per-metric counts are given; active workers is the exception, and it has no pre-2018 "
+        "values to disagree about in the first place).\n\n"
+        "A DIFFERENT KIND OF ABSENCE. The national expenditure series does not begin with the "
+        "scheme: the count of national expenditure facts in FY 2006-07 and FY 2007-08 is given, "
+        "and it is zero. Person-days and households are recorded from the first year; spending is "
+        "not. That is an absence of source data, not a withheld value, and it is why the "
+        "expenditure chart starts two years later than the person-days chart.\n\n"
         "Finally, a metric that is absent rather than null: active workers exists only from FY "
         "2018-19 onward (the count of such facts in that first year is given). Anyone comparing "
         "'workers' across the full twenty years would be comparing a metric against its own "
@@ -563,14 +616,59 @@ def retrieve_coverage(tools: AnalystTools) -> RetrievedSection:
         unit="cells",
     )
 
+    # The compound predicate: BOTH in FY 2017-18 AND withheld for this reason. Counting all nulls in
+    # that year and attributing them to one reason would be a predicate mismatch — the state series
+    # also carries unadjudicated nulls, and nothing says they avoid this year.
     seam = retrieve.fetch_cohort(
         tools,
-        id="nulls_2017_18",
-        label="state-series null cells in FY 2017-18 alone, the seam between the two eras",
+        id="seam_partial_period_nulls",
+        label=(
+            "state cells that are BOTH in FY 2017-18 AND withheld as partial-period-only "
+            "(the seam between the two sourcing eras)"
+        ),
         table=_STATE,
         fy_from="2017-18",
         fy_to="2017-18",
-        filter=cohort.VALUE_IS_NULL,
+        filter=cohort.PARTIAL_PERIOD_ONLY,
+    )
+
+    national_nulls_by_year = tuple(
+        retrieve.fetch_cohort(
+            tools,
+            id=f"national_nulls_{fy.replace('-', '_')}",
+            label=f"national cells withheld as single-publisher divergence in FY {fy}",
+            table=_NATIONAL,
+            fy_from=fy,
+            fy_to=fy,
+            filter=cohort.SINGLE_PUBLISHER_DIVERGENCE,
+        )
+        for fy in ("2012-13", "2013-14", "2014-15", "2015-16")
+    )
+    national_nulls_by_metric = tuple(
+        retrieve.fetch_cohort(
+            tools,
+            id=f"national_nulls_metric_{metric}",
+            label=(
+                f"national {metric.replace('_', ' ')} cells withheld as single-publisher divergence"
+            ),
+            table=_NATIONAL,
+            metrics=[metric],
+            filter=cohort.SINGLE_PUBLISHER_DIVERGENCE,
+        )
+        for metric in _SPINE_METRICS
+    )
+    expenditure_before_2008 = retrieve.fetch_cohort(
+        tools,
+        id="national_expenditure_2006_08",
+        label=(
+            "national total-expenditure facts in FY 2006-07 and FY 2007-08 — none exist; the "
+            "spending series starts two years after the work series"
+        ),
+        table=_NATIONAL,
+        metrics=["total_expenditure"],
+        fy_from="2006-07",
+        fy_to="2007-08",
+        filter=cohort.ALL,
     )
     active_workers_first_year = retrieve.fetch_cohort(
         tools,
@@ -609,7 +707,16 @@ def retrieve_coverage(tools: AnalystTools) -> RetrievedSection:
         plan=COVERAGE,
         figures=(),
         derivations=(total,),
-        cohorts=(partial, unadjudicated, national_nulls, seam, active_workers_first_year),
+        cohorts=(
+            partial,
+            unadjudicated,
+            national_nulls,
+            seam,
+            expenditure_before_2008,
+            active_workers_first_year,
+            *national_nulls_by_year,
+            *national_nulls_by_metric,
+        ),
         refusals=(floor_refusal,),
         series_cohorts=nulls_by_year,
     )
@@ -710,11 +817,15 @@ DISTRICTS = SectionPlan(
         "Districts split over the life of the scheme, so the number of districts reporting is not "
         "fixed. Using the counts of district person-days facts (one such fact per district per "
         "year), give the number of districts reporting in the flagship's first year, FY 2018-19, "
-        "and in FY 2023-24, and the derived difference between them. Explain what the record does "
-        "about this: each fact stays filed under the geography that existed at its OWN period, and "
-        "is never forward-mapped across a split — redistributing an old district's value across "
-        "its successors would require an allocation the source never published, which would be "
-        "inventing data. The growth in the count is districts splitting, not new territory."
+        "and in FY 2025-26, the last complete financial year of the scheme.\n\n"
+        "The difference between those two counts is a NET figure — additions minus any districts "
+        "that stopped reporting — and you must call it a net increase, not a count of districts "
+        "added. The record does not tell us that nothing was subtracted.\n\n"
+        "Explain what the record does about splits: each fact stays filed under the geography that "
+        "existed at its OWN period, and is never forward-mapped across a split — redistributing an "
+        "old district's value across its successors would require an allocation the source never "
+        "published, which would be inventing data. The rise in the count is districts dividing, "
+        "not territory being added."
     ),
 )
 
@@ -732,17 +843,22 @@ def retrieve_districts(tools: AnalystTools) -> RetrievedSection:
     )
     later = retrieve.fetch_cohort(
         tools,
-        id="districts_2023_24",
-        label="districts reporting person-days in FY 2023-24",
+        id="districts_2025_26",
+        label="districts reporting person-days in FY 2025-26 (the last complete year)",
         table=_DISTRICT,
         metrics=[_PERSONDAYS],
-        fy_from="2023-24",
-        fy_to="2023-24",
+        fy_from="2025-26",
+        fy_to="2025-26",
         filter=cohort.ALL,
     )
+    # A difference of two reporting counts is a NET change: it cannot see a district that stopped
+    # reporting being offset by two that started. The label says so, so the prose cannot overstate.
     growth = retrieve.derived(
-        id="districts_added",
-        label="districts added between FY 2018-19 and FY 2023-24",
+        id="districts_net_increase",
+        label=(
+            "NET increase in districts reporting between FY 2018-19 and FY 2025-26 "
+            "(additions minus any that stopped reporting — not a count of districts added)"
+        ),
         operation=derive.DIFFERENCE,
         inputs=[later, first_year],
         unit="districts",
@@ -860,8 +976,11 @@ INTRODUCTION = SectionPlan(
         "year 2006-07. It gave rural households a legal right to a fixed quota of paid manual "
         "work each year; the state's obligation was to provide it on demand. Work is measured in "
         "PERSON-DAYS (one day of work by one person), spending in rupees, participation in "
-        "households employed. It was repealed effective 30 June 2026 and replaced by a successor "
-        "scheme, so the record is now closed: no new data will ever be published for it.\n\n"
+        "households employed. It was repealed effective 30 June 2026, so the record is now closed: "
+        "no new data will ever be published for it.\n\n"
+        "Say NOTHING about what replaced it. Whether a successor programme exists, and what it "
+        "does, is outside this record — the served data contains no such fact, so this document "
+        "cannot assert one.\n\n"
         "Then explain what this document is and is not. It is a reading of a reconciled dataset "
         "assembled from the many separately-published government datasets on India's open-data "
         "portal, which disagree with each other on units, geography and even on the numbers "
@@ -920,9 +1039,12 @@ METHODOLOGY = SectionPlan(
         "(2) WHEN SOURCES DISAGREE. Where two publishers of comparable standing disagree on the "
         "same cell, the pipeline adjudicates by a documented rule and keeps the rejected value, "
         "its publisher and the size of the gap in the record's lineage — the disagreement is "
-        "published, not hidden. Where a primary source disagrees with a secondary republication "
-        "of the same statistic, authority decides: the primary stands and the divergence is "
-        "recorded as a flagged note rather than adjudicated between peers. A disagreement is only "
+        "published, not hidden. Where the primary district management information system disagrees "
+        "with a figure tabled in Parliament for the same cell, authority decides: the primary "
+        "system stands, and the divergence is recorded as a flagged note rather than adjudicated "
+        "between peers. (Do not characterise how the Parliament-tabled figures were produced or "
+        "where they came from — the record does not say, and neither does this document.) A "
+        "disagreement is only "
         "counted at all if it clears a two-part materiality floor: it must be large in absolute "
         "terms AND large relative to the value, so that rounding noise is never reported as a "
         "conflict.\n\n"

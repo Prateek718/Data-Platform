@@ -88,3 +88,9 @@ def test_round_sigfig_3() -> None:
 def test_presentation_operations_are_unary(operation: str) -> None:
     with pytest.raises(ValueError, match="exactly 1 input"):
         derive.compute(operation, [Decimal("1"), Decimal("2")])
+
+
+def test_round_2dp_is_a_declared_rounding() -> None:
+    """383.782169313422 INR reads as 383.78 in prose — because code rounded it, not the drafter."""
+    assert derive.compute(derive.ROUND_2DP, [Decimal("383.782169313422")]) == Decimal("383.78")
+    assert derive.ROUND_2DP in derive.PRESENTATION_OPERATIONS

@@ -141,3 +141,43 @@ def test_a_cohorts_own_label_may_be_quoted(tools: DirectTools) -> None:
     section = replace(build_section(tools), cohorts=(labelled,))
     prose = "The floor is Rs 1,000/day. The series carries 2 null cells."
     assert verify.verify(section, prose, tools).ok
+
+
+def test_the_displayed_predicate_defines_the_member_set(tools: DirectTools) -> None:
+    """A predicate that does not define its set is not a predicate.
+
+    Two cohorts can share `confidence == flagged-disagreement` and count 9 and 25, because the
+    financial-year bound is doing half the work. Showing only the filter would be a truncation that
+    fails its own recomputation test — so the displayed predicate carries the query scope too.
+    """
+    scoped = retrieve.fetch_cohort(
+        tools,
+        id="pre_2018_nulls",
+        label="null cells before the flagship era",
+        table="state_annual_series",
+        fy_to="2017-18",
+        filter=cohort.VALUE_IS_NULL,
+    )
+    assert scoped.predicate == "table = state_annual_series AND fy <= 2017-18 AND value_is_null"
+
+    single_year = retrieve.fetch_cohort(
+        tools,
+        id="one_year",
+        label="null cells in one year",
+        table="state_annual_series",
+        fy_from="2017-18",
+        fy_to="2017-18",
+        filter=cohort.VALUE_IS_NULL,
+    )
+    assert "fy == 2017-18" in single_year.predicate
+
+    metric_scoped = retrieve.fetch_cohort(
+        tools,
+        id="wage_facts",
+        label="wage facts",
+        table="district_flagship",
+        metrics=["avg_wage_rate_per_day"],
+        filter=cohort.ALL,
+    )
+    assert "metric in (avg_wage_rate_per_day)" in metric_scoped.predicate
+    assert "all" not in metric_scoped.predicate  # the no-op filter is not a condition

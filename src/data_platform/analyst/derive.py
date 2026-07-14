@@ -35,6 +35,7 @@ TO_BILLIONS: Final = "to_billions"
 LAKH_TO_CRORE: Final = "lakh_to_crore"
 LAKH_TO_LAKH_CRORE: Final = "lakh_to_lakh_crore"
 ROUND_SIGFIG_3: Final = "round_sigfig_3"
+ROUND_2DP: Final = "round_2dp"
 
 # A ratio of two exact decimals runs to 28 significant digits ("4.288494297577824085634669313
 # times"), which is precision the claim does not have and no reader wants. Rounding it HERE, as a
@@ -102,6 +103,11 @@ def _lakh_to_lakh_crore(values: Sequence[Decimal]) -> Decimal:
     return _scaled_2dp(values, divisor=_LAKH_PER_LAKH_CRORE, operation=LAKH_TO_LAKH_CRORE)
 
 
+def _round_2dp(values: Sequence[Decimal]) -> Decimal:
+    """383.782169313422 INR reads as 383.78 — a declared rounding, recomputed by the verifier."""
+    return _only(values, ROUND_2DP).quantize(_TWO_DP, rounding=ROUND_HALF_UP)
+
+
 def _round_sigfig_3(values: Sequence[Decimal]) -> Decimal:
     """Round to three significant figures — 905,054,000 reads as 905,000,000."""
     value = _only(values, ROUND_SIGFIG_3)
@@ -122,12 +128,13 @@ OPERATIONS: Final[dict[str, Callable[[Sequence[Decimal]], Decimal]]] = {
     LAKH_TO_CRORE: _lakh_to_crore,
     LAKH_TO_LAKH_CRORE: _lakh_to_lakh_crore,
     ROUND_SIGFIG_3: _round_sigfig_3,
+    ROUND_2DP: _round_2dp,
 }
 
 # The operations that only restate a served value in a readable form. Recorded in report.json so a
 # reader can tell "the same fact, another unit" from "a new claim about the data".
 PRESENTATION_OPERATIONS: Final[frozenset[str]] = frozenset(
-    {TO_MILLIONS, TO_BILLIONS, LAKH_TO_CRORE, LAKH_TO_LAKH_CRORE, ROUND_SIGFIG_3}
+    {TO_MILLIONS, TO_BILLIONS, LAKH_TO_CRORE, LAKH_TO_LAKH_CRORE, ROUND_SIGFIG_3, ROUND_2DP}
 )
 
 

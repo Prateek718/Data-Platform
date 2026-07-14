@@ -119,6 +119,31 @@ class Cohort:
     member_fact_ids: tuple[str, ...]
     sources: tuple[Payload, ...]
 
+    @property
+    def predicate(self) -> str:
+        """The COMPLETE rule that selects the members — query scope and filter together.
+
+        Showing only the filter would be a truncation that fails its own recomputation test: two
+        cohorts can share ``confidence == flagged-disagreement`` and count 9 and 25, because the
+        financial-year bound is doing half the work. A predicate that does not define its set is not
+        a predicate.
+        """
+        parts = [f"table = {self.query.table}"]
+        if self.query.metrics:
+            parts.append(f"metric in ({', '.join(self.query.metrics)})")
+        if self.query.states:
+            parts.append(f"state in ({', '.join(self.query.states)})")
+        if self.query.fy_from is not None and self.query.fy_from == self.query.fy_to:
+            parts.append(f"fy == {self.query.fy_from}")
+        else:
+            if self.query.fy_from is not None:
+                parts.append(f"fy >= {self.query.fy_from}")
+            if self.query.fy_to is not None:
+                parts.append(f"fy <= {self.query.fy_to}")
+        if self.filter != "all":
+            parts.append(self.filter)
+        return " AND ".join(parts)
+
 
 @dataclass(frozen=True)
 class RefusalExhibit:

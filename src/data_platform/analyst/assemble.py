@@ -107,6 +107,7 @@ def _cohort(cohort: Cohort) -> dict[str, object]:
         "operation": cohort.operation,
         "query": cohort.query.to_dict(),
         "filter": cohort.filter,
+        "predicate": cohort.predicate,
         "member_fact_ids": list(cohort.member_fact_ids),
         "sources": [dict(s) for s in cohort.sources],
     }
@@ -214,17 +215,15 @@ def render_markdown(report: dict[str, object]) -> str:
         assert isinstance(cohorts, list)
         if cohorts:
             lines += [
-                "| count | value | counted over | filter | members |",
-                "|---|---|---|---|---|",
+                "| count | value | selected by (the complete predicate) | members |",
+                "|---|---|---|---|",
             ]
             for cohort in cohorts:
-                query = cohort["query"]
-                assert isinstance(query, dict)
                 members = cohort["member_fact_ids"]
                 assert isinstance(members, list)
                 lines.append(
-                    f"| {cohort['label']} | {cohort['value']} | {query['table']} | "
-                    f"`{cohort['filter']}` | {len(members)} fact ids in report.json |"
+                    f"| {cohort['label']} | {cohort['value']} | `{cohort['predicate']}` | "
+                    f"{len(members)} fact ids in report.json |"
                 )
             lines.append("")
 
@@ -276,6 +275,15 @@ def _how_to_cite(report: dict[str, object]) -> list[str]:
         "```",
         "",
         "Any OpenAI-compatible endpoint works; the model writes the prose and nothing else.",
+        "",
+        "**To cite this report:**",
+        "",
+        "> Data Platform (2026). *MGNREGA, 2006-2026: what the record says.* Generated from the "
+        "MGNREGA canonical series v1.0.0 (DOI: 10.5281/zenodo.21318431). "
+        "https://doi.org/10.5281/zenodo.21318431",
+        "",
+        "Cite the **dataset** for the figures and the **report** for the reading of them; both are "
+        "versioned, and the dataset is sealed.",
         "",
         "**To check any single number**, take its `fact_id` from the table beneath the section, "
         "start the query server (`PYTHONPATH=src uv run python -m data_platform.mcp`) and call "

@@ -71,6 +71,12 @@ about MGNREGA, and where the record declines to answer, say so in plain words an
 server's reason once.
 - Never state the same figure twice in a paragraph, and do not restate a number you have already \
 given in the section.
+- Group thousands with commas: write 94,004 and not 94004.
+- NO SUPERLATIVES unless the evidence itself says so. Do not call anything the largest, the \
+highest, the worst or the most unless the label of the figure you are citing uses that word. A \
+ranking nobody computed is a claim you cannot support.
+- A figure attached to a disagreement is the CANONICAL VALUE the record settled on — it is not the \
+size of the gap between the publishers. Never describe it as a magnitude of disagreement.
 - Do not print figure ids, fact ids, table names, or column names.
 - QUOTATION MARKS ARE A CLAIM. If you put the server's reason in quotes, reproduce it WORD FOR \
 WORD, exactly as given. If you want to shorten or reword it, do so WITHOUT quotation marks. A \
@@ -114,7 +120,7 @@ def render_evidence(section: RetrievedSection) -> str:
         for cohort in section.cohorts:
             lines.append(
                 f"- {cohort.label}: {canonical(cohort.value)} "
-                f"[counted over {cohort.query.table} where {cohort.filter}]"
+                f"[counted over the facts where {cohort.predicate}]"
             )
 
     if section.derivations:
