@@ -11,6 +11,20 @@ dependencies = [
     "langgraph>=0.2",
 ]
 
+# The documented commands. Installing the project puts these on PATH, so nothing needs PYTHONPATH.
+[project.scripts]
+data-platform-mcp = "data_platform.mcp.__main__:main"
+data-platform-analyst = "data_platform.analyst.__main__:main"
+data-platform-export = "data_platform.export.__main__:main"
+data-platform-bootstrap = "data_platform.bootstrap.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/data_platform"]
+
 [dependency-groups]
 dev = [
     "pre-commit>=3.7",
@@ -20,10 +34,11 @@ dev = [
     "pyarrow>=16",  # parquet writer for the v1 export deliverable (dist/); no core-runtime dep
 ]
 
-# No source package to build yet; treat the repo as an application, not a library,
-# so `uv sync` doesn't try to build/install it.
+# The project IS installed into the environment (src layout, hatchling): `uv sync` puts
+# `data_platform` on the import path and the console scripts above on PATH. Nothing needs
+# PYTHONPATH=src any more.
 [tool.uv]
-package = false
+package = true
 
 [tool.ruff]
 target-version = "py312"
