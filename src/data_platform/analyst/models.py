@@ -146,6 +146,24 @@ class Cohort:
 
 
 @dataclass(frozen=True)
+class SchemaFact:
+    """A number the served SCHEMA declares — how many metrics a table carries, say.
+
+    "Seven of the eight metrics" needs its denominator to be as traceable as its numerator. The
+    eight is not a fact about the data, it is a fact about the contract: ``get_schema`` states it,
+    and the verifier re-executes the call and recounts rather than taking the number on trust.
+    """
+
+    id: str
+    label: str
+    value: Decimal
+    unit: str
+    table: str
+    call: str
+    metrics: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RefusalExhibit:
     """A refusal the report shows as evidence: the call, and the object the server returned."""
 
@@ -173,6 +191,7 @@ class RetrievedSection:
     derivations: tuple[Derivation, ...]
     refusals: tuple[RefusalExhibit, ...] = ()
     cohorts: tuple[Cohort, ...] = ()
+    schema_facts: tuple[SchemaFact, ...] = ()
     # Chart data: whole annual series, verified exactly like the figures above (lineage attached,
     # backing query re-executed) but NOT shown to the drafter. The charts are drawn by code from
     # report.json; the model neither sees these values nor may cite them.

@@ -570,9 +570,10 @@ COVERAGE = SectionPlan(
         "THE NATIONAL HOLE, decomposed. Do not leave the national nulls as a bare total: say which "
         "years they fall in (counts for FY 2012-13, 2013-14, 2014-15 and 2015-16 are given, and "
         "they account for all of them — there are no national nulls in any other year) and say "
-        "that they are spread across seven of the eight metrics rather than concentrated in one "
-        "(per-metric counts are given; active workers is the exception, and it has no pre-2018 "
-        "values to disagree about in the first place).\n\n"
+        "that they are spread across the metrics rather than concentrated in one. The number of "
+        "metrics the national series carries is given as a schema fact — use THAT number as the "
+        "denominator, and give the per-metric counts; active workers is the one metric untouched, "
+        "and it has no pre-2018 values to disagree about in the first place.\n\n"
         "A DIFFERENT KIND OF ABSENCE. The national expenditure series does not begin with the "
         "scheme: the count of national expenditure facts in FY 2006-07 and FY 2007-08 is given, "
         "and it is zero. Person-days and households are recorded from the first year; spending is "
@@ -681,6 +682,15 @@ def retrieve_coverage(tools: AnalystTools) -> RetrievedSection:
         filter=cohort.ALL,
     )
 
+    # The denominator of "seven of the eight metrics" is a fact about the CONTRACT, not the data.
+    # The schema declares it, and the verifier re-executes get_schema and recounts.
+    metric_count = retrieve.fetch_metric_count(
+        tools,
+        id="national_metric_count",
+        label="metrics the national series carries, as its schema declares them",
+        table=_NATIONAL,
+    )
+
     floor_refusal = retrieve.refusal(
         tools,
         id="state_series_floor",
@@ -717,6 +727,7 @@ def retrieve_coverage(tools: AnalystTools) -> RetrievedSection:
             *national_nulls_by_year,
             *national_nulls_by_metric,
         ),
+        schema_facts=(metric_count,),
         refusals=(floor_refusal,),
         series_cohorts=nulls_by_year,
     )
@@ -824,8 +835,11 @@ DISTRICTS = SectionPlan(
         "Explain what the record does about splits: each fact stays filed under the geography that "
         "existed at its OWN period, and is never forward-mapped across a split — redistributing an "
         "old district's value across its successors would require an allocation the source never "
-        "published, which would be inventing data. The rise in the count is districts dividing, "
-        "not territory being added."
+        "published, which would be inventing data.\n\n"
+        "On the CAUSE of the rise, be careful: the record does not establish it. Say the rise is "
+        "CONSISTENT WITH existing districts dividing rather than territory being added. Do not "
+        "write that it 'reflects' or 'is explained by' district splits — that asserts a cause the "
+        "data does not demonstrate, and it would undo the caution of the net-increase caveat."
     ),
 )
 

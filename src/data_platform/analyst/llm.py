@@ -131,6 +131,17 @@ def render_evidence(section: RetrievedSection) -> str:
                 f"[counted over the facts where {cohort.predicate}]"
             )
 
+    if section.schema_facts:
+        lines += [
+            "",
+            "SCHEMA FACTS (what the dataset's contract declares — use the number as given):",
+        ]
+        for fact in section.schema_facts:
+            lines.append(
+                f"- {fact.label}: {canonical(fact.value)} {fact.unit} "
+                f"[{fact.call} declares: {', '.join(fact.metrics)}]"
+            )
+
     if section.derivations:
         lines += ["", "DERIVED FIGURES (computed by code from the figures above — use as given):"]
         for derivation in section.derivations:

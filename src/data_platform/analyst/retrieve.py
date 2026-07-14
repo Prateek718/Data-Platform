@@ -22,6 +22,7 @@ from data_platform.analyst.models import (
     Figure,
     QuerySpec,
     RefusalExhibit,
+    SchemaFact,
 )
 from data_platform.analyst.tools import AnalystTools, Payload
 
@@ -137,6 +138,27 @@ def fetch_series(
             )
         )
     return tuple(figures)
+
+
+def fetch_metric_count(tools: AnalystTools, *, id: str, label: str, table: str) -> SchemaFact:
+    """How many metrics a table declares — read from ``get_schema``, never asserted."""
+    payload = tools.get_schema(table)
+    metrics = payload.get("metrics")
+    if payload.get("refused") or not isinstance(metrics, list) or not metrics:
+        raise RetrievalError(f"{id}: get_schema({table!r}) served no metric list")
+
+    names = tuple(str(m["name"]) for m in metrics if isinstance(m, dict) and "name" in m)
+    if len(names) != len(metrics):
+        raise RetrievalError(f"{id}: the served schema has a metric without a name")
+    return SchemaFact(
+        id=id,
+        label=label,
+        value=Decimal(len(names)),
+        unit="metrics",
+        table=table,
+        call=f'get_schema(table="{table}")',
+        metrics=names,
+    )
 
 
 def fetch_cohort(

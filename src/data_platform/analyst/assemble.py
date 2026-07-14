@@ -32,6 +32,13 @@ from data_platform.analyst.models import (
 
 REPORT_TITLE = "MGNREGA, 2006-2026: what the record says"
 
+# From CITATION.cff: the author of the dataset and of this report, and the two DOIs Zenodo mints —
+# the VERSION doi points at this immutable v1.0.0 release (what a citation must pin), the CONCEPT
+# doi at the record across all its versions.
+AUTHOR = "Prateek"
+VERSION_DOI = "10.5281/zenodo.21318927"
+CONCEPT_DOI = "10.5281/zenodo.21318431"
+
 
 def build_report(sections: Sequence[VerifiedSection], *, generated_at: str) -> dict[str, object]:
     """The structured report artifact — the contract a viewer consumes."""
@@ -39,9 +46,11 @@ def build_report(sections: Sequence[VerifiedSection], *, generated_at: str) -> d
         "title": REPORT_TITLE,
         "generated_at": generated_at,
         "dataset": {
-            "name": "MGNREGA canonical series",
+            "name": "MGNREGA Canonical Series",
+            "author": AUTHOR,
             "version": "v1.0.0",
-            "doi": "10.5281/zenodo.21318431",
+            "doi": VERSION_DOI,
+            "concept_doi": CONCEPT_DOI,
             "served_by": "data_platform.mcp (read-only MCP server over the sealed dist/v1.0)",
         },
         "verification": {
@@ -74,6 +83,17 @@ def _section(section: VerifiedSection) -> dict[str, object]:
         "attempts": section.attempts,
         "figures": [_figure(f) for f in retrieved.figures],
         "cohorts": [_cohort(c) for c in retrieved.cohorts],
+        "schema_facts": [
+            {
+                "id": f.id,
+                "label": f.label,
+                "value": canonical(f.value),
+                "unit": f.unit,
+                "call": f.call,
+                "declares": list(f.metrics),
+            }
+            for f in retrieved.schema_facts
+        ],
         "derivations": [_derivation(d, retrieved) for d in retrieved.derivations],
         "refusals": [_refusal(r) for r in retrieved.refusals],
         # Verified exactly like the figures above, but never shown to the drafter: the charts are
@@ -157,9 +177,9 @@ def render_markdown(report: dict[str, object]) -> str:
     lines = [
         f"# {report['title']}",
         "",
-        f"*Generated {report['generated_at']} from the MGNREGA canonical series v1.0.0 "
-        f"(DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431)), served "
-        "read-only over MCP.*",
+        f"*Generated {report['generated_at']} from the MGNREGA Canonical Series v1.0.0 "
+        f"(DOI [{VERSION_DOI}](https://doi.org/{VERSION_DOI})) by {AUTHOR}, served read-only over "
+        "MCP.*",
         "",
         "> **Every number in this document was machine-verified against the served dataset.** The "
         "prose was written by a language model that could see the record only through the query "
@@ -278,12 +298,15 @@ def _how_to_cite(report: dict[str, object]) -> list[str]:
         "",
         "**To cite this report:**",
         "",
-        "> Data Platform (2026). *MGNREGA, 2006-2026: what the record says.* Generated from the "
-        "MGNREGA canonical series v1.0.0 (DOI: 10.5281/zenodo.21318431). "
-        "https://doi.org/10.5281/zenodo.21318431",
+        f"> {AUTHOR} (2026). *{REPORT_TITLE}.* Generated from the MGNREGA Canonical Series v1.0.0 "
+        f"[dataset], DOI [{VERSION_DOI}](https://doi.org/{VERSION_DOI}).",
         "",
-        "Cite the **dataset** for the figures and the **report** for the reading of them; both are "
-        "versioned, and the dataset is sealed.",
+        f"**To cite the dataset itself:** {AUTHOR} (2026). *MGNREGA Canonical Series* (v1.0.0) "
+        f"[dataset]. Zenodo. DOI [{VERSION_DOI}](https://doi.org/{VERSION_DOI}). That is the "
+        f"**version** DOI — it pins this immutable release, which is what a citation needs. The "
+        f"**concept** DOI [{CONCEPT_DOI}](https://doi.org/{CONCEPT_DOI}) resolves to the record "
+        "across all its versions. Cite the dataset for the figures and this report for the reading "
+        "of them.",
         "",
         "**To check any single number**, take its `fact_id` from the table beneath the section, "
         "start the query server (`PYTHONPATH=src uv run python -m data_platform.mcp`) and call "

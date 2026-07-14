@@ -29,6 +29,7 @@ from data_platform.analyst.models import (
     Derivation,
     Figure,
     RetrievedSection,
+    SchemaFact,
     VerificationReport,
     canonical,
 )
@@ -59,6 +60,9 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
 
     for cohort in (*section.cohorts, *section.series_cohorts):
         problems.extend(cohort_problems(cohort, tools))
+
+    for fact in section.schema_facts:
+        problems.extend(schema_problems(fact, tools))
 
     known = {figure.id: figure.value for figure in section.figures}
     known.update({cohort.id: cohort.value for cohort in section.cohorts})
@@ -164,6 +168,24 @@ def derivation_problems(
         return [
             f"{derivation.id}: declared value {canonical(derivation.value)} does not match "
             f"{derivation.operation} over its inputs, which gives {canonical(recomputed)}"
+        ]
+    return []
+
+
+def schema_problems(fact: SchemaFact, tools: AnalystTools) -> list[str]:
+    """Re-execute get_schema and recount: a declared denominator is checked like any figure."""
+    payload = tools.get_schema(fact.table)
+    metrics = payload.get("metrics")
+    if payload.get("refused") or not isinstance(metrics, list):
+        return [f"{fact.id}: get_schema({fact.table!r}) no longer serves a metric list"]
+
+    served = tuple(str(m["name"]) for m in metrics if isinstance(m, dict) and "name" in m)
+    if served != fact.metrics:
+        return [f"{fact.id}: the served schema declares different metrics than the report recorded"]
+    if Decimal(len(served)) != fact.value:
+        return [
+            f"{fact.id}: claims {canonical(fact.value)} metrics, but the served schema declares "
+            f"{len(served)}"
         ]
     return []
 
@@ -298,6 +320,8 @@ def _allowed_renderings(section: RetrievedSection) -> set[str]:
         allowed |= renderings(derivation.value)
     for cohort in section.cohorts:
         allowed |= renderings(cohort.value)
+    for fact in section.schema_facts:
+        allowed |= renderings(fact.value)
     for text in _served_and_briefed_text(section):
         allowed |= set(number_tokens(text))
     return allowed
@@ -324,6 +348,7 @@ def _served_and_briefed_text(section: RetrievedSection) -> list[str]:
     texts.extend(figure.label for figure in section.figures)
     texts.extend(derivation.label for derivation in section.derivations)
     texts.extend(cohort.label for cohort in section.cohorts)
+    texts.extend(fact.label for fact in section.schema_facts)
     for exhibit in section.refusals:
         texts.append(exhibit.call)
         texts.append(exhibit.label)
