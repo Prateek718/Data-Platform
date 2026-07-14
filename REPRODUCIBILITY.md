@@ -27,8 +27,9 @@ JSONL are unconditionally byte-identical.
 
 - **Python 3.12** (developed on 3.12.10).
 - **uv** for dependency management, with `uv.lock` pinning every version (developed on uv 0.11.23).
-- Core runtime deps are just `pydantic` + `httpx`; **`pyarrow`** (dev/export group) is required only
-  to write the `.parquet` files — CSV + `lineage.jsonl` are written without it.
+- Runtime deps (pinned in `uv.lock`): `pydantic` and `httpx` for the pipeline; `duckdb` + `mcp` for
+  the read-only serving layer; `langgraph` for the report analyst. **`pyarrow`** (dev group) is
+  required only to write the `.parquet` files — CSV + `lineage.jsonl` are written without it.
 
 ## Steps
 
@@ -63,9 +64,10 @@ currently lives only on the maintainer's machine. The maintainer chose **Option 
 archive snapshot is deposited alongside the code and outputs, so anyone can reproduce the series
 exactly and offline. The two options are recorded below for the deposit record.
 
-- **Total size: ~628 MB** — the API/JSON datasets (91 files), the file-only CSVs (41 files), and the
+- **Total size: ~628 MB** — the API/JSON datasets (88 files), the file-only CSVs (41 files), and the
   LGD geography reference.
-- The exported deliverables (`dist/v1.0/`) are ~70 MB (dominated by the ~58 MB `lineage.jsonl`).
+- The exported deliverables (`dist/v1.0/`) are ~66 MB (dominated by the ~56 MB `lineage.jsonl`); the
+  release zip that `data-platform-bootstrap` fetches is ~5 MB compressed.
 
 **Option A (recommended): include the frozen raw archive snapshot in the Zenodo deposit**, alongside
 the code and the outputs. Anyone can then reproduce the series exactly, offline, forever — the
