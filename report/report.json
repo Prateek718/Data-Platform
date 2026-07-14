@@ -1,10 +1,12 @@
 {
   "title": "MGNREGA, 2006-2026: what the record says",
-  "generated_at": "2026-07-14T08:05:07+00:00",
+  "generated_at": "2026-07-14T10:41:32+00:00",
   "dataset": {
-    "name": "MGNREGA canonical series",
+    "name": "MGNREGA Canonical Series",
+    "author": "Prateek",
     "version": "v1.0.0",
-    "doi": "10.5281/zenodo.21318431",
+    "doi": "10.5281/zenodo.21318927",
+    "concept_doi": "10.5281/zenodo.21318431",
     "served_by": "data_platform.mcp (read-only MCP server over the sealed dist/v1.0)"
   },
   "verification": {
@@ -18,7 +20,7 @@
     {
       "key": "abstract",
       "title": "Abstract",
-      "prose": "This document constitutes a reconciled, lineage-traced record of MGNREGA, India's rural employment guarantee scheme in force from 2006 until its repeal effective 30 June 2026, assembled from separately published government datasets on data.gov.in into one canonical annual series and read by an analyst solely through a governed query interface. At its peak in FY 2020-21, the scheme delivered 3.88 billion person-days of employment, a level corresponding to 4.29 times the activity of its first year, FY 2006-07. Among state-year cells, publishers materially disagree in 34 instances, and the record withholds 164 cells as partial-period-only instead of supplying estimates. Every numeric value in this account was machine-verified against the served data, and any figure that could not be verified was blocked from printing rather than conjectured.",
+      "prose": "This document is a reconciled, lineage-traced record of MGNREGA, India's rural employment guarantee, in force from FY 2006-07 until its repeal, assembled from many separately-published government datasets on data.gov.in into one canonical annual series and read by an analyst through a governed query interface. At its peak in FY 2020-21, the scheme generated 3.88 billion person-days, a scale 4.29 times that of its first year. Across the state annual series, publishers materially disagree in 34 state-year cells, and the record withholds 164 state-year cells as partial-period-only rather than guessing. Every number in this document was machine-verified against served data, and any figure that could not be verified was blocked rather than printed.",
       "attempts": 1,
       "figures": [
         {
@@ -503,6 +505,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "abstract_peak_billions",
@@ -542,7 +545,7 @@
     {
       "key": "introduction",
       "title": "Introduction",
-      "prose": "The Mahatma Gandhi National Rural Employment Guarantee Act, enacted in 2005, constituted India's rural employment guarantee and operated from financial year 2006-07 by granting rural households a legal right to a fixed annual quota of paid manual labour, with the state bound to supply that work on demand. Work performed under the scheme was tallied in person-days, defined as one day of labour by one person, while expenditure was recorded in rupees and participation in terms of households employed. The scheme was repealed with effect from 30 June 2026, rendering its documentary record closed so that no new statistics will be published for it. In the last complete financial year of 2025-26, it generated 2.21 billion person-days of employment.\n\nThis document is a reading of a reconciled dataset built from the multiple government datasets separately published on India's open-data portal, sources that diverge from one another on units, geographic boundaries, and even on the numerical values themselves. It is not an evaluation of the scheme's policy merits and it draws no causal conclusions, limiting itself to stating what the record contains, the confidence attached to those contents, and the points at which it declines to answer. The operational span of the record runs from 2006-07 through 2026-27, with 2025-26 as the final complete financial year and the partial concluding year represented only by the month of April 2026. No information about any programme that may have followed the repeal appears here, as the served data contains no such fact.\n\nThe record declines to answer for any period beyond the scheme's termination. The served reason for the absence of data from 2027-28 onward is \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\" No successor programme is described, because the dataset holds no such fact.",
+      "prose": "The Mahatma Gandhi National Rural Employment Guarantee Act, enacted in 2005, operated as India's rural employment guarantee from financial year 2006-07. Under its provisions, rural households held a legal right to a fixed annual quota of paid manual labour, with the state bound to supply that work on demand. Administrative measurement tracked effort in person-days, expenditure in rupees, and reach in households employed. The scheme was repealed with effect from 30 June 2026, rendering its archival record permanently closed.\n\nThis document is a reading of a reconciled dataset built from the multiple government publications on India's open-data portal, sources that diverge on units, geographic boundaries, and the numerical values themselves. It is not an assessment of the scheme's policy merits and it advances no causal claims, limiting itself to stating what the record contains, the confidence attached, and the points where it withholds answer. The covered span runs from financial year 2006-07 through financial year 2026-27, with 2025-26 standing as the last complete year and generating 2.21 billion person-days of work. The terminal financial year 2026-27 is incomplete, its available figure confined to April 2026.\n\nThe record refuses to supply information beyond the repeal horizon. When asked for figures from 2027-28 onward, it responds: \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\" No successor programme appears in the data, and this report therefore asserts nothing about any replacement.",
       "attempts": 1,
       "figures": [
         {
@@ -597,6 +600,7 @@
         }
       ],
       "cohorts": [],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "intro_last_billions",
@@ -631,7 +635,7 @@
     {
       "key": "methodology",
       "title": "Methodology",
-      "prose": "From fiscal year 2018-19 onward, the figures for the scheme come from the government's own district-level management information system, the primary production authority for the period it covers. Before that, the flagship system published nothing, so the years back to 2006-07 are carried by archived secondary sources, specifically statistical yearbooks and tables tabled in Parliament in answer to questions. The pre-2018 archived sources supply 76 national facts, while the district management information system supplies 72 national facts. The join between these two eras is a seam, and the report does not pretend otherwise.\n\nWhen two publishers of comparable standing disagree on the same cell, the record applies a documented rule and keeps the rejected value, its publisher, and the size of the gap in the lineage, so the disagreement is published rather than hidden. Where the primary district management information system disagrees with a figure tabled in Parliament for the same cell, the primary system stands and the divergence is recorded as a flagged note rather than adjudicated between peers. A disagreement is counted only if it clears a two-part materiality floor: it must be large in absolute terms and large relative to the value, ensuring that rounding noise is never reported as a conflict.\n\nWhere the compilation cannot honestly assert a value—because the only available reading covers part of a year, or an incomplete aggregate contradicts a complete one—the cell is left empty and carries the reason why, and an empty cell is never written as a zero. The record declined to provide state annual series for the entry \"2019\", stating: \"Malformed financial year '2019'. Expected exactly 'YYYY-YY', where the two-digit suffix is the start year plus one — e.g. '2018-19' for the year running April 2018 to March 2019.\"\n\nThe prose in this document was written by a language model, but the model never chose a number. Each figure was retrieved from the query server by code, with its provenance attached; figures the report combines, such as sums, ratios, and unit conversions, were computed by code and recomputed independently afterwards; and every number in the finished prose was checked back against the served data. A number that failed the check blocked its section from the report entirely. The model cannot query the data and cannot do arithmetic—it can only narrate what it was handed.",
+      "prose": "From FY 2018-19, the government's own district-level management information system acts as the primary production authority and contributes 72 national facts. Prior to that year, the same system published nothing, so the record carries 76 national facts from archived secondary sources, including statistical yearbooks and tables tabled in Parliament in answer to questions, for the years back to 2006-07. The transition between these two bodies of data is a seam that the report acknowledges rather than conceals.\n\nWhen two publishers of comparable standing report conflicting numbers for the same cell, the pipeline applies a documented rule and preserves the rejected value, its publisher, and the size of the gap within the lineage, so the disagreement stays published. Where the district-level management information system disagrees with a figure tabled in Parliament for the same cell, the primary system stands and the divergence is recorded as a flagged note rather than adjudicated between peers. A conflict is entered into the record only if it meets a two-part materiality floor, demanding both a large absolute difference and a large difference relative to the value, ensuring rounding noise is never reported as a conflict.\n\nCells where the only available reading covers part of a year, or where an incomplete aggregate contradicts a complete one, are left empty with the reason for omission attached, and such cells are never written as zero. The record also declines to answer a request for the state annual series filed under the year '2019', stating: \"Malformed financial year '2019'. Expected exactly 'YYYY-YY', where the two-digit suffix is the start year plus one — e.g. '2018-19' for the year running April 2018 to March 2019.\"\n\nThe prose of this report was written by a language model, but the model never selected a number. Each figure was retrieved from the query server by code with its provenance attached, and any combined figures such as sums or ratios were computed by code and recomputed independently afterward. Every number in the finished text was checked back against the served data, and any figure that failed the check blocked its section from the report entirely. The model cannot query the data or perform arithmetic; it can only narrate what it was handed.",
       "attempts": 1,
       "figures": [],
       "cohorts": [
@@ -864,6 +868,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [],
       "refusals": [
         {
@@ -883,7 +888,7 @@
     {
       "key": "national_series",
       "title": "The twenty-year record, 2006-07 to 2026-27",
-      "prose": "MGNREGA's national record opened in 2006-07 with 0.91 billion person-days generated across India. The scheme's peak year was 2020-21, when 3.88 billion person-days were generated, a volume 4.29 times that of the inaugural year. In that peak financial year, total expenditure stood at 1.1 lakh crore rupees and 75.5 million households were employed.\n\nThe final complete financial year before repeal was 2025-26, with 2.21 billion person-days generated. The series extends to a partial stub for 2026-27 covering April 2026 only, which recorded 12.91 million person-days; because the scheme was repealed effective 30 June 2026, this figure is not comparable to a full year and the canonical series closes with FY 2026-27 as a stub.\n\nThe national annual series is stitched from two distinct sourcing eras. A count of 76 national facts derives from the pre-2018 archive, drawing on archived publishers such as MoSPI and Rajya Sabha answers, while 72 national facts from FY 2018-19 onward are sourced from the flagship district MIS.\n\nThe record contains no data for financial years from 2027-28 onward. It states plainly: \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\"",
+      "prose": "MGNREGA's national record opens in financial year 2006-07 with 0.91 billion person-days generated under the scheme. Employment scaled to a peak in 2020-21, when 3.88 billion person-days were recorded, a level 4.29 times that of the first year. The final complete financial year, 2025-26, saw 2.21 billion person-days. In the peak year of 2020-21, total expenditure reached 1.1 lakh crore rupees and the scheme employed 75.5 million households.\n\nThe annual national series is assembled from two distinct sourcing eras. It draws on 76 facts from the pre-2018 archive classified as the historical era, and on 72 facts sourced from the flagship district management information system covering FY 2018-19 onward.\n\nFinancial year 2026-27 is not a full year but a stub limited to April 2026, reporting 12.91 million person-days that cannot be compared with complete-year totals; the scheme was repealed effective 30 June 2026, leaving 2025-26 as the last complete financial year. The record carries no figures from 2027-28 onward, and the data server states in response to such queries: \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\"",
       "attempts": 1,
       "figures": [
         {
@@ -1438,6 +1443,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "peak_over_first",
@@ -4743,7 +4749,7 @@
     {
       "key": "disagreements",
       "title": "Where the publishers disagree, and what the record does about it",
-      "prose": "The record separates pre-2018 cross-publisher material disagreements from flagship-era divergences between the primary district MIS and Parliament-tabled figures, and neither set is merged into a single count. Both sets passed the same two-part materiality floor, under which a disagreement is recognised only when it clears an absolute threshold and a relative threshold. The pre-2018 set comprises 9 state-year cells where MoSPI and Rajya Sabha parliamentary answers disagreed and a canonical value was adjudicated between the two sources of comparable standing. The flagship-era set comprises 25 state-year cells from FY 2018-19 onward where the primary district MIS and figures tabled in Parliament diverged, with the production authority's figure recorded as a flagged note rather than adjudicated between peers. Together these flagged cells number 34.\n\nOne such case is Telangana in FY 2016-17, where the record publishes a canonical total expenditure of 2,108.98 crore rupees, drawn from the Rajya Sabha figure after adjudication between the two archived publishers. This amount is the value the record settled on for that state-year cell, not the size of the gap between the publishers; the rejected MoSPI estimate is retained in lineage.\n\nOne such case is Lakshadweep in FY 2023-24, where the primary district MIS reported 3,510 person-days and that figure becomes the canonical value recorded as a flagged note. This count is the value the record publishes for the cell, not the size of the gap between the publishers; the Parliament-tabled figure stays in lineage. The authority rule assigns the production authority's figure as the published value while keeping the parliamentary figure visible rather than discarding it.\n\nThe separation of these two phenomena and the retention of rejected values in lineage mean the record exposes its disagreements instead of smoothing them away. In the pre-2018 set the reconciliation adjudicated between peers, whereas in the flagship-era set the divergence is noted under an authority hierarchy, but in both the underlying conflict remains inspectable. This approach constitutes a governance choice to show friction rather than hide it.",
+      "prose": "The record separates pre-2018 state-year cells where MoSPI and Rajya Sabha parliamentary answers materially disagreed from flagship-era state-year cells where the primary district MIS diverged from figures tabled in Parliament. The first set, adjudicated between sources of comparable standing under cross-source reconciliation, comprises 9 cells. The second set, recorded as flagged notes under the authority rule that favours the production authority for its covered period, comprises 25 cells. Both sets passed the same two-part materiality floor requiring a disagreement to clear an absolute and a relative threshold before being counted.\n\nOne such case is Telangana's total expenditure for FY 2016-17, for which the record publishes a canonical value of 2108.98 crore rupees drawn from the Rajya Sabha figure, not the size of the gap between publishers. The rejected MoSPI value remains in lineage, and the disagreement stays visible rather than smoothed away.\n\nOne such case is Lakshadweep's person-days generated in FY 2023-24, for which the record publishes a canonical value of 3,510 person-days from the primary district MIS, not the magnitude of divergence from the Parliament-tabled figure. The Parliament-tabled number is retained in lineage as a flagged note, reflecting the authority accorded to the primary district MIS for that period.\n\nAcross the two separately-counted phenomena, the record carries 34 flagged cells in total. This separation and retention of rejected values demonstrates that the scheme's archive surfaces its disagreements instead of concealing them.",
       "attempts": 1,
       "figures": [
         {
@@ -5077,6 +5083,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "all_flagged",
@@ -5148,7 +5155,7 @@
     {
       "key": "goa_spine",
       "title": "Goa, FY 2022-23: the spine reconciles, and the rate refuses to",
-      "prose": "In FY 2022-23, the Goa state series for MGNREGA records 94,004 person-days generated. North Goa accounted for 42,253 person-days and South Goa for 51,751 person-days within the same period. The addition of the two district totals aligns exactly with the state figure, and the difference between the state value and the district sum is 0 person-days.\n\nThe average wage rate per day is served only at district-annual grain, with North Goa at 383.78 rupees per day and South Goa at 330.93 rupees per day for that year. These rates are not additive quantities, so summing the district values would produce no meaningful result. The state series does not provide this rate; the recorded reason is \"Metric 'avg_wage_rate_per_day' is not available at this grain; it lives in district_flagship. Call get_schema for a table's metrics.\"\n\nThe record is annual-only. When asked for a monthly figure, it states: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\" No monthly or state-level wage rate appears in the dataset for Goa in FY 2022-23.",
+      "prose": "In FY 2022-23, the Goa state series records 94,004 person-days generated under the employment guarantee scheme. North Goa accounted for 42,253 person-days and South Goa for 51,751 person-days, and the difference between the state total and the sum of these two district figures is 0 person-days, confirming exact reconciliation at the district drill-down.\n\nThe average wage rate per day is a rate metric served only at district-annual grain, with North Goa at 383.78 rupees per day and South Goa at 330.93 rupees per day for the same year. Because it is not an additive count, combining the two district values into a single figure is not a meaningful operation, and the state series does not provide a wage rate aggregate.\n\nWhen queried for the wage rate at state grain, the data server responded: \"Metric 'avg_wage_rate_per_day' is not available at this grain; it lives in district_flagship. Call get_schema for a table's metrics.\" The record is annual-only, and a request for a monthly figure produced the statement: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\"",
       "attempts": 1,
       "figures": [
         {
@@ -5435,6 +5442,7 @@
         }
       ],
       "cohorts": [],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "district_sum_persondays",
@@ -5537,7 +5545,7 @@
     {
       "key": "wage_rate",
       "title": "The wage rate the record will not price by the month",
-      "prose": "The average wage rate per day under MGNREGA is recorded exclusively at district-annual resolution for financial years that ran to completion, and the record serves 5,645 such district-annual wage-rate facts covering FY 2018-19 through FY 2025-26. The same rate is not available aggregated to state level; the data server declines to answer at that grain, indicating the metric lives only at the district-annual resolution.\n\nFor FY 2026-27, the record contains zero wage-rate facts. The scheme was repealed effective 30 June 2026, leaving that year incomplete, and an unfinished financial year yields no annual rate; the record therefore withholds any part-year ratio rather than present it as a wage anyone earned.\n\nMonthly wage figures are refused outright. The server states: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\"\n\nA small number of financial-year-final rates remain implausibly high: 9 such rates exceed Rs 1,000 per day, and the highest is 3,582 INR recorded for Hooghly, West Bengal in FY 2023-24. These values are not observed wages; a plausible MGNREGA daily wage is an order of magnitude lower. They are data-quality artifacts of the source series, carried faithfully into the record with their lineage rather than quietly deleted, and a reader must not read them as amounts paid to workers.",
+      "prose": "The record supplies average wage rate per day only at the district-annual grain for completed financial years, serving 5,645 such facts from FY 2018-19 through FY 2025-26. It does not provide this wage metric at state grain, because the underlying data holds the figure exclusively within district-level records. The scheme’s wage rate is never priced by the month.\n\nFor FY 2026-27, the record contains 0 wage-rate facts. The scheme was repealed effective 30 June 2026, leaving that year incomplete, and an unfinished financial year yields no annual rate; the record therefore withholds any part-year ratio rather than presenting it as a wage.\n\nThe record declines to provide monthly wage figures. The data source states: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\"\n\nA small number of financial-year-final rates are implausibly high and must not be read as observed wages: 9 such rates exceed Rs 1,000 per day, and the highest is 3,582 INR in Hooghly, West Bengal for FY 2023-24. A plausible MGNREGA daily wage is an order of magnitude lower than these figures. These values are data-quality artifacts of the source series, carried faithfully into the record with their lineage rather than deleted, and a reader must not interpret them as amounts paid to any worker.",
       "attempts": 1,
       "figures": [
         {
@@ -11325,6 +11333,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [],
       "refusals": [
         {
@@ -11365,7 +11374,7 @@
     {
       "key": "coverage",
       "title": "What the record does not contain",
-      "prose": "The record treats a null cell as a datum carrying a reason rather than a missing zero. At state grain, 164 cells were withheld because the only reading was a mid-year partial, and 10 were withheld as unadjudicated where a structurally incomplete aggregate disagreed with a whole-geography peer. At national grain, 19 cells were withheld due to single-publisher divergence among a publisher's own vintages. Across all reasons the record contains 193 null cells. In FY 2017-18, 163 state cells were withheld as partial-period-only. The record declines to provide state-grain data before FY 2010-11; it returns: \"The state series starts at FY 2010-11; no state-grain data exists before it. The national series covers FY 2006-07 onward — query national_annual_series instead.\"\n\nThe national nulls withheld as single-publisher divergence all fall in four years: 6 in FY 2012-13, 4 in FY 2013-14, 7 in FY 2014-15, and 2 in FY 2015-16, with no such nulls in any other year. These nulls spread across seven of the eight metrics rather than concentrating in one. Households employed has 2 withheld cells, households completed 100 days has 3, persondays generated has 3, wages expenditure has 2, material skilled expenditure has 4, admin expenditure has 3, and total expenditure has 2. Active workers is the exception, with no national cells withheld as single-publisher divergence.\n\nThe national expenditure series does not begin with the scheme. Zero national total-expenditure facts exist in FY 2006-07 and FY 2007-08, while person-days and households are recorded from the first year; spending is absent, which is why the expenditure chart starts two years later than the person-days chart.\n\nActive workers is a metric absent rather than null, existing only from FY 2018-19 onward; in that first year, 33 state-grain facts for active workers are present. Anyone comparing workers across the full twenty years would be comparing a metric against its own absence.",
+      "prose": "The record treats a null cell as a datum carrying a reason rather than a gap coerced to zero. At state grain, 164 cells are withheld as partial-period-only because the only reading was an edition’s mid-year partial, and 10 are withheld as unadjudicated after a structurally incomplete aggregate materially disagreed with a whole-geography peer. At national grain, 19 cells are withheld as single-publisher divergence where one publisher’s own vintages disagree with no defensible order between them. All reasons together account for 193 null cells in the record.\n\nIn FY 2017-18, the year before the district system begins and the point where the record’s two sourcing eras meet, 163 state cells are withheld as partial-period-only. The record declines to supply state-grain observations before FY 2010-11, responding with the statement \"The state series starts at FY 2010-11; no state-grain data exists before it. The national series covers FY 2006-07 onward — query national_annual_series instead.\"\n\nThe national nulls fall only in FY 2012-13 (6 cells), FY 2013-14 (4 cells), FY 2014-15 (7 cells) and FY 2015-16 (2 cells), and there are no national nulls in any other year. These withheld cells are distributed across the 8 metrics that the national series carries rather than concentrated in one.\n\nAmong those metrics, households employed, wages expenditure and total expenditure each account for 2 withheld cells, while households completed 100 days, persondays generated and admin expenditure each account for 3, material skilled expenditure accounts for 4, and active workers is the one metric untouched, with no pre-2018 values to disagree about.\n\nThe national expenditure series does not open with the scheme, as the count of national total-expenditure facts in FY 2006-07 and FY 2007-08 is 0, whereas person-days and households are recorded from the first year; this is an absence of source data rather than a withheld value and explains why the expenditure chart starts two years later than the person-days chart. Active workers is a metric absent rather than null, existing only from FY 2018-19 onward, and the count of such facts at state grain in that first year is 33, so any comparison of workers across the full twenty years would set a metric against its own absence.",
       "attempts": 1,
       "figures": [],
       "cohorts": [
@@ -12508,6 +12517,25 @@
           ]
         }
       ],
+      "schema_facts": [
+        {
+          "id": "national_metric_count",
+          "label": "metrics the national series carries, as its schema declares them",
+          "value": "8",
+          "unit": "metrics",
+          "call": "get_schema(table=\"national_annual_series\")",
+          "declares": [
+            "households_employed",
+            "households_completed_100_days",
+            "active_workers",
+            "persondays_generated",
+            "wages_expenditure",
+            "material_skilled_expenditure",
+            "admin_expenditure",
+            "total_expenditure"
+          ]
+        }
+      ],
       "derivations": [
         {
           "id": "all_nulls",
@@ -13344,7 +13372,7 @@
     {
       "key": "districts",
       "title": "The district set is not a constant",
-      "prose": "In the flagship's first year FY 2018-19, 666 districts reported person-days under MGNREGA. By the last complete financial year FY 2025-26, the count of reporting districts stood at 738.\n\nThe difference between those counts is a net increase of 72 districts, representing additions minus any that stopped reporting rather than a tally of districts newly added. The record does not establish that no district ceased reporting across the interval. This rise in the number of reporting districts reflects existing districts dividing over time, not the incorporation of new territory.\n\nEach district person-days fact remains filed under the geography that existed in its own financial year and is never forward-mapped across a split. Redistributing an older district's value across its successor districts would require an allocation the source never published, which would be inventing data.\n\nThe record declines to supply district-level data before the flagship era. It states: \"The district drill-down starts at FY 2018-19 (the flagship era); no district-level data exists before it. Use the state or national series for earlier years.\"",
+      "prose": "The number of districts reporting person-days under the flagship component was not constant across the scheme's life. In the flagship's first year, FY 2018-19, 666 districts reported person-days. By the last complete financial year, FY 2025-26, 738 districts reported. The net increase of 72 districts between those years comprises additions minus any that stopped reporting; the record does not state that no districts ceased reporting, so the figure is a net change rather than a count of districts added.\n\nUnder the scheme's data practices, each district person-days fact remains filed under the geography that existed in its own financial year and is never forward-mapped across a subsequent split. Redistributing an earlier district's value across its successors would require an allocation the source never published, which would amount to inventing data. Consequently, the district count observed in any year reflects the administrative map operative in that year.\n\nThe growth in reporting districts is consistent with existing districts dividing rather than territory being added, though the record does not establish the cause of the rise. It documents only the larger count at the later date without linking the change to specific boundary events.\n\nThe record declines to supply district-level figures before the flagship era. In its own words, \"The district drill-down starts at FY 2018-19 (the flagship era); no district-level data exists before it. Use the state or national series for earlier years.\" No district counts preceding FY 2018-19 can therefore be drawn from this series.",
       "attempts": 1,
       "figures": [],
       "cohorts": [
@@ -14807,6 +14835,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [
         {
           "id": "districts_net_increase",
@@ -22932,10 +22961,11 @@
     {
       "key": "refusals",
       "title": "What this record refuses to answer",
-      "prose": "MGNREGA's historical record is sealed after the scheme's repeal, and it does not offer any data on or after the financial year 2027-28 because the canonical series terminates at FY 2026-27. The record declares: \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\" This refusal protects the boundary of a closed archive from silent extension. The same record refuses to break its annual grain by serving monthly figures, since doing so would present cumulative year-to-date ratios as if they were valid monthly rates. It states: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\" That constraint shields users from mistaking partial-period averages for true monthly wages.\n\nThe record also declines to provide the average wage rate at state grain, because that metric is defined only at the district flagship level and does not sum upward. It states: \"Metric 'avg_wage_rate_per_day' is not available at this grain; it lives in district_flagship. Call get_schema for a table's metrics.\" This protects the consistency of aggregation across administrative levels. Likewise, no district-level data exists before the flagship era, and the drill-down opens only at FY 2018-19. The record says: \"The district drill-down starts at FY 2018-19 (the flagship era); no district-level data exists before it. Use the state or national series for earlier years.\" That refusal prevents the appearance of a sub-national series where none was compiled.\n\nA malformed financial-year label is rejected rather than compared, because such labels are treated as strings and a malformed one would otherwise yield a wrong answer without error. The record responds: \"Malformed financial year '2019'. Expected exactly 'YYYY-YY', where the two-digit suffix is the start year plus one — e.g. '2018-19' for the year running April 2018 to March 2019.\" This protects the query interface from silent mismatches. An unknown geography meets a similar guard, with the record refusing to guess a state that does not exist. It answers: \"Unknown state 'Atlantis' (give an LGD code or current LGD name).\" That refusal blocks fabrication of places outside the recognised catalogue.\n\nFinally, the lineage table is not reachable through the general query verb, as provenance is served per fact rather than as a queryable table. The record instructs: \"The lineage table is not queryable via query(); it is per-fact provenance. Use get_lineage(fact_id) instead.\" This directs researchers to the correct verb for tracing each fact's origin, ensuring that refusals themselves are explicit about where to turn instead of failing silently.",
+      "prose": "The closed historical record of MGNREGA refuses any request for data on or after the financial year 2027-28, protecting the sealed series from extension beyond its repeal. The scheme was repealed effective 30 June 2026, and the canonical series ends at FY 2026-27. The record's answer is: \"No data on or after 2027-28: MGNREGA was repealed effective 30 June 2026, so the canonical series ends at FY 2026-27 and this is a closed historical record.\"\n\nA request for a monthly figure is declined because the series is annual-grain only, and the wage rate is published solely as a financial-year-final annual value at district-annual grain. The record says: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\" A query for the average wage rate at state grain is likewise refused, since that metric resides in the district drill-down rather than the state table. The reason given is: \"Metric 'avg_wage_rate_per_day' is not available at this grain; it lives in district_flagship. Call get_schema for a table's metrics.\" These refusals protect against treating a non-additive rate as if it were comparable across grains.\n\nDistrict-level data before the flagship era is not supplied, because the district drill-down begins at FY 2018-19 and no finer geography exists earlier. The record instructs: \"The district drill-down starts at FY 2018-19 (the flagship era); no district-level data exists before it. Use the state or national series for earlier years.\" A malformed financial-year label is rejected rather than silently compared as a string that would yield a wrong answer. The refusal reads: \"Malformed financial year '2019'. Expected exactly 'YYYY-YY', where the two-digit suffix is the start year plus one — e.g. '2018-19' for the year running April 2018 to March 2019.\" An unknown geography is not guessed but refused with a pointer to valid identifiers. The stated reason is: \"Unknown state 'Atlantis' (give an LGD code or current LGD name).\" Each of these protects the record from invalid keys and from false drill-downs.\n\nThe lineage table cannot be retrieved through the analytical query verb, and the record redirects to the provenance-specific call. It answers: \"The lineage table is not queryable via query(); it is per-fact provenance. Use get_lineage(fact_id) instead.\" This preserves lineage as per-fact provenance rather than a queryable table.",
       "attempts": 1,
       "figures": [],
       "cohorts": [],
+      "schema_facts": [],
       "derivations": [],
       "refusals": [
         {
@@ -23070,7 +23100,7 @@
     {
       "key": "limitations",
       "title": "Limitations",
-      "prose": "The record provides only annual figures at all geographic levels. When asked for a monthly figure, the data server returned: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\" Because the monthly values served are cumulative year-to-date ratios rather than valid monthly rates, any such reading would be incorrect. Consequently, numbers derived from those columns in other sources cannot be reproduced or checked here, and this document does not repeat them.\n\nFY 2017-18, the year before the district system begins, is the record's weakest year. In that year, the count of withheld cells is 163. Comparisons that straddle this seam year should be made with caution.\n\nThe annual figures retain defects from the source series in the form of implausible wage rates. There are 9 district-year wage rates above Rs 1,000 a day, which are source artifacts and not wages paid to workers. The highest among them is 3,582 INR, recorded in Hooghly, West Bengal, in FY 2023-24. They are carried in the record with their provenance so that a reader can identify and discount them.\n\nActive workers is reported only from FY 2018-19 onward. In that first year, the count of active-workers facts at state grain is 33. Any comparison across the full scheme span would set this metric against its own absence before 2018.",
+      "prose": "The record does not provide monthly figures at any level of geography, and it declines to answer such queries. It states: \"The series is annual-grain only; monthly figures are not served. In particular, monthly avg_wage_rate_per_day values are cumulative year-to-date ratios, not valid monthly rates — the wage rate is published only as the financial-year-final annual value at district-annual grain. Remove 'month' to query the annual series.\" Consequently, figures that circulate elsewhere and are derived from those monthly columns cannot be reproduced or checked here, and this document does not repeat them.\n\nIn FY 2017-18 the record withholds 163 cells, marking this year as a weak point in the series where comparisons that straddle it should be made with care. The withheld entries appear in the state annual series for that financial year.\n\nThe record carries 9 district-year wage rates above Rs 1,000 a day, the highest being 3,582 INR in Hooghly, West Bengal, for FY 2023-24. These values are not wages paid to workers but defects of the source series, carried into the record faithfully with their provenance rather than quietly deleted so that a reader can see and discount them.\n\nThe active workers metric is reported only from FY 2018-19 onward, with 33 active-workers facts at state grain in that first year. Comparing this metric across the full span of the scheme would compare a measure against its own absence before that point.",
       "attempts": 1,
       "figures": [
         {
@@ -23424,6 +23454,7 @@
           ]
         }
       ],
+      "schema_facts": [],
       "derivations": [],
       "refusals": [
         {
