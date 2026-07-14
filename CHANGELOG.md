@@ -6,6 +6,17 @@ Notable changes to the MGNREGA Canonical Series. Format loosely follows
 ## [Unreleased]
 
 ### Added
+- **Packaging & deployment (code only).** The project installs itself (src layout, hatchling), so
+  four console commands are on `PATH` — `data-platform-mcp`, `data-platform-analyst`,
+  `data-platform-export`, `data-platform-bootstrap` — and nothing needs a `PYTHONPATH=src` prefix.
+  A fresh clone has **no data** (`dist/` is gitignored), so `data-platform-bootstrap` fetches the
+  sealed v1.0.0 release and verifies it twice: the zip against the SHA-256 the release published,
+  then the seven extracted files against the manifest the server enforces at startup. The install is
+  atomic — staged inside `dist/` on the same filesystem, moved into place only after both layers
+  pass — so a failure leaves no half-populated dataset and never damages a working one. A
+  `Dockerfile` (pinned base, non-root, no dataset baked in by default) and `compose.yaml` run the
+  MCP server over stdio (`docker run -i`), with the analyst as a one-shot job that takes its API key
+  from the environment. CI builds the image (build only; no registry push, no deploy).
 - **MCP server (code only).** A read-only [MCP](https://modelcontextprotocol.io) serving layer over
   the sealed v1.0.0 release artifacts (`src/data_platform/mcp/`), started with
   `PYTHONPATH=src uv run python -m data_platform.mcp`. At startup it verifies every `dist/v1.0/` file

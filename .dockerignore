@@ -1,0 +1,8 @@
+# The image gets the code and the lockfile — nothing else. The dataset is fetched at start (or
+# baked with --build-arg BAKE_DATASET=1), never copied from the developer's working tree, so an
+# image can never carry an unverified dist.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!src/

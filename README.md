@@ -17,7 +17,7 @@ December 2025 — so this is built as a concluded, citable reference record rath
 
 ## What you get
 
-Running the export (`PYTHONPATH=src uv run python -m data_platform.export`) produces, under
+Running the export (`data-platform-export`) produces, under
 `dist/v1.0/`:
 
 | File | What it is |
@@ -106,10 +106,16 @@ from the published release zip) and **refuses to start** on any mismatch or miss
 them into an in-memory DuckDB, opens no network connection, and exposes no mutation verb — the
 record is sealed (MGNREGA was repealed 30 June 2026).
 
-Run it over stdio from the repo root:
+**A fresh clone has no data.** `dist/` is gitignored: the dataset lives in the
+[v1.0.0 release](https://github.com/Prateek718/Data-Platform/releases/tag/v1.0.0). Fetch it once —
+the download is verified against the SHA-256 the release published, then the seven extracted files
+are verified against the manifest the server itself enforces at startup, and the install is
+atomic (a failure leaves no half-populated `dist/`, and never damages one that already works):
 
 ```bash
-PYTHONPATH=src uv run python -m data_platform.mcp
+uv sync                    # installs the project + its console commands
+data-platform-bootstrap    # ~5 MB; downloads, verifies twice, installs to dist/v1.0
+data-platform-mcp          # the server, over stdio
 ```
 
 Claude Desktop config (`claude_desktop_config.json`):
@@ -119,12 +125,47 @@ Claude Desktop config (`claude_desktop_config.json`):
   "mcpServers": {
     "mgnrega-canonical-series": {
       "command": "uv",
-      "args": ["run", "python", "-m", "data_platform.mcp"],
-      "cwd": "/path/to/Data-Platform",
-      "env": { "PYTHONPATH": "src" }
+      "args": ["run", "data-platform-mcp"],
+      "cwd": "/path/to/Data-Platform"
     }
   }
 }
+```
+
+### Or run it as a container
+
+The server is a stdio MCP server, and a container does not change that: `docker run -i` connects the
+client's pipes straight to the process's, so a client spawns the container exactly as it would spawn
+the local command. No port is opened and no HTTP transport is added.
+
+```bash
+docker build -t data-platform .
+docker run -i --rm -v dp-dataset:/data data-platform     # fetches + verifies the dataset on first run
+```
+
+The dataset is **not baked into the image**: it is fetched into the mounted volume at container
+start and verified twice on the way in, so an image can never carry an unverified dataset. For an
+offline image, bake it: `docker build --build-arg BAKE_DATASET=1 -t data-platform .`
+
+Claude Desktop, against the container:
+
+```json
+{
+  "mcpServers": {
+    "mgnrega-canonical-series": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "dp-dataset:/data", "data-platform"]
+    }
+  }
+}
+```
+
+`docker compose` wires the same thing with a named volume — `docker compose run --rm -T mcp` for the
+server, and the analyst as a one-shot job that takes its API key from the environment (never from
+the image):
+
+```bash
+OPENROUTER_API_KEY=... docker compose run --rm analyst
 ```
 
 **Tools:**
@@ -196,7 +237,7 @@ export OPENROUTER_MODEL=tencent/hy3:free                       # optional; free-
 export OPENROUTER_BASE_URL=https://openrouter.ai/api/v1        # optional; any compatible endpoint
 export OPENROUTER_MAX_TOKENS=12000                             # optional; reasoning models need headroom
 
-PYTHONPATH=src uv run python -m data_platform.analyst           # writes report/report.{json,md}
+data-platform-analyst                                          # writes report/report.{json,md}
 ```
 
 This is the only path in the repo that calls a live model. The test suite never does: it drives the
@@ -245,8 +286,14 @@ raw archive.
 ```bash
 uv sync                                   # install (pinned via uv.lock)
 uv run ruff check . && uv run mypy src tests && uv run pytest   # gate: lint, types, tests
-PYTHONPATH=src uv run python -m data_platform.export   # regenerate dist/v1.0/ from data/archive/
+data-platform-export                      # regenerate dist/v1.0/ from data/archive/
 ```
+
+*(The reproduce line inside [report/report.md](report/report.md) still shows the older
+`PYTHONPATH=src uv run python -m data_platform.analyst` form. That is not an oversight: the report is
+a **generated, verified artifact** of the sealed v1.0 dataset, and editing its text by hand would
+break the guarantee that every word of it came out of a checked pipeline. Both commands do the same
+thing; the packaged one is the current form.)*
 
 ## How to cite
 
