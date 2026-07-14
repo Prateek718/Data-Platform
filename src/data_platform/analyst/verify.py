@@ -41,6 +41,11 @@ FY_LABEL: Final = re.compile(r"\b[0-9]{4}-[0-9]{2}\b")
 # period is PUNCTUATION, not part of the number — "300,000, and" must read as the figure 300,000.
 NUMBER: Final = re.compile(r"(?<![\w.])[0-9](?:[0-9,]*[0-9])?(?:\.[0-9]+)?")
 
+# A double-quoted span in the prose. Quotation marks are a CLAIM — "the server said this" — so a
+# long quoted span must be verbatim. Short spans (a metric name, a label) are not attributions.
+MIN_QUOTATION: Final = 40
+QUOTATION: Final = re.compile(rf"[\u201c\"]([^\u201c\u201d\"]{{{MIN_QUOTATION},}})[\u201d\"]")
+
 
 def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> VerificationReport:
     """Check every numeric claim in ``prose`` against the section's evidence and the served data."""
@@ -77,6 +82,8 @@ def verify(section: RetrievedSection, prose: str, tools: AnalystTools) -> Verifi
                 f"the prose cites financial year {label}, which this section never retrieved "
                 f"(retrieved: {', '.join(sorted(periods))})"
             )
+
+    problems.extend(quotation_problems(prose, section))
 
     allowed = _allowed_renderings(section)
     for token in number_tokens(claims):
@@ -228,6 +235,25 @@ def replay_problems(figure: Figure, tools: AnalystTools) -> list[str]:
             f"{canonical(figure.value)}"
         ]
     return []
+
+
+def quotation_problems(prose: str, section: RetrievedSection) -> list[str]:
+    """A long quoted span must be text the server or the brief actually contains, word for word.
+
+    Putting words in quotation marks attributes them to the source. The drafter may paraphrase the
+    server freely — but not inside quotes: a reworded "quotation" of a refusal is a forgery even
+    when every number in it is right.
+    """
+    served = _served_and_briefed_text(section)
+    problems: list[str] = []
+    for quoted in QUOTATION.findall(prose):
+        text = quoted.strip()
+        if not any(text in candidate for candidate in served):
+            problems.append(
+                f"the prose puts this in quotation marks, but the server never said it: {text!r}. "
+                "Quote the reason verbatim, or paraphrase it without quotation marks."
+            )
+    return problems
 
 
 def _strip_quoted_exhibits(prose: str, section: RetrievedSection) -> str:

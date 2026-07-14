@@ -72,6 +72,9 @@ server's reason once.
 - Never state the same figure twice in a paragraph, and do not restate a number you have already \
 given in the section.
 - Do not print figure ids, fact ids, table names, or column names.
+- QUOTATION MARKS ARE A CLAIM. If you put the server's reason in quotes, reproduce it WORD FOR \
+WORD, exactly as given. If you want to shorten or reword it, do so WITHOUT quotation marks. A \
+reworded "quotation" is checked and will block the section.
 - No throat-clearing ("This section will..."), no summarising your own instructions.
 - Every sentence must carry a fact. Delete any sentence that only restates what the previous ones \
 already said ("This joint foundation supports the counts that make up the scheme's lifespan").

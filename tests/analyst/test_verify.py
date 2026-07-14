@@ -233,3 +233,31 @@ def test_a_source_with_no_resource_id_is_not_provenance(
         section.figures[0], lineage={**section.figures[0].lineage, "sources": nameless}
     )
     assert "resource_id" in " ".join(verify.lineage_problems(figure))
+
+
+def test_a_quotation_must_be_verbatim(section: RetrievedSection, tools: DirectTools) -> None:
+    """Quotation marks are a claim: "the server said this". A paraphrase inside them is a forgery.
+
+    Caught in the full run: the drafter wrote the refusal's reason inside quotes but reworded it
+    ("Remove the month parameter" for "Remove 'month' to query the annual series"). No number
+    changed, so every other check passed — and the report would have attributed words to the server
+    that it never said.
+    """
+    reason = section.refusals[0].payload["reason"]
+    assert isinstance(reason, str)
+
+    verbatim = f'The record says: "{reason}" The state generated 1,000,000 person-days.'
+    assert verify.verify(section, verbatim, tools).ok
+
+    reworded = reason.replace("annual-grain only", "yearly only")
+    report = verify.verify(section, f'The record says: "{reworded}"', tools)
+    assert not report.ok
+    assert "quotation" in report.render().lower()
+
+
+def test_a_short_quoted_phrase_is_not_a_quotation(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """Quoting a label or a name is not attributing a sentence to the server."""
+    prose = 'The metric "avg_wage_rate_per_day" is a rate. The state generated 1,000,000.'
+    assert verify.verify(section, prose, tools).ok
