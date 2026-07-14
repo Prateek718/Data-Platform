@@ -209,3 +209,27 @@ def test_an_invented_number_still_blocks_even_with_a_brief_and_refusals(
     report = verify.verify(section, "The state generated 1,400,000 person-days.", tools)
     assert not report.ok
     assert "1,400,000" in report.render()
+
+
+def test_a_source_the_publisher_never_dated_is_still_provenance(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    """The archived MoSPI tables carrying the early years were published with no date at all.
+
+    Provenance must EXIST and be accurate — the resource must be nameable, so a reader can go and
+    look. Demanding an as-of date the publisher never gave would drop the pre-2018 years out of the
+    record. The absence is recorded (as_of: null), not treated as a failure.
+    """
+    undated = [{"source_id": "SRC_MOSPI", "resource_id": "7496d75d", "as_of": None}]
+    figure = replace(section.figures[0], lineage={**section.figures[0].lineage, "sources": undated})
+    assert verify.lineage_problems(figure) == []
+
+
+def test_a_source_with_no_resource_id_is_not_provenance(
+    section: RetrievedSection, tools: DirectTools
+) -> None:
+    nameless = [{"source_id": "SRC_MOSPI", "resource_id": None, "as_of": "2021-03-23"}]
+    figure = replace(
+        section.figures[0], lineage={**section.figures[0].lineage, "sources": nameless}
+    )
+    assert "resource_id" in " ".join(verify.lineage_problems(figure))

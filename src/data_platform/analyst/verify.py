@@ -109,25 +109,25 @@ def renderings(value: Decimal) -> set[str]:
 def lineage_problems(figure: Figure) -> list[str]:
     """Complaints about a figure's provenance — empty when it carries a usable lineage reference.
 
-    Every source must name the resource it came from, and at least one must be dated. (Not every
-    source can be: several archived MOSPI vintages carry no publication date at all, and demanding
-    one from each would reject facts whose provenance is otherwise complete.)
+    A figure must name every source it came from, and every source must name the resource it came
+    from: without that, a reader cannot go and look.
+
+    An as-of date is NOT required. Several archived pre-2018 sources — the MoSPI tables carrying the
+    early years — were published with no date at all (e.g. the FY 2010-11 national expenditure fact
+    rests on three MoSPI resources, none of them dated). Demanding a date the publisher never gave
+    would reject facts whose provenance is otherwise complete, and would quietly drop the early
+    years out of the record. The absence is recorded instead: the lineage carries ``as_of: null``,
+    and it is visible in the report's figure tables.
     """
     sources = figure.sources
     if not sources:
-        problems = [f"{figure.id}: no lineage reference — a figure without provenance cannot ship"]
-        return problems
+        return [f"{figure.id}: no lineage reference — a figure without provenance cannot ship"]
 
-    problems = []
-    undated = [s for s in sources if not s.get("as_of")]
-    if len(undated) == len(sources):
-        problems.append(f"{figure.id}: no lineage source carries an as-of date")
-    for source in sources:
-        if not source.get("resource_id"):
-            problems.append(
-                f"{figure.id}: lineage source {source.get('source_id')!r} names no resource_id"
-            )
-    return problems
+    return [
+        f"{figure.id}: lineage source {source.get('source_id')!r} names no resource_id"
+        for source in sources
+        if not source.get("resource_id")
+    ]
 
 
 def derivation_problems(
