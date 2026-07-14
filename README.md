@@ -143,6 +143,65 @@ geography — return a **structured refusal** (`{refused, code, reason}`), never
 is distinct from a **null data cell**, which is returned as data with its reason (queryable via
 `get_lineage`).
 
+## The analyst and its report
+
+[`report/report.md`](report/report.md) is a researcher-grade document — abstract, introduction,
+methodology, findings, limitations — written by an AI analyst that can only see this dataset through
+the MCP server above. It has no other access to the data, and no ability to compute.
+[`report/report.json`](report/report.json) is the same report as a structured artifact: every figure
+is a typed object carrying its value, unit, metric, geography, period, `fact_id`, the exact query
+that produced it, and its **full lineage payload** (each source, its data.gov.in resource id, and
+its as-of date), captured at generation time from the checksum-verified release artifacts.
+
+The [charts](report/charts) are drawn by code from `report.json` — never from the dataset — so a
+chart cannot plot a number the report did not verify, and each one's manifest entry names the exact
+figure ids behind every point. Two consequences of that discipline are visible in them: the
+person-days line **breaks** across FY 2012-13 to 2014-15 rather than interpolating over three years
+the record withholds, and FY 2026-27 (which holds April 2026 alone) is **omitted** from every chart
+rather than drawn as a collapse that never happened. Both are stated in the captions and reported in
+the prose.
+
+**How the no-bluffing guarantee works.** The model writes prose; it never chooses a number. The
+pipeline around it is deterministic:
+
+1. **Retrieve** — code queries the server for each figure a section needs and pulls its lineage in
+   the same breath. A figure with no provenance never reaches the model.
+2. **Derive** — ratios, sums and differences are computed *by code* in exact decimal, over input
+   facts listed by id. Counts ("193 null cells") record every member `fact_id` and a named,
+   replayable filter.
+3. **Draft** — the model is handed those figures and *nothing else*, and told every number it writes
+   must be one of them, copied exactly.
+4. **Verify** — deterministic, no model involved. Every number in the prose must be a declared
+   figure or derivation, spelled exactly as served: **undeclared rounding is rejected** ("roughly
+   1.0 million" is not `1,000,000`; readable forms like "3.88 billion" are *declared* derivations
+   the verifier recomputes). Every derivation is recomputed from its declared inputs. Every backing
+   query is re-executed against the served data. A figure without a lineage reference blocks the
+   section. And a long span in quotation marks must be **verbatim** — the model may paraphrase the
+   server, but not inside quotes: a reworded "quotation" is a forgery even when every number in it
+   is right.
+5. **Loop or fail** — a section that fails goes back to the model with the verifier's complaints
+   attached, and after a bounded number of attempts the run **fails loudly and writes nothing**. A
+   model that bluffs produces no report, never a wrong one.
+
+Any figure's trace can be re-derived independently — run the MCP server and call
+`get_lineage(fact_id)`. Because the record is sealed, a live lookup cannot return anything different
+from the embedded copy.
+
+**Regenerating it** needs any OpenAI-compatible chat-completions endpoint — there is no dependency
+on a specific vendor, and no Anthropic account is required:
+
+```bash
+export OPENROUTER_API_KEY=...                                  # required
+export OPENROUTER_MODEL=tencent/hy3:free                       # optional; free-model ids churn
+export OPENROUTER_BASE_URL=https://openrouter.ai/api/v1        # optional; any compatible endpoint
+export OPENROUTER_MAX_TOKENS=12000                             # optional; reasoning models need headroom
+
+PYTHONPATH=src uv run python -m data_platform.analyst           # writes report/report.{json,md}
+```
+
+This is the only path in the repo that calls a live model. The test suite never does: it drives the
+graph with scripted fakes — including one that lies about a number, to prove the verifier blocks it.
+
 ## Honest limitations
 
 - FY 2006-07 → 2009-10 exists only in the **national** spine — no state-level source reaches before

@@ -7,7 +7,7 @@ import json
 import pytest
 
 from data_platform.mcp import loader
-from tests.mcp.conftest import SyntheticDist
+from tests.conftest import SyntheticDist
 
 
 def _load(sd: SyntheticDist) -> loader.Dataset:

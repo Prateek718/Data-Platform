@@ -1,4 +1,4 @@
-# Data Platform — RULES.md — Stage 2 (Normalization), Stage 3 (Entity Resolution) & Stage 4 (Metric Harmonization)
+# Data Platform — RULES.md — Stage 2 (Normalization), Stage 3 (Entity Resolution), Stage 4 (Metric Harmonization) & Stage 7 (Serving)
 
 > **Data Platform** — A governed data layer that fuses multiple public sources into one
 > contracted, lineage-tracked dataset, served over MCP for AI agents to query.
@@ -236,6 +236,27 @@ as an edition family before ordinary adjudication.
   upstream by Stage 2 cleanup (R2-FMT-01 / R2-TYPE-01) — or carrying an impossible value
   (negative expenditure, persondays > active_workers × days_in_period), is quarantined with
   a typed reason and excluded from the golden store — but remains queryable as quarantined.
+
+---
+
+## STAGE 7 — SERVING & INTERFACE CONTRACTS
+
+Goal: the contracts the read-only query surface owes its consumers. Rules here govern what enters
+the system through an interface boundary (API input parsing) and what the surface may assert.
+
+### Ordinal string fields
+
+- **R7-SRV-01 (lexicographic-proxy fields validate ASCII well-formedness at the boundary)**: any
+  string field that is compared lexicographically as a proxy for chronological or ordinal
+  comparison — financial-year labels (`YYYY-YY`), as-of dates, edition labels — MUST validate ASCII
+  well-formedness at the boundary where it enters the system (ingestion, API input parsing).
+  Lexicographic order on such a field is only chronologically correct for well-formed ASCII values;
+  a malformed value silently produces a wrong comparison instead of an error. Validate the format
+  BEFORE any comparison, and reject a malformed value explicitly (a structured refusal at the API
+  boundary, a quarantine/flag at ingestion) — never let it reach the comparison.
+  - Beware Unicode digit classes: a regex `\d` matches Unicode decimal digits and `int()` parses
+    them, so a fullwidth year ("２０１８-19") passes a naive well-formedness check and then sorts as
+    garbage. Anchor digit patterns to `[0-9]`.
 
 ---
 

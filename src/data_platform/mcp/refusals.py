@@ -47,6 +47,15 @@ class Refusal:
         return payload
 
 
+def as_payload(result: dict[str, object] | Refusal) -> dict[str, object]:
+    """Serialize a core result for a caller: a refusal becomes its dict, a result passes through.
+
+    One serialization path, shared by the MCP protocol adapter and the analyst's in-process tool
+    backend, so both hand callers the same payload shape.
+    """
+    return result.to_dict() if isinstance(result, Refusal) else result
+
+
 def unknown_table(table: str, valid_tables: tuple[str, ...]) -> Refusal:
     return Refusal(
         code=UNKNOWN_TABLE,

@@ -8,7 +8,7 @@ import pytest
 
 from data_platform.mcp import loader, query, refusals
 from data_platform.mcp.query import query as run_query
-from tests.mcp.conftest import SyntheticDist
+from tests.conftest import SyntheticDist
 
 
 def _load(sd: SyntheticDist) -> loader.Dataset:

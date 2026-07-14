@@ -16,7 +16,7 @@ from mcp.types import TextContent
 
 from data_platform.mcp import loader
 from data_platform.mcp.server import build_server
-from tests.mcp.conftest import SyntheticDist
+from tests.conftest import SyntheticDist
 
 
 def _server(sd: SyntheticDist) -> FastMCP:
