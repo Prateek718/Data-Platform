@@ -11,10 +11,13 @@ Employment Guarantee Act scheme, India's rural employment guarantee — assemble
 separately-published government datasets on [data.gov.in](https://data.gov.in) into one canonical
 series covering **FY 2006-07 → FY 2026-27**. Where those sources disagree, the disagreement is
 adjudicated by a defensible, source-grounded rule or published as a first-class output with full
-lineage — never silently smoothed away. MGNREGA was **repealed effective 30 June 2026**, so this is
-built as a concluded, citable reference record rather than a live feed. (A successor programme was
-legislated; that is context from outside this record — the dataset holds no fact about it, and
-nothing here depends on it.)
+lineage — never silently smoothed away. **MGNREGA's last day in force was 30 June 2026** — the date
+the served record itself states — and it stands repealed from 1 July 2026, when the Viksit Bharat –
+Guarantee for Rozgar and Ajeevika Mission (Gramin) Act, 2025, passed by Parliament in December 2025,
+commenced ([PIB, Government of India](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2259691)).
+The successor programme is context from outside this record: the dataset holds no fact about it, and
+nothing here depends on it. This is therefore built as a concluded, citable reference record rather
+than a live feed.
 
 **Start with the report.** [**`report/report.md`**](report/report.md) is a researcher-grade reading of
 the whole record — twenty years, what it shows, where the publishers disagree, and what it refuses to
