@@ -145,12 +145,21 @@ is distinct from a **null data cell**, which is returned as data with its reason
 
 ## The analyst and its report
 
-[`report/report.md`](report/report.md) is written by an AI analyst that can only see this dataset
-through the MCP server above — it has no other access to the data, and no ability to compute.
+[`report/report.md`](report/report.md) is a researcher-grade document — abstract, introduction,
+methodology, findings, limitations — written by an AI analyst that can only see this dataset through
+the MCP server above. It has no other access to the data, and no ability to compute.
 [`report/report.json`](report/report.json) is the same report as a structured artifact: every figure
 is a typed object carrying its value, unit, metric, geography, period, `fact_id`, the exact query
 that produced it, and its **full lineage payload** (each source, its data.gov.in resource id, and
 its as-of date), captured at generation time from the checksum-verified release artifacts.
+
+The [charts](report/charts) are drawn by code from `report.json` — never from the dataset — so a
+chart cannot plot a number the report did not verify, and each one's manifest entry names the exact
+figure ids behind every point. Two consequences of that discipline are visible in them: the
+person-days line **breaks** across FY 2012-13 to 2014-15 rather than interpolating over three years
+the record withholds, and FY 2026-27 (which holds April 2026 alone) is **omitted** from every chart
+rather than drawn as a collapse that never happened. Both are stated in the captions and reported in
+the prose.
 
 **How the no-bluffing guarantee works.** The model writes prose; it never chooses a number. The
 pipeline around it is deterministic:
@@ -163,9 +172,13 @@ pipeline around it is deterministic:
 3. **Draft** — the model is handed those figures and *nothing else*, and told every number it writes
    must be one of them, copied exactly.
 4. **Verify** — deterministic, no model involved. Every number in the prose must be a declared
-   figure or derivation, spelled exactly as served: **rounding is rejected** ("roughly 1.0 million"
-   is not `1,000,000`). Every derivation is recomputed from its declared inputs. Every backing query
-   is re-executed against the served data. A figure without a lineage reference blocks the section.
+   figure or derivation, spelled exactly as served: **undeclared rounding is rejected** ("roughly
+   1.0 million" is not `1,000,000`; readable forms like "3.88 billion" are *declared* derivations
+   the verifier recomputes). Every derivation is recomputed from its declared inputs. Every backing
+   query is re-executed against the served data. A figure without a lineage reference blocks the
+   section. And a long span in quotation marks must be **verbatim** — the model may paraphrase the
+   server, but not inside quotes: a reworded "quotation" is a forgery even when every number in it
+   is right.
 5. **Loop or fail** — a section that fails goes back to the model with the verifier's complaints
    attached, and after a bounded number of attempts the run **fails loudly and writes nothing**. A
    model that bluffs produces no report, never a wrong one.
