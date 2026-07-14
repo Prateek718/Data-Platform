@@ -278,7 +278,14 @@ wage rate. (The last complete financial year is 2025-26; §1.)
   MoSPI partial is kept in each cell's lineage. **These nulls are expected to be temporary**: the
   deferred RS vintages `7efb084d`/`ec1ee20d` carry FY2017-18 as a NON-terminal (full) year and are
   queued for v1.1 to fill them.
-- **The national spine carries 22 unadjudicated `single-publisher divergence` cells** (FY 2012-13 →
+- **Open question (v1.1) — national FY2017-18 `persondays_generated`.** The national spine publishes
+  **1,349,100,000** for FY2017-18 (single-source, fact `3abdd35702d483a7`), ~43% below FY2016-17 and
+  ~47% below FY2018-19 — in exactly the year whose *state* coverage was thin enough to withhold 163
+  cells as `partial-period-only`. **Investigate whether this national value is itself a
+  partial-period reading** that should be withheld at national grain under the same rule (R4-REC-11).
+  Not corrected here: the record publishes what its source published, with the provenance to check
+  it, and does not assert a value is wrong on a shape argument alone.
+- **The national spine carries 19 unadjudicated `single-publisher divergence` cells** (FY 2012-13 →
   2015-16, across 7 metrics), where one publisher's (MoSPI) national vintages disagree materially and
   no groundable edition order exists. Their `value` is null and every reading is in lineage
   (`confidence = single-publisher divergence`, rule `R4-REC-09`). Extending the state

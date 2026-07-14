@@ -31,6 +31,9 @@ _MARGIN_RIGHT: Final = 24
 _MARGIN_TOP: Final = 28
 _MARGIN_BOTTOM: Final = 56
 
+# One row per year, so an index step IS a year step: label every second year, from the first.
+_TICK_EVERY_N_YEARS: Final = 2
+
 _STYLE: Final = f"""
   .surface {{ fill: #fcfcfb; }}
   .grid {{ stroke: #e6e5e1; stroke-width: 1; }}
@@ -42,6 +45,8 @@ _STYLE: Final = f"""
   .point {{ fill: {_SERIES_LIGHT}; }}
   .bar {{ fill: {_SERIES_LIGHT}; }}
   .marker {{ stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; }}
+  .withheld {{ fill: #b5b3ad; fill-opacity: 0.10; }}
+  .withheld-edge {{ stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }}
   @media (prefers-color-scheme: dark) {{
     .surface {{ fill: #1a1a19; }}
     .grid {{ stroke: #35342f; }}
@@ -53,6 +58,8 @@ _STYLE: Final = f"""
     .point {{ fill: {_SERIES_DARK}; }}
     .bar {{ fill: {_SERIES_DARK}; }}
     .marker {{ stroke: #56554f; }}
+    .withheld {{ fill: #9c9b93; fill-opacity: 0.12; }}
+    .withheld-edge {{ stroke: #56554f; }}
   }}
 """
 
@@ -230,14 +237,11 @@ def _render(
         f'<line class="axis" x1="{_MARGIN_LEFT}" y1="{axis_y}" '
         f'x2="{_WIDTH - _MARGIN_RIGHT}" y2="{axis_y}"/>'
     )
-    # Label every other year, and always the last one — dropping its neighbour rather than letting
-    # the two collide.
-    labelled = set(range(0, len(rows), 2))
-    if len(rows) - 1 not in labelled:
-        labelled.discard(len(rows) - 2)
-        labelled.add(len(rows) - 1)
+    # Label every second YEAR, counted from the first — a constant rhythm (2006-07, 2008-09, …,
+    # 2024-25). Forcing the last year in as well used to leave one irregular interval at the right
+    # edge, which reads as a break in the time axis that the data does not have.
     for index, (period, _) in enumerate(rows):
-        if index in labelled:
+        if index % _TICK_EVERY_N_YEARS == 0:
             parts.append(
                 f'<text class="tick" x="{x_of(index):.1f}" y="{axis_y + 18}" '
                 f'text-anchor="middle">{_esc(period)}</text>'
@@ -285,6 +289,27 @@ def _render(
                 f'<circle class="point" cx="{x_of(index):.1f}" cy="{y_of(value):.1f}" r="3"/>'
             )
 
+    # Shade the years the record withholds, and say so inside the plot: a gap in a line is easy to
+    # misread as a kink. The band is drawn like the era-boundary marker, and claims nothing about
+    # WHY the years are absent — only that the record does not carry them.
+    if not as_bars:
+        for first, last in _withheld_spans(rows):
+            left = x_of(first) - step / 2
+            width = (x_of(last) + step / 2) - left
+            parts.append(
+                f'<rect class="withheld" x="{left:.1f}" y="{_MARGIN_TOP}" '
+                f'width="{width:.1f}" height="{plot_h:.1f}"/>'
+            )
+            parts.append(
+                f'<rect class="withheld-edge" x="{left:.1f}" y="{_MARGIN_TOP}" '
+                f'width="{width:.1f}" height="{plot_h:.1f}"/>'
+            )
+            span = rows[first][0] if first == last else f"{rows[first][0]} \u2013 {rows[last][0]}"
+            parts.append(
+                f'<text class="muted" x="{left + width / 2:.1f}" y="{_MARGIN_TOP + 14}" '
+                f'text-anchor="middle">record withholds {_esc(span)}</text>'
+            )
+
     # Name the hole, so a reader sees an absence rather than wondering about a kink in the line.
     withheld = [period for period, value in rows if value is None]
     if withheld and not as_bars:
@@ -305,13 +330,45 @@ def _render(
         x, y = x_of(index), y_of(value)
         anchor = "end" if index > len(rows) * 0.7 else "start"
         dx = -8 if anchor == "end" else 8
+        # A label above a local minimum lands on top of the line rising away from it. Put it below.
+        dy = 18 if _is_local_minimum(rows, index) else -10
         parts.append(
-            f'<text class="muted" x="{x + dx:.1f}" y="{y - 10:.1f}" '
+            f'<text class="muted" x="{x + dx:.1f}" y="{y + dy:.1f}" '
             f'text-anchor="{anchor}">{_esc(note.text)}</text>'
         )
 
     parts.append("</svg>")
     return "\n".join(parts)
+
+
+def _is_local_minimum(rows: list[tuple[str, Decimal | None]], index: int) -> bool:
+    """Is this point lower than the neighbours that carry a value on either side?"""
+    value = rows[index][1]
+    if value is None:
+        return False
+
+    neighbours: list[Decimal] = []
+    for neighbour in (index - 1, index + 1):
+        if 0 <= neighbour < len(rows):
+            other = rows[neighbour][1]
+            if other is not None:
+                neighbours.append(other)
+    return bool(neighbours) and all(other > value for other in neighbours)
+
+
+def _withheld_spans(rows: list[tuple[str, Decimal | None]]) -> list[tuple[int, int]]:
+    """Contiguous runs of years the record does not carry, as (first, last) row indexes."""
+    spans: list[tuple[int, int]] = []
+    start: int | None = None
+    for index, (_, value) in enumerate(rows):
+        if value is None and start is None:
+            start = index
+        elif value is not None and start is not None:
+            spans.append((start, index - 1))
+            start = None
+    if start is not None:
+        spans.append((start, len(rows) - 1))
+    return spans
 
 
 def _axis_top(largest: Decimal) -> Decimal:

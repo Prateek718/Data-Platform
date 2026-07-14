@@ -59,7 +59,10 @@ def _national_charts(section: dict[str, Any]) -> list[Chart]:
                 y_label="billion person-days",
                 y_scale=Decimal(1_000_000_000),
                 boundary_after="2017-18",
-                annotations=(Annotation("2020-21", "COVID-year peak"),),
+                annotations=(
+                    Annotation("2017-18", "the seam year"),
+                    Annotation("2020-21", "COVID-year peak"),
+                ),
             )
         )
     if expenditure:

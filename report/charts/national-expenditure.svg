@@ -10,6 +10,8 @@
   .point { fill: #2a78d6; }
   .bar { fill: #2a78d6; }
   .marker { stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; }
+  .withheld { fill: #b5b3ad; fill-opacity: 0.10; }
+  .withheld-edge { stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
   @media (prefers-color-scheme: dark) {
     .surface { fill: #1a1a19; }
     .grid { stroke: #35342f; }
@@ -21,6 +23,8 @@
     .point { fill: #3987e5; }
     .bar { fill: #3987e5; }
     .marker { stroke: #56554f; }
+    .withheld { fill: #9c9b93; fill-opacity: 0.12; }
+    .withheld-edge { stroke: #56554f; }
   }
 </style>
 <rect class="surface" width="880" height="380"/>
@@ -45,7 +49,7 @@
 <text class="tick" x="531.8" y="342" text-anchor="middle">2018-19</text>
 <text class="tick" x="618.3" y="342" text-anchor="middle">2020-21</text>
 <text class="tick" x="704.7" y="342" text-anchor="middle">2022-23</text>
-<text class="tick" x="834.4" y="342" text-anchor="middle">2025-26</text>
+<text class="tick" x="791.2" y="342" text-anchor="middle">2024-25</text>
 <line class="marker" x1="510.2" y1="28" x2="510.2" y2="324"/>
 <text class="muted" x="516.2" y="40">flagship MIS era begins</text>
 <path class="series" d="M99.6,283.7 L142.8,267.9 L186.1,265.7 L229.3,269.1 L272.5,265.4 M402.2,259.1 L445.4,237.4 L488.6,266.7 L531.8,226.9 L575.1,228.9 L618.3,161.2 L661.5,167.9 L704.7,175.1 L747.9,168.6 L791.2,176.4 L834.4,201.6"/>
@@ -65,6 +69,9 @@
 <circle class="point" cx="747.9" cy="168.6" r="3"/>
 <circle class="point" cx="791.2" cy="176.4" r="3"/>
 <circle class="point" cx="834.4" cy="201.6" r="3"/>
+<rect class="withheld" x="294.1" y="28" width="86.4" height="296.0"/>
+<rect class="withheld-edge" x="294.1" y="28" width="86.4" height="296.0"/>
+<text class="muted" x="337.3" y="42" text-anchor="middle">record withholds 2013-14 – 2014-15</text>
 <text class="muted" x="856" y="372" text-anchor="end">no line where the record withholds a year: 2013-14, 2014-15</text>
 <text class="muted" x="626.3" y="151.2" text-anchor="start">COVID-year peak</text>
 </svg>

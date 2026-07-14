@@ -10,6 +10,8 @@
   .point { fill: #2a78d6; }
   .bar { fill: #2a78d6; }
   .marker { stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; }
+  .withheld { fill: #b5b3ad; fill-opacity: 0.10; }
+  .withheld-edge { stroke: #b5b3ad; stroke-width: 1; stroke-dasharray: 4 3; fill: none; }
   @media (prefers-color-scheme: dark) {
     .surface { fill: #1a1a19; }
     .grid { stroke: #35342f; }
@@ -21,6 +23,8 @@
     .point { fill: #3987e5; }
     .bar { fill: #3987e5; }
     .marker { stroke: #56554f; }
+    .withheld { fill: #9c9b93; fill-opacity: 0.12; }
+    .withheld-edge { stroke: #56554f; }
   }
 </style>
 <rect class="surface" width="880" height="380"/>
@@ -40,7 +44,7 @@
 <text class="tick" x="126.6" y="342" text-anchor="middle">2018-19</text>
 <text class="tick" x="321.1" y="342" text-anchor="middle">2020-21</text>
 <text class="tick" x="515.6" y="342" text-anchor="middle">2022-23</text>
-<text class="tick" x="807.4" y="342" text-anchor="middle">2025-26</text>
+<text class="tick" x="710.1" y="342" text-anchor="middle">2024-25</text>
 <rect class="bar" x="96.5" y="126.9" width="60.3" height="197.1" rx="2"/>
 <rect class="bar" x="193.7" y="126.0" width="60.3" height="198.0" rx="2"/>
 <rect class="bar" x="291.0" y="113.8" width="60.3" height="210.2" rx="2"/>
