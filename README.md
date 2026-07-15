@@ -401,6 +401,12 @@ Deferred items are documented where they were deferred, so they stay findable:
   (deferred Rajya Sabha vintages carry 2017-18 in full); extending the edition-supersession check to
   the **national** tier would resolve the 19 national nulls. See
   [DATA_DICTIONARY.md](DATA_DICTIONARY.md) and [docs/RULES.md](docs/RULES.md).
+- **Open question — national FY 2017-18 person-days.** The series carries **1,349,100,000**
+  (single-source), which is ~43% below FY 2016-17 and ~47% below FY 2018-19 — in the record's
+  weakest-coverage year, where 163 *state* cells were withheld as `partial-period-only`. Investigate
+  whether the national figure is itself a partial-period value that should be withheld at national
+  grain under the same rule. Until that is settled the value stands as published, with its
+  provenance; the record does not currently claim it is wrong.
 - **A discrete-monthly wage rate** (Δwages ÷ Δperson-days between consecutive months) needs a
   payment-timing/arrears rule before it can be published honestly — deferred with its reasoning in
   [docs/notes/sources.md](docs/notes/sources.md) (OQ-OGD-4).

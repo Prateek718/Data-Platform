@@ -7,6 +7,7 @@ walk from a plotted point to a fact_id to its lineage.
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -147,3 +148,74 @@ def test_the_repeal_stub_year_is_never_plotted() -> None:
     assert chart.source_ids == ("series_persondays_2025_26",)
     assert "2026-27" not in chart.svg
     assert "FY 2026-27 is omitted" in chart.caption
+
+
+def _ticks(svg: str) -> list[tuple[str, float]]:
+    """The x-axis year labels and their x positions, as rendered."""
+    pattern = re.compile(
+        r'<text class="tick" x="([0-9.]+)" y="[0-9.]+" '
+        r'text-anchor="middle">([0-9]{4}-[0-9]{2})</text>'
+    )
+    return [(period, float(x)) for x, period in pattern.findall(svg)]
+
+
+def _points(svg: str) -> list[float]:
+    return [float(x) for x in re.findall(r'<circle class="point" cx="([0-9.]+)"', svg)]
+
+
+def _full_series_chart() -> charts.Chart:
+    """One point per year, 2006-07 to 2025-26 — so point i IS year i on the axis."""
+    points = [Point(f"{y}-{str(y + 1)[2:]}", Decimal(y), f"f{y}") for y in range(2006, 2026)]
+    return charts.line_chart(
+        id="t",
+        title="t",
+        caption="c",
+        section_key="national_series",
+        points=points,
+        y_label="n",
+    )
+
+
+def test_tick_positions_are_the_year_positions_the_points_use() -> None:
+    """The invariant that made the old defect diagnosable.
+
+    A tick must sit exactly where the year it names sits. If ticks are placed on their own rhythm
+    while points are placed on the year axis, the labels drift off the data and the chart lies about
+    when things happened — quietly, because both halves look plausible alone.
+    """
+    svg = _full_series_chart().svg
+    ticks = _ticks(svg)
+    point_x = _points(svg)
+    assert len(point_x) == 20  # one per year, 2006-07 .. 2025-26
+
+    for period, x in ticks:
+        year_index = int(period[:4]) - 2006
+        assert x == pytest.approx(point_x[year_index], abs=0.05), (
+            f"the tick for {period} is not where the {period} datapoint is"
+        )
+
+
+def test_labelled_ticks_are_evenly_spaced_in_years() -> None:
+    """A constant rhythm: every second year, with no irregular interval at the right edge."""
+    ticks = _ticks(_full_series_chart().svg)
+    years = [int(period[:4]) for period, _ in ticks]
+    gaps = {b - a for a, b in zip(years, years[1:], strict=False)}
+    assert gaps == {2}, f"tick years are not evenly spaced: {years}"
+
+
+def test_withheld_years_are_shaded_and_named_in_the_chart() -> None:
+    """A gap in a line reads as a kink. The band says what it is, without claiming why."""
+    chart = charts.line_chart(
+        id="t",
+        title="t",
+        caption="c",
+        section_key="national_series",
+        points=[
+            Point("2011-12", Decimal("2187636000"), "a"),
+            Point("2015-16", Decimal("2352090000"), "b"),
+        ],
+        y_label="billion person-days",
+        y_scale=Decimal(1_000_000_000),
+    )
+    assert 'class="withheld"' in chart.svg
+    assert "record withholds 2012-13 – 2014-15" in chart.svg
