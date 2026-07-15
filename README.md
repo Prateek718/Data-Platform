@@ -1,4 +1,4 @@
-# MGNREGA Canonical Series
+# Data Platform — governed reconciliation, served over MCP
 
 [![CI](https://github.com/Prateek718/Data-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Prateek718/Data-Platform/actions/workflows/ci.yml)
 [![Code License: MIT](https://img.shields.io/badge/Code%20License-MIT-yellow.svg)](LICENSE)
@@ -6,56 +6,76 @@
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21318431.svg)](https://doi.org/10.5281/zenodo.21318431)
 
-A definitive, reconciled, lineage-traced record of **MGNREGA** — the Mahatma Gandhi National Rural
-Employment Guarantee Act scheme, India's rural employment guarantee — assembled from the many
-separately-published government datasets on [data.gov.in](https://data.gov.in) into one canonical
-series covering **FY 2006-07 → FY 2026-27**. Where those sources disagree, the disagreement is
-adjudicated by a defensible, source-grounded rule or published as a first-class output with full
-lineage — never silently smoothed away. **MGNREGA's last day in force was 30 June 2026** — the date
-the served record itself states — and it stands repealed from 1 July 2026, when the Viksit Bharat –
-Guarantee for Rozgar and Ajeevika Mission (Gramin) Act, 2025, passed by Parliament in December 2025,
-commenced ([PIB, Government of India](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2259691)).
-The successor programme is context from outside this record: the dataset holds no fact about it, and
-nothing here depends on it. This is therefore built as a concluded, citable reference record rather
-than a live feed.
-
-**Start with the report.** [**`report/report.md`**](report/report.md) is a researcher-grade reading of
-the whole record — twenty years, what it shows, where the publishers disagree, and what it refuses to
-answer. Every number in it was machine-verified against the served dataset and carries its lineage;
-figures that could not be verified were **blocked from printing**, not guessed. It is the best way to
-see what this dataset is, in about ten minutes.
+**A governed data platform:** multi-source reconciliation with **per-fact lineage**, served **read-only
+over [MCP](https://modelcontextprotocol.io) with structured refusals**, and an **AI analyst whose report
+is machine-verified against the served data** — a report that cannot print a number the dataset does not
+back. It is demonstrated end-to-end on the complete twenty-year record of **MGNREGA** — the Mahatma
+Gandhi National Rural Employment Guarantee Act, India's rural employment guarantee, **in force until
+30 June 2026** and captured here as **FY 2006-07 → FY 2026-27**. MGNREGA is the demonstration corpus,
+not the subject: the same facts are re-published across many government datasets with conflicting units,
+grains and year-slices, which makes it a genuinely hard test of the machinery. The pipeline's structure
+and principles are general; its reconciliation rules are specific to this corpus (see
+[Architecture](#architecture)).
 
 | | |
 |---|---|
-| **The reading** | [`report/report.md`](report/report.md) — the record, in prose, with charts |
-| **The data** | the [v1.0.0 release](https://github.com/Prateek718/Data-Platform/releases/tag/v1.0.0) (`dist/` is gitignored — [fetch it](#serve-the-record)) |
+| **What the platform produces** | [`report/report.md`](report/report.md) — an AI analyst's reading of the record, every figure machine-verified |
+| **The data** | the [v1.0.0 release](https://github.com/Prateek718/Data-Platform/releases/tag/v1.0.0) (`dist/` is gitignored — [fetch it](#connect-any-mcp-agent)) |
 | **The citation** | DOI [10.5281/zenodo.21318927](https://doi.org/10.5281/zenodo.21318927) (this release) |
 | **Every field, defined** | [DATA_DICTIONARY.md](DATA_DICTIONARY.md) |
 
-## What you get
+**Contents**
 
-Running the export (`data-platform-export`) produces, under
-`dist/v1.0/`:
+- [The platform, in 30 seconds](#the-platform-in-30-seconds) — for the engineer
+- [Connect any MCP agent](#connect-any-mcp-agent) — for the integrator
+- [The analyst: one consumer among many](#the-analyst-one-consumer-among-many)
+- [The dataset as a citable artifact](#the-dataset-as-a-citable-artifact) — for the researcher
+- [Why this corpus is a real test of the machinery](#why-this-corpus-is-a-real-test-of-the-machinery)
+- [Architecture](#architecture)
+- [Future work](#future-work) · [Authors](#authors) · [License](#license) · [How this was built](#how-this-was-built)
 
-| File | What it is |
-|---|---|
-| `state_annual_series.csv` / `.parquet` | 4,219 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
-| `national_annual_series.csv` / `.parquet` | 148 facts — one value per (financial-year, metric), FY 2006-07 → 2026-27. |
-| `district_flagship.csv` / `.parquet` | 57,181 facts — the flagship district drill-down (2018+), single-grain **district-annual**: the 8 additive metrics (which sum to the state spine) plus `avg_wage_rate_per_day` (a cumulative-YTD ratio, published at its FY-final annual value for complete financial years only). |
-| `lineage.jsonl` | 61,548 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
+## The platform, in 30 seconds
 
-The CSVs are flat and friendly; the deep provenance lives in `lineage.jsonl`, joined on `fact_id`.
-Every column and metric is defined in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)** — a reader needs
-nothing beyond it to use the data.
+For the engineer, in one screen: a **deterministic pipeline** turns a messy multi-source archive into one
+**sealed, checksum-verified dataset** carrying per-fact lineage; a **read-only MCP server** serves that
+dataset to any MCP client through **five tools with structured refusals**; and a **verified AI analyst**
+— one consumer among many — turns it into a report in which every number is checked back against the
+served data.
 
-## Serve the record
+```
+   messy multi-source archive  (data.gov.in, offline under data/archive/)
+        │
+   ┌────▼──────────────────────────────────────────────────┐
+   │ PIPELINE   ingest → normalize → resolve → harmonize    │  deterministic; no ML/LLM
+   │            → reconcile → assemble                      │  divergence is a first-class output
+   └────┬──────────────────────────────────────────────────┘
+        │
+   SEALED DATASET   flat CSV/Parquet + per-fact lineage.jsonl, checksum-verified
+        │
+   ┌────▼────────────┐
+   │ MCP SERVER      │  read-only · 5 tools · structured refusals · no mutation verb
+   └────┬────────────┘
+        │
+   ANY MCP CLIENT ───┬──►  the bundled AI analyst  →  a machine-verified report
+                     └──►  your agent
+```
 
-A read-only [MCP](https://modelcontextprotocol.io) server exposes this release to AI agents as a
-governed query surface. It serves the **checksum-verified v1.0.0 release artifacts** only: at
-startup it verifies every file in `dist/v1.0/` against a committed SHA-256 manifest (itself derived
-from the published release zip) and **refuses to start** on any mismatch or missing file. It loads
-them into an in-memory DuckDB, opens no network connection, and exposes no mutation verb — the
-record is sealed (MGNREGA was repealed 30 June 2026).
+What the platform produces is [**`report/report.md`**](report/report.md): a researcher-grade reading of
+the whole record — twenty years, what it shows, where the publishers disagree, and what it refuses to
+answer. Every number in it was machine-verified against the served dataset and carries its lineage;
+figures that could not be verified were **blocked from printing**, not guessed. It is the fastest way to
+see what the platform does, in about ten minutes.
+
+## Connect any MCP agent
+
+The server is a standard [MCP](https://modelcontextprotocol.io) server, and **any MCP client can connect
+to it**. Claude Desktop is used as the example below, but it is one client and not a dependency — the
+bundled analyst is likewise one consumer among many. The server exposes this release to AI agents as a
+governed query surface. It serves the **checksum-verified v1.0.0 release artifacts** only: at startup it
+verifies every file in `dist/v1.0/` against a committed SHA-256 manifest (itself derived from the
+published release zip) and **refuses to start** on any mismatch or missing file. It loads them into an
+in-memory DuckDB, opens no network connection, and exposes no mutation verb — the record is sealed
+(MGNREGA was repealed 30 June 2026).
 
 **A fresh clone has no data.** `dist/` is gitignored: the dataset lives in the
 [v1.0.0 release](https://github.com/Prateek718/Data-Platform/releases/tag/v1.0.0). Fetch it once —
@@ -69,15 +89,14 @@ data-platform-bootstrap    # ~5 MB; downloads, verifies twice, installs to dist/
 data-platform-mcp          # the server, over stdio
 ```
 
-Claude Desktop config (`claude_desktop_config.json`):
+Client config (`claude_desktop_config.json` shown; any MCP client's config takes the same shape):
 
 ```json
 {
   "mcpServers": {
     "mgnrega-canonical-series": {
       "command": "uv",
-      "args": ["run", "data-platform-mcp"],
-      "cwd": "/path/to/Data-Platform"
+      "args": ["run", "--directory", "/path/to/Data-Platform", "data-platform-mcp"]
     }
   }
 }
@@ -98,7 +117,7 @@ The dataset is **not baked into the image**: it is fetched into the mounted volu
 start and verified twice on the way in, so an image can never carry an unverified dataset. For an
 offline image, bake it: `docker build --build-arg BAKE_DATASET=1 -t data-platform .`
 
-Claude Desktop, against the container:
+Any MCP client, against the container (Claude Desktop shown):
 
 ```json
 {
@@ -125,7 +144,7 @@ OPENROUTER_API_KEY=... docker compose run --rm analyst
 |---|---|
 | `list_datasets` | The three data tables + lineage, each with row count, financial-year coverage window, grain, and metric list. |
 | `get_schema(table)` | Columns and types, per-metric unit and unit-class, grain, join key (`fact_id`), and null semantics. |
-| `query(table, metrics?, states?, districts?, fy_from?, fy_to?)` | Constrained filter (no raw SQL; parameters only). Geography by LGD code or current LGD name. Returns rows carrying `fact_id` in a result envelope, or a structured refusal. |
+| `query(table, metrics?, states?, districts?, fy_from?, fy_to?, month?)` | Constrained filter (no raw SQL; parameters only). Geography by LGD code or current LGD name. Returns rows carrying `fact_id` in a result envelope, or a structured refusal. `month?` is accepted only to be refused with guidance — the series is annual-grain, so a monthly request is truthfully declined, not errored. |
 | `get_lineage(fact_id \| [fact_id])` | Full provenance per fact: each source with resource id and as-of date, reconciliation status, rejected value, materiality, and null reason. |
 | `request_refresh` | Reports that the record is sealed and cannot be refreshed, with the citation pointer. |
 
@@ -175,8 +194,10 @@ label. **A refusal is not a null.** A null *data cell* is returned as data, carr
 empty — the record distinguishes "I will not answer that" from "the value is unknown, and here is
 why".
 
-## The analyst and its report
+## The analyst: one consumer among many
 
+The bundled analyst is the platform's own demonstration consumer — it proves the served surface is
+enough to build a rigorous product on, seeing the data through nothing but the five tools above.
 [`report/report.md`](report/report.md) is a researcher-grade document — abstract, introduction,
 methodology, findings, limitations — written by an AI analyst that can only see this dataset through
 the MCP server above. It has no other access to the data, and no ability to compute.
@@ -234,85 +255,37 @@ data-platform-analyst                                          # writes report/r
 This is the only path in the repo that calls a live model. The test suite never does: it drives the
 graph with scripted fakes — including one that lies about a number, to prove the verifier blocks it.
 
-## Why it's hard
+## The dataset as a citable artifact
 
-The divergence being reconciled is internal to data.gov.in: the same MGNREGA facts are re-published
-across many datasets and departments with conflicting units (lakh vs crore), grains (district vs
-state), and year-slices. Turning that into one trustworthy series meant defusing several real traps:
+For the researcher, the platform's output is a concluded, citable dataset. **MGNREGA's last day in force
+was 30 June 2026** — the date the served record itself states — and it stands repealed from 1 July 2026,
+when the Viksit Bharat – Guarantee for Rozgar and Ajeevika Mission (Gramin) Act, 2025, passed by
+Parliament in December 2025, commenced
+([PIB, Government of India](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2259691)). The successor
+programme is context from outside this record: the dataset holds no fact about it, and nothing here
+depends on it. The dataset is therefore a concluded, citable reference record rather than a live feed:
+one canonical series covering **FY 2006-07 → FY 2026-27**, assembled from the many separately-published
+government datasets on [data.gov.in](https://data.gov.in). Where those sources disagree, the disagreement
+is adjudicated by a defensible, source-grounded rule or published as a first-class output with full
+lineage — never silently smoothed away.
 
-- **Cumulative-YTD, not monthly flows.** The flagship publishes person-days and expenditure as a
-  *running year-to-date* total, so the annual figure is the year's final month — never the sum of
-  the monthly rows. Summing them over-counts badly (on Goa in FY 2022-23, a naive monthly sum gives
-  593,095 person-days against the correct 94,004 — a 6.31× inflation). The pipeline takes the
-  financial-year-final and never sums.
-- **No code mapping to canonical geography.** The flagship publishes its own internal MIS codes, not
-  the government's Local Government Directory (LGD) codes — Goa is `10` in the flagship but `30` in
-  LGD, and no crosswalk exists. Every source is resolved to canonical LGD geography by a curated
-  name-join; a row that cannot be placed honestly is quarantined with a reason, never forced onto a
-  code that does not fit.
-- **Apparent conflict was mostly disguised incompleteness.** Much of what looked like cross-source
-  disagreement was really *period mismatch* — an edition's mid-year partial terminal year, a
-  half-year "upto 30.09" column — or one publisher re-issuing its own table across successive
-  Statistical Year Book editions. Separating those out first (edition supersession labels 470 state
-  cells; partial periods and partial columns are excluded before comparison) collapsed the apparent
-  conflict and *revealed* real agreement: cross-publisher corroboration on households rose from 53 to
-  118 cells while flagged household conflicts fell from 69 to 4.
-- **The pre-2018 residual is small, and named.** After all of that, **nine** genuine cross-publisher
-  material disagreements remain in the pre-2018 series: **four** in `households_employed` (Bihar FY
-  2015-16, Mizoram FY 2013-14, Telangana FY 2014-15, Andaman & Nicobar FY 2014-15 — a MoSPI edition
-  vs a Rajya Sabha answer, settled by a documented tie-break between equal-authority publishers) and
-  **five** in `total_expenditure` (Andhra Pradesh FY 2014-15 & 2015-16, Bihar FY 2014-15, Jammu &
-  Kashmir & Telangana FY 2016-17), surfaced once the RS expenditure table made RS an independent
-  publisher there. Each records the rejected value and percentage in lineage. (That same wiring also
-  produced **137** new cross-publisher *corroborations* pre-2018 — RS independently confirming MoSPI.)
-- **The flagship era reconciles too.** Four Rajya Sabha state tables (person-days, total-expenditure,
-  100-days) are peers to the flagship rollup, not dropped: across FY 2018-24 that yields **180**
-  cross-publisher corroborations, **25** flagged conflicts where the flagship has whole-geography
-  coverage (flagship value taken, RS value recorded), and **10** *unadjudicated* cells where a
-  structurally-incomplete flagship rollup materially disagrees with the RS peer — value withheld, both
-  readings in lineage. Maharashtra's FY2021-24 person-days going null is the honest outcome (flagship
-  34/36 districts vs RS +11 to +19.6%), not a number silently chosen.
+### What you get
 
-Edition supersession is a *source-grounded editorial hierarchy*, not "newest file wins": it is
-applied to a family only after shared publication identity, dated edition markers, and empirically
-(near-)unidirectional restatement are all confirmed — with the single known reversion (a one-lakh
-flicker on Sikkim) documented and resolving cleanly. The full account is in
-[docs/stage-4-5-series-assembly-summary.md](docs/stage-4-5-series-assembly-summary.md) and
-[docs/RULES.md](docs/RULES.md).
+Running the export (`data-platform-export`) produces, under
+`dist/v1.0/`:
 
-## Architecture
-
-```
-data.gov.in MGNREGA archive (offline, gitignored under data/archive/)
-  → ingest        capture the full archive locally; the portal is not a runtime dependency
-  → normalize     reshape to tidy rows; clean dates, types, dedupe
-  → resolve       geography → LGD code by name-join; zero-loss gate (resolve OR quarantine-with-reason)
-  → harmonize     units (lakh/crore → canonical), cumulative-YTD → FY-final; Stage-4 reconciliation — deterministic rules, divergence a first-class output
-  → assemble      Stage-4.5 continuous series across the 2018 seam (flagship 2018+ / historical before)
-  → export        this deliverable: flat CSV/Parquet + deep lineage.jsonl
-```
-
-Principles enforced throughout: **deterministic only** (no ML/LLM inside the transforms — the only
-model in the system writes the report's prose, and cannot choose a number); **quarantine over
-discard** (no row and no dataset dropped without a recorded reason); **null ≠ 0** (a missing value is
-never coerced to zero); and **every fact carries its lineage**. MGNREGA is the reference
-implementation; the platform is architected scheme-agnostic.
-
-**Where the reasoning lives.** Nothing below is summarized here — these are the documents that decide
-things, and they are the ones to read if you want to argue with a rule:
-
-| Document | What it settles |
+| File | What it is |
 |---|---|
-| [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md) | The canonical schema, the geography anchor (LGD), source priority, and the lineage every fact must carry. |
-| [docs/RULES.md](docs/RULES.md) | Every named rule, by id: normalization (R2), entity resolution (R3), harmonization and reconciliation (R4), serving (R7). A rule id in `lineage.jsonl` resolves here. |
-| [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | Every column and metric, unit, null semantics, and the full coverage account. |
-| [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | The byte-for-byte claim, the environment, and how to get the raw archive. |
-| [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md) | The twelve stages and what delivered each. |
-| [docs/stage-4-5-series-assembly-summary.md](docs/stage-4-5-series-assembly-summary.md) | How the continuous series was assembled across the 2018 seam, with the divergence accounting. |
-| [docs/quarantine-report.md](docs/quarantine-report.md) | What was quarantined, and why — nothing is dropped silently. |
-| [docs/notes/](docs/notes/) | The working record: source reconnaissance, divergence findings, the Stage 8 claim inventory and fork facts. |
+| `state_annual_series.csv` / `.parquet` | 4,219 facts — one value per (state, financial-year, metric), 8 metrics, FY 2010-11 → 2026-27. |
+| `national_annual_series.csv` / `.parquet` | 148 facts — one value per (financial-year, metric), FY 2006-07 → 2026-27. |
+| `district_flagship.csv` / `.parquet` | 57,181 facts — the flagship district drill-down (2018+), single-grain **district-annual**: the 8 additive metrics (which sum to the state spine) plus `avg_wage_rate_per_day` (a cumulative-YTD ratio, published at its FY-final annual value for complete financial years only). |
+| `lineage.jsonl` | 61,548 records — full per-fact provenance keyed by `fact_id`: every source seen, every rejected/superseded value with the rule that decided it, coverage descriptors, flags. |
 
-## Scope, coverage and caveats
+The CSVs are flat and friendly; the deep provenance lives in `lineage.jsonl`, joined on `fact_id`.
+Every column and metric is defined in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)** — a reader needs
+nothing beyond it to use the data.
+
+### Scope, coverage and caveats
 
 Read this before you use a number. The full statement, with every figure verified against the served
 data, is the **[Limitations section of the report](report/report.md)**; this is the summary.
@@ -374,7 +347,7 @@ data, is the **[Limitations section of the report](report/report.md)**; this is 
 
 The same account, per column and per metric, is in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)**.
 
-## Reproducibility
+### Reproducibility
 
 The pipeline runs **offline** against the local archive and produces the series **byte-for-byte
 identically** on every run (the export test suite asserts this for CSV, JSONL, and Parquet). See
@@ -392,6 +365,105 @@ data-platform-export                      # regenerate dist/v1.0/ from data/arch
 a **generated, verified artifact** of the sealed v1.0 dataset, and editing its text by hand would
 break the guarantee that every word of it came out of a checked pipeline. Both commands do the same
 thing; the packaged one is the current form.)*
+
+### How to cite
+
+Citation metadata is in **[CITATION.cff](CITATION.cff)**. The v1.0.0 release is archived on Zenodo —
+cite the version DOI [10.5281/zenodo.21318927](https://doi.org/10.5281/zenodo.21318927) for this
+specific release, or the concept DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431),
+which always resolves to the latest version (see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)).
+
+**The dataset** (what a researcher cites for the figures):
+
+> Prateek (2026). *MGNREGA Canonical Series* (v1.0.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21318927
+
+**The report** (what they cite for the reading of them) carries its own citation block, generated
+with it — see [report/report.md](report/report.md).
+
+## Why this corpus is a real test of the machinery
+
+The demonstration corpus was chosen because it is genuinely hard: it exercises every part of the
+machinery, and each trap below is a capability the platform had to implement, not a finding for its own
+sake. The divergence being reconciled is internal to data.gov.in: the same MGNREGA facts are
+re-published across many datasets and departments with conflicting units (lakh vs crore), grains
+(district vs state), and year-slices. Turning that into one trustworthy series meant defusing several
+real traps:
+
+- **Cumulative-YTD, not monthly flows.** The flagship publishes person-days and expenditure as a
+  *running year-to-date* total, so the annual figure is the year's final month — never the sum of
+  the monthly rows. Summing them over-counts badly (on Goa in FY 2022-23, a naive monthly sum gives
+  593,095 person-days against the correct 94,004 — a 6.31× inflation). The pipeline takes the
+  financial-year-final and never sums.
+- **No code mapping to canonical geography.** The flagship publishes its own internal MIS codes, not
+  the government's Local Government Directory (LGD) codes — Goa is `10` in the flagship but `30` in
+  LGD, and no crosswalk exists. Every source is resolved to canonical LGD geography by a curated
+  name-join; a row that cannot be placed honestly is quarantined with a reason, never forced onto a
+  code that does not fit.
+- **Apparent conflict was mostly disguised incompleteness.** Much of what looked like cross-source
+  disagreement was really *period mismatch* — an edition's mid-year partial terminal year, a
+  half-year "upto 30.09" column — or one publisher re-issuing its own table across successive
+  Statistical Year Book editions. Separating those out first (edition supersession labels 470 state
+  cells; partial periods and partial columns are excluded before comparison) collapsed the apparent
+  conflict and *revealed* real agreement: cross-publisher corroboration on households rose from 53 to
+  118 cells while flagged household conflicts fell from 69 to 4.
+- **The pre-2018 residual is small, and named.** After all of that, **nine** genuine cross-publisher
+  material disagreements remain in the pre-2018 series: **four** in `households_employed` (Bihar FY
+  2015-16, Mizoram FY 2013-14, Telangana FY 2014-15, Andaman & Nicobar FY 2014-15 — a MoSPI edition
+  vs a Rajya Sabha answer, settled by a documented tie-break between equal-authority publishers) and
+  **five** in `total_expenditure` (Andhra Pradesh FY 2014-15 & 2015-16, Bihar FY 2014-15, Jammu &
+  Kashmir & Telangana FY 2016-17), surfaced once the RS expenditure table made RS an independent
+  publisher there. Each records the rejected value and percentage in lineage. (That same wiring also
+  produced **137** new cross-publisher *corroborations* pre-2018 — RS independently confirming MoSPI.)
+- **The flagship era reconciles too.** Four Rajya Sabha state tables (person-days, total-expenditure,
+  100-days) are peers to the flagship rollup, not dropped: across FY 2018-24 that yields **180**
+  cross-publisher corroborations, **25** flagged conflicts where the flagship has whole-geography
+  coverage (flagship value taken, RS value recorded), and **10** *unadjudicated* cells where a
+  structurally-incomplete flagship rollup materially disagrees with the RS peer — value withheld, both
+  readings in lineage. Maharashtra's FY2021-24 person-days going null is the honest outcome — withheld
+  as `unadjudicated`, both readings kept in `lineage.jsonl`, the facts named in the
+  [claim inventory](docs/notes/STAGE8-CLAIM-INVENTORY.md) — not a number silently chosen.
+
+Edition supersession is a *source-grounded editorial hierarchy*, not "newest file wins": it is
+applied to a family only after shared publication identity, dated edition markers, and empirically
+(near-)unidirectional restatement are all confirmed — with the single known reversion (a one-lakh
+flicker on Sikkim) documented and resolving cleanly. The full account is in
+[docs/stage-4-5-series-assembly-summary.md](docs/stage-4-5-series-assembly-summary.md) and
+[docs/RULES.md](docs/RULES.md).
+
+## Architecture
+
+```
+data.gov.in MGNREGA archive (offline, gitignored under data/archive/)
+  → ingest        capture the full archive locally; the portal is not a runtime dependency
+  → normalize     reshape to tidy rows; clean dates, types, dedupe
+  → resolve       geography → LGD code by name-join; zero-loss gate (resolve OR quarantine-with-reason)
+  → harmonize     units (lakh/crore → canonical), cumulative-YTD → FY-final; Stage-4 reconciliation — deterministic rules, divergence a first-class output
+  → assemble      Stage-4.5 continuous series across the 2018 seam (flagship 2018+ / historical before)
+  → export        this deliverable: flat CSV/Parquet + deep lineage.jsonl
+```
+
+Principles enforced throughout: **deterministic only** (no ML/LLM inside the transforms — the only
+model in the system writes the report's prose, and cannot choose a number); **quarantine over
+discard** (no row and no dataset dropped without a recorded reason); **null ≠ 0** (a missing value is
+never coerced to zero); and **every fact carries its lineage**. MGNREGA is the reference
+implementation. The pipeline's structure and principles — staged transforms, quarantine-over-discard,
+divergence as a first-class output, per-fact lineage — are general; the rules (R2/R3/R4) are
+deliberately specific to this corpus. A second corpus would bring its own rule set into the same
+frame; that generalization is future work, not a shipped property.
+
+**Where the reasoning lives.** Nothing below is summarized here — these are the documents that decide
+things, and they are the ones to read if you want to argue with a rule:
+
+| Document | What it settles |
+|---|---|
+| [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md) | The canonical schema, the geography anchor (LGD), source priority, and the lineage every fact must carry. |
+| [docs/RULES.md](docs/RULES.md) | Every named rule, by id: normalization (R2), entity resolution (R3), harmonization and reconciliation (R4), serving (R7). A rule id in `lineage.jsonl` resolves here. |
+| [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | Every column and metric, unit, null semantics, and the full coverage account. |
+| [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | The byte-for-byte claim, the environment, and how to get the raw archive. |
+| [docs/BUILD_SEQUENCE.md](docs/BUILD_SEQUENCE.md) | The twelve stages and what delivered each. |
+| [docs/stage-4-5-series-assembly-summary.md](docs/stage-4-5-series-assembly-summary.md) | How the continuous series was assembled across the 2018 seam, with the divergence accounting. |
+| [docs/quarantine-report.md](docs/quarantine-report.md) | What was quarantined, and why — nothing is dropped silently. |
+| [docs/notes/](docs/notes/) | The working record: source reconnaissance, divergence findings, the Stage 8 claim inventory and fork facts. |
 
 ## Future work
 
@@ -432,20 +504,6 @@ The tool, cited in the standard form for a language-model tool:
 
 > Anthropic. (2026). *Claude Code* (Claude Opus 4.8) [Large language model]. https://claude.com/claude-code
 
-## How to cite
-
-Citation metadata is in **[CITATION.cff](CITATION.cff)**. The v1.0.0 release is archived on Zenodo —
-cite the version DOI [10.5281/zenodo.21318927](https://doi.org/10.5281/zenodo.21318927) for this
-specific release, or the concept DOI [10.5281/zenodo.21318431](https://doi.org/10.5281/zenodo.21318431),
-which always resolves to the latest version (see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)).
-
-**The dataset** (what a researcher cites for the figures):
-
-> Prateek (2026). *MGNREGA Canonical Series* (v1.0.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21318927
-
-**The report** (what they cite for the reading of them) carries its own citation block, generated
-with it — see [report/report.md](report/report.md).
-
 ## License
 
 Two-part licensing: the **code** (pipeline, export, tests) is under the **MIT License** (`LICENSE`);
@@ -470,3 +528,5 @@ most important corrections in the project came from a human reading generated ou
 to catch prose that outran its numbers. That division is also why the report has a deterministic
 verifier rather than a careful prompt: a review gate catches what it reads, and the verifier catches
 what nobody reads. The model writes the report's prose and never chooses a number.
+</content>
+</invoke>
